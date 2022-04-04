@@ -1,0 +1,4 @@
+imu_topic: "/dji_sdk/imu"
+imu_rate: 400
+measure_rate: 400
+sequence_time: 14399

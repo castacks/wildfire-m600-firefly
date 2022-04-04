@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen"/>
+  <node pkg="firefly_telemetry" type="onboard_telemetry.py" name="onboard_telemetry" output="screen"/>
+  <node pkg="firefly_perception" type="firefly_perception" name="firefly_perception" output="screen"/>
+  <include file="$(find dji_sdk)/launch/sdk.launch"/>
+  <include file="$(find flir_ros_sync)/launch/example/flir_ros.launch"/>
+  <include file="$(find seek_driver)/launch/seek_driver.launch" />
+  <include file="$(find frame_publishers)/launch/frame_publishers.launch" />
+</launch>

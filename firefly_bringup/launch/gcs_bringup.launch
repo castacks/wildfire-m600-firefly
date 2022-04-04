@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="firefly_mapping" type="gcs_mapping" name="gcs_mapping" output="screen"/>
+  <node pkg="firefly_telemetry" type="gcs_telemetry.py" name="gcs_telemetry" output="screen"/>
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find firefly_mapping)/rviz/gcs.rviz" />
+</launch>

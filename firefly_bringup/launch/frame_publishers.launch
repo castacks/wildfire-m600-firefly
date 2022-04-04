@@ -1,0 +1,5 @@
+<launch> 
+	<node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.1505426 -0.01063025 -0.13471977 -1.6225108 -0.0043312 -2.0387049 base_link thermal/camera_link 100"/>
+
+	<node pkg="frame_publishers" type="enu_pub.py" name="enu_pub"/>
+</launch>
