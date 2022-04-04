@@ -4,7 +4,7 @@ import rospy
 import tf
 from geometry_msgs.msg import QuaternionStamped
 from sensor_msgs.msg import NavSatFix
-from std_msgs.msg import Empty
+from firefly_telemetry.srv import SetLocalPosRef, SetLocalPosRefResponse, SetLocalPosRefRequest
 import pymap3d as pm
 
 
@@ -12,9 +12,8 @@ class GPS2LocalENU:
     def __init__(self):
         rospy.Subscriber('dji_sdk/attitude', QuaternionStamped, self.attitude_callback)
         rospy.Subscriber('dji_sdk/gps_position', NavSatFix, self.gps_pos_callback)
-        rospy.Subscriber('set_local_pos_ref', Empty, self.set_local_pos_ref_handler)
-        # TODO: Publish lat, lon, height of enu datum
-        # TODO: Provide service for manually setting enu datum
+        rospy.Service('set_local_pos_ref', SetLocalPosRef, self.set_local_pos_ref_handler)
+
         self.br = tf.TransformBroadcaster()
 
         self.attitude = None
@@ -45,11 +44,18 @@ class GPS2LocalENU:
         self.gps_stamp = data.header.stamp
         self.publish_tf()
 
-    def set_local_pos_ref_handler(self, data):
+    def set_local_pos_ref_handler(self, req):
         self.lat0 = self.lat
         self.lon0 = self.lon
         self.h0 = self.h
         self.publish_tf()
+
+        response = SetLocalPosRefResponse()
+        response.latitude = self.lat0
+        response.longitude = self.lon0
+        response.altitude = self.h0
+
+        return response
 
     def publish_tf(self):
         if self.attitude is None \

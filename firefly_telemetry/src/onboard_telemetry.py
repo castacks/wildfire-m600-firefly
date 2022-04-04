@@ -10,6 +10,7 @@ from threading import Lock
 from enum import Enum
 import tf2_ros
 import struct
+from firefly_telemetry.srv import SetLocalPosRef, SetLocalPosRefResponse, SetLocalPosRefRequest
 
 os.environ['MAVLINK20'] = '1'
 
@@ -132,16 +133,20 @@ class OnboardTelemetry:
         if msg is None:
             return
         msg = msg.to_dict()
+        print(msg)
 
         if msg['mavpackettype'] == 'FIREFLY_CLEAR_MAP':
             self.clear_map_pub.publish(Empty())
         elif msg['mavpackettype'] == 'FIREFLY_SET_LOCAL_POS_REF':
             self.clear_map_pub.publish(Empty())
-            self.set_local_pos_ref_pub.publish(Empty())
-            pass
-        print(msg)
-
-        if msg['mavpackettype'] == 'FIREFLY_GET_FRAME':
+            rospy.wait_for_service('set_local_pos_ref', timeout=0.1)
+            try:
+                set_local_pos_ref = rospy.ServiceProxy('set_local_pos_ref', SetLocalPosRef)
+                response = set_local_pos_ref()
+                self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
+            except rospy.ServiceException as e:
+                print("Service call failed: %s" % e)
+        elif msg['mavpackettype'] == 'FIREFLY_GET_FRAME':
             if msg['get_frame'] == 1:
                 # tell perception handler to extract frame
                 e = Empty()

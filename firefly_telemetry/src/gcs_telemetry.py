@@ -19,7 +19,7 @@ class OnboardTelemetry:
         self.new_fire_pub = rospy.Publisher("new_fire_bins", Int32MultiArray, queue_size=100)
         self.new_no_fire_pub = rospy.Publisher("new_no_fire_bins", Int32MultiArray, queue_size=100)
         self.clear_map_sub = rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
-        self.clear_map_sub = rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
+        self.set_local_pos_ref_sub = rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
 
         self.br = tf.TransformBroadcaster()
 
