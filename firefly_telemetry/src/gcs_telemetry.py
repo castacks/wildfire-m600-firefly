@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import math
-
 import rospy
 from std_msgs.msg import Int32MultiArray
 from pymavlink import mavutil
@@ -12,25 +10,24 @@ import time
 
 os.environ['MAVLINK20'] = '1'
 
+
 class OnboardTelemetry:
     def __init__(self):
         self.now = time.time()
         self.connection = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600, dialect='firefly')
         self.new_fire_pub = rospy.Publisher("new_fire_bins", Int32MultiArray, queue_size=100)
         self.new_no_fire_pub = rospy.Publisher("new_no_fire_bins", Int32MultiArray, queue_size=100)
-        self.clear_map_sub = rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
-        self.set_local_pos_ref_sub = rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
+        rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
+        rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
+        rospy.Subscriber("capture_frame", Empty, self.capture_frame_callback)
 
         self.br = tf.TransformBroadcaster()
 
         self.clear_map_flag = False
         self.set_local_pos_ref_flag = False
-
+        self.capture_frame_flag = False
 
     def run(self):
-        if(time.time() - self.now > 10):
-            self.connection.mav.firefly_get_frame_send(1)
-            self.now = time.time()
 
         msg = self.connection.recv_match()
         if msg is None:
@@ -65,11 +62,18 @@ class OnboardTelemetry:
             self.connection.mav.firefly_set_local_pos_ref_send(0)
             self.clear_map_flag = False
 
+        if self.capture_frame_flag:
+            self.connection.mav.firefly_get_frame_send(1)
+            self.capture_frame_flag = False
+
     def clear_map_callback(self, empty_msg):
         self.clear_map_flag = True
 
     def set_local_pos_ref_callback(self, empty_msg):
         self.set_local_pos_ref_flag = True
+
+    def capture_frame_callback(self, empty_msg):
+        self.capture_frame_flag = True
 
 
 if __name__ == "__main__":
