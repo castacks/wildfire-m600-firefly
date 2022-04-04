@@ -5,5 +5,8 @@
   <include file="$(find dji_sdk)/launch/sdk.launch"/>
   <include file="$(find flir_ros_sync)/launch/example/flir_ros.launch"/>
   <include file="$(find seek_driver)/launch/seek_driver.launch" />
-  <include file="$(find frame_publishers)/launch/frame_publishers.launch" />
+
+  <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.1505426 -0.01063025 -0.13471977 -1.6225108 -0.0043312 -2.0387049 base_link thermal/camera_link 100"/>
+
+  <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu"/>
 </launch>

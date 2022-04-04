@@ -4,11 +4,11 @@ import rospy
 import tf
 from geometry_msgs.msg import QuaternionStamped
 from sensor_msgs.msg import NavSatFix
-from sensor_msgs.msg import Empty
+from std_msgs.msg import Empty
 import pymap3d as pm
 
 
-class ENUPublisher:
+class GPS2LocalENU:
     def __init__(self):
         rospy.Subscriber('dji_sdk/attitude', QuaternionStamped, self.attitude_callback)
         rospy.Subscriber('dji_sdk/gps_position', NavSatFix, self.gps_pos_callback)
@@ -72,7 +72,7 @@ class ENUPublisher:
 
 
 if __name__ == '__main__':
-    rospy.init_node('enu_pub', anonymous=True)
-    enu_pub = ENUPublisher()
+    rospy.init_node('gps_to_local_enu', anonymous=True)
+    enu_pub = GPS2LocalENU()
 
     rospy.spin()
