@@ -13,17 +13,28 @@ class OnboardMappingTest {
 public:
     OnboardMappingTest() {
         image_sub = nh.subscribe("image_to_project", 1000, &OnboardMappingTest::project_image, this);
+        map_pub = nh.advertise<nav_msgs::OccupancyGrid>("observed_firemap", 10);
         new_fire_pub = nh.advertise<std_msgs::Int32MultiArray>("new_fire_bins", 10);
 
         K_inv << 1.0/fx,  0.0,    -cx/fx,
                  0.0,     1.0/fy, -cy/fy,
                  0.0,     0.0,     1.0;
+
+        outputMap.header.frame_id = "world";
+        outputMap.info.resolution = 0.5;
+        outputMap.info.width = 400; //Number of Cells
+        outputMap.info.height = 400; //Number of Cells
+        outputMap.info.origin.position.x = -100; //In meters
+        outputMap.info.origin.position.y = -100; //In meters
+        outputMap.data = std::vector<std::int8_t> (400*400, 50); // Initialize map to 50 percent certainty
     }
 
 private:
     ros::NodeHandle nh;
     ros::Subscriber image_sub;
-    ros::Publisher new_fire_pub;
+    ros::Publisher map_pub, new_fire_pub;
+
+    nav_msgs::OccupancyGrid outputMap;
 
     Eigen::Vector3d ground_normal{0, 0, 1}; //Should point up from ground - if pointing into ground, will cause errors
     float ground_offset = 0;
@@ -55,6 +66,12 @@ private:
 
         std::unordered_set<int> new_fire_bins;
         std::unordered_set<int> new_no_fire_bins;
+
+        outputMap.data = std::vector<std::int8_t> (400*400, 50);
+        size_t gtRow = (size_t) ((0.0003317448153091762-minY)/resolution);
+        size_t gtCol = (size_t) ((12.053241997035023-minX)/resolution);
+        int gtBin = gtCol + gtRow * 400;
+        outputMap.data[gtBin] = 0;
 
         for (size_t i = 0; i < msg.image.width; i++) {
             for (size_t j = 0; j < msg.image.height; j++) {
@@ -88,6 +105,7 @@ private:
                 int mapBin = gridCol + gridRow * 400;
 
                 new_fire_bins.insert(mapBin);
+                outputMap.data[mapBin] = 100;
 
             }
         }
@@ -101,6 +119,8 @@ private:
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "Projection of single image took: " << duration.count() << " milliseconds" << std::endl;
+
+        map_pub.publish(outputMap);
 
         return;
     }
