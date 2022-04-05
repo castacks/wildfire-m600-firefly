@@ -7,6 +7,7 @@ import os
 import tf
 from std_msgs.msg import Empty
 import time
+from sensor_msgs.msg import NavSatFix
 
 os.environ['MAVLINK20'] = '1'
 
@@ -17,6 +18,8 @@ class GCSTelemetry:
         self.connection = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600, dialect='firefly')
         self.new_fire_pub = rospy.Publisher("new_fire_bins", Int32MultiArray, queue_size=100)
         self.new_no_fire_pub = rospy.Publisher("new_no_fire_bins", Int32MultiArray, queue_size=100)
+        self.local_pos_ref_pub = rospy.Publisher("local_pos_ref", NavSatFix, queue_size=100)
+
         rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
         rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
         rospy.Subscriber("capture_frame", Empty, self.capture_frame_callback)
@@ -54,6 +57,13 @@ class GCSTelemetry:
                                       rospy.Time.now(),
                                       "world",
                                       "base_link")
+            elif msg['mavpackettype'] == 'FIREFLY_LOCAL_POS_REF':
+                nav_msg = NavSatFix()
+                nav_msg.header.frame_id = 'world'
+                nav_msg.latitude = msg['latitude']
+                nav_msg.longitude = msg['longitude']
+                nav_msg.altitude = msg['altitude']
+                self.local_pos_ref_pub.publish(nav_msg)
 
         if self.clear_map_flag:
             self.connection.mav.firefly_clear_map_send(0)
