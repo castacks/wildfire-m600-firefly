@@ -1,0 +1,9 @@
+<library path="lib/libfirefly_viz">
+    <class name="firefly_viz/FireflyPanel"
+           type="rviz::FireflyPanel"
+           base_class_type="rviz::Panel">
+        <description>
+            A panel widget for the firefly wildfire monitoring project.
+        </description>
+    </class>
+</library>
