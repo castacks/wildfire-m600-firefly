@@ -42,6 +42,10 @@ add_executable(onboard_mapping src/onboard_mapping.cpp)
 add_dependencies(onboard_mapping ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(onboard_mapping ${catkin_LIBRARIES})
 
+add_executable(onboard_mapping_test src/onboard_mapping_test.cpp)
+add_dependencies(onboard_mapping_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(onboard_mapping_test ${catkin_LIBRARIES})
+
 add_executable(gcs_mapping src/gcs_mapping.cpp)
 add_dependencies(gcs_mapping ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(gcs_mapping ${catkin_LIBRARIES})

@@ -42,3 +42,7 @@ add_executable(firefly_perception src/firefly_perception.cpp)
 target_link_libraries(firefly_perception
                             ${catkin_LIBRARIES}
                             ${OpenCV_LIBRARIES})
+add_executable(firefly_perception_continuous src/firefly_perception_continuous.cpp)
+target_link_libraries(firefly_perception_continuous
+        ${catkin_LIBRARIES}
+        ${OpenCV_LIBRARIES})

@@ -30,11 +30,9 @@ public:
             : it_(nh_)
     {
         image_sub_thresh = it_.subscribe("/seek_camera/temperatureImageCelcius", 1,
-                                   &ThermalImageReader::imageCbThresh, this);
+                                         &ThermalImageReader::imageCbThresh, this);
         image_sub_gray = it_.subscribe("/seek_camera/displayImage", 1,
-                                   &ThermalImageReader::imageCbGray, this);
-
-        img_extract_sub = nh_.subscribe("extract_frame",1,  &ThermalImageReader::img_extract_cb,  this);
+                                       &ThermalImageReader::imageCbGray, this);
 
         image_pub_ = nh_.advertise<firefly_mapping::ImageWithPose>("image_to_project", 1, this);
     }
@@ -58,6 +56,7 @@ public:
             cv::imshow("Thresholded Image", cv_img.image);
 
             cv::waitKey(3);
+
         }
         catch (cv_bridge::Exception& e)
         {
@@ -65,7 +64,31 @@ public:
             return;
         }
 
-        // Output modified video stream
+        firefly_mapping::ImageWithPose reply;
+        cv_img.toImageMsg(reply.image);
+
+
+
+        tf::StampedTransform transform;
+        try {
+            listener.lookupTransform("world", "thermal/camera_link",
+                                     ros::Time(0), transform);
+        }
+        catch (tf::TransformException &ex) {
+            ROS_ERROR("%s",ex.what());
+            return;
+        }
+
+        reply.pose.position.x = transform.getOrigin().x();
+        reply.pose.position.y = transform.getOrigin().y();
+        reply.pose.position.z = transform.getOrigin().z();
+
+        reply.pose.orientation.x = transform.getRotation().x();
+        reply.pose.orientation.y = transform.getRotation().y();
+        reply.pose.orientation.z = transform.getRotation().z();
+        reply.pose.orientation.w = transform.getRotation().w();
+
+        image_pub_.publish(reply);
     }
 
     void imageCbGray(const sensor_msgs::ImageConstPtr& msg)
@@ -84,34 +107,6 @@ public:
         }
     }
 
-    void img_extract_cb(std_msgs::Empty msg)
-    {
-        firefly_mapping::ImageWithPose reply;
-        cv_img.toImageMsg(reply.image);
-
-        
-
-        tf::StampedTransform transform;
-        try {
-          listener.lookupTransform("world", "thermal/camera_link",
-                                   ros::Time(0), transform);
-        }
-        catch (tf::TransformException &ex) {
-          ROS_ERROR("%s",ex.what());
-          return;
-        }
-
-        reply.pose.position.x = transform.getOrigin().x();
-        reply.pose.position.y = transform.getOrigin().y();
-        reply.pose.position.z = transform.getOrigin().z();
-
-        reply.pose.orientation.x = transform.getRotation().x();
-        reply.pose.orientation.y = transform.getRotation().y();
-        reply.pose.orientation.z = transform.getRotation().z();
-        reply.pose.orientation.w = transform.getRotation().w();
-
-        image_pub_.publish(reply);
-    }
 };
 
 int main(int argc, char** argv)
