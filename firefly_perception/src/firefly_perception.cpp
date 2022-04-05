@@ -58,7 +58,8 @@ public:
             // std::cout<<"Image details : "<<img.size().width<<" "<<img.size().height<<"\n";
 
             cv::Mat thresh;
-            cv::threshold(img, cv_img.image, 100, 255, CV_THRESH_BINARY);
+            cv::threshold(img, thresh, 25, 255, CV_THRESH_BINARY);
+            thresh.convertTo(cv_img.image, CV_8U);
 //            cv_img->image = thresh;
 
             // std::vector<float> unik = ThermalImageReader::unique(img, true);

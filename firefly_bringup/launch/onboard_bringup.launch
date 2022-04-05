@@ -2,11 +2,11 @@
   <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen"/>
   <node pkg="firefly_telemetry" type="onboard_telemetry.py" name="onboard_telemetry" output="screen"/>
   <node pkg="firefly_perception" type="firefly_perception" name="firefly_perception" output="screen"/>
-  <include file="$(find dji_sdk)/launch/sdk.launch"/>
+  <!--include file="$(find dji_sdk)/launch/sdk.launch"/>
   <include file="$(find flir_ros_sync)/launch/example/flir_ros.launch"/>
-  <include file="$(find seek_driver)/launch/seek_driver.launch" />
+  <include file="$(find seek_driver)/launch/seek_driver.launch" /-->
 
-  <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.1505426 -0.01063025 -0.13471977 -1.6225108 -0.0043312 -2.0387049 base_link thermal/camera_link 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="-0.01568547 -0.041098 -0.27658746 1.5313006 0.0074513 -3.1380038 base_link thermal/camera_link 100"/>
 
   <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu"/>
 </launch>

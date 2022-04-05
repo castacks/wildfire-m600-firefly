@@ -53,10 +53,10 @@ private:
 //    float fy = 412.6712;
 //    float cx = 320.4049;
 //    float cy = 251.967;
-    float fx = 317.1595;
-    float fy = 324.8607;
-    float cx = 100;
-    float cy = 75;
+    float fx = 338.136183;
+    float fy = 336.039570;
+    float cx = 160.829;
+    float cy = 112.614;
 
     float resolution = 0.5;
     float minX = -100;
@@ -64,7 +64,7 @@ private:
     float minY = -100;
     float maxY = 100;
 
-    float fpr = 0.05; // False positives divided by all negative cases
+    float fpr = 0.0; // False positives divided by all negative cases
     float fnr = 0.05; // False negatives divided by all positive cases
     float tpr = 1 - fnr; // True positives divided by all positives
     float tnr = 1 - fpr; // True negatives divided by all negatives
@@ -130,6 +130,7 @@ private:
                     float posterior = (tpr/probOfPositive) * prior;
                     map[mapBin] = posterior;
                     outputMap.data[mapBin] = posterior*100;
+                    std::cout << "Positive Hit: " << mapBin << std::endl;
 
                     if ((prior <= 0.5) && (posterior > 0.5)) { // If bin changed value
                         new_no_fire_bins.erase(mapBin);
