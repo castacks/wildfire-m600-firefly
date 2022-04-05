@@ -127,11 +127,9 @@ private:
                 }
                 else {
                     float probOfPositive = tpr * prior + fpr * (1 - prior);
-                    float posterior = (tpr/probOfPositive) * prior;
-                    map[mapBin] = posterior;
-                    outputMap.data[mapBin] = posterior*100;
-                    std::cout << "Positive Hit: " << mapBin << std::endl;
-
+                    float posterior = 1.0; //(tpr/probOfPositive) * prior;
+                    map[mapBin] = 1.0;
+                    outputMap.data[mapBin] = 100;
                     if ((prior <= 0.5) && (posterior > 0.5)) { // If bin changed value
                         new_no_fire_bins.erase(mapBin);
                         new_fire_bins.insert(mapBin);
