@@ -42,7 +42,7 @@ class GCSTelemetry:
             print("Opened connection to GCS radio")
         except serial.serialutil.SerialException:
             self.connectedToGCSRadio = False
-        self.last_serial_atempt_time = time.time()
+        self.last_serial_attempt_time = time.time()
         self.serial_reconnect_wait_time = 1.0
 
     def run(self):
@@ -82,15 +82,14 @@ class GCSTelemetry:
             except serial.serialutil.SerialException as e:
                 self.connectedToGCSRadio = False
                 print(e)
-                # print("GCS radio was disconnected")
-        elif time.time() - self.last_serial_atempt_time >= self.serial_reconnect_wait_time:
+        elif time.time() - self.last_serial_attempt_time >= self.serial_reconnect_wait_time:
             try:
                 self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
                 print("Opened connection to GCS radio")
                 self.connectedToGCSRadio = True
             except serial.serialutil.SerialException as e:
                 print(e)
-            self.last_serial_atempt_time = time.time()
+            self.last_serial_attempt_time = time.time()
 
     def read_incoming(self):
         msg = self.connection.recv_match()
