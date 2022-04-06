@@ -15,7 +15,7 @@ os.environ['MAVLINK20'] = '1'
 class GCSTelemetry:
     def __init__(self):
         self.now = time.time()
-        self.connection = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600, dialect='firefly')
+        self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
         self.new_fire_pub = rospy.Publisher("new_fire_bins", Int32MultiArray, queue_size=100)
         self.new_no_fire_pub = rospy.Publisher("new_no_fire_bins", Int32MultiArray, queue_size=100)
         self.local_pos_ref_pub = rospy.Publisher("local_pos_ref", NavSatFix, queue_size=100)
