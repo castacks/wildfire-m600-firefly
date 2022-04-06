@@ -11,6 +11,7 @@ from enum import Enum
 import tf2_ros
 import struct
 from firefly_telemetry.srv import SetLocalPosRef, SetLocalPosRefResponse, SetLocalPosRefRequest
+import time
 
 os.environ['MAVLINK20'] = '1'
 
@@ -48,6 +49,12 @@ class OnboardTelemetry:
 
         self.bytes_per_sec_send_rate = 1152.0
         self.mavlink_packet_overhead_bytes = 12
+
+        rospy.Timer(rospy.Duration(1), self.heartbeat_send_callback)
+
+        self.last_heartbeat_time = None
+        self.connected = False
+        self.watchdog_timeout = 2.0
 
     def new_fire_bins_callback(self, data):
         with self.new_bins_mutex:
@@ -126,9 +133,21 @@ class OnboardTelemetry:
         rospy.sleep((self.mavlink_packet_overhead_bytes + 28) / self.bytes_per_sec_send_rate)
 
     def run(self):
+        if (self.last_heartbeat_time is None) or (time.time() - self.last_heartbeat_time > self.watchdog_timeout):
+            if self.connected:
+                self.connected = False
+                print("Disconnected from onboard radio")
+        else:
+            if not self.connected:
+                self.connected = True
+                print("Connected to onboard radio")
+
+        self.read_incoming()
+
         self.send_map_update()
         self.send_pose_update()
 
+    def read_incoming(self):
         msg = self.connection.recv_match()
         if msg is None:
             return
@@ -151,6 +170,11 @@ class OnboardTelemetry:
                 # tell perception handler to extract frame
                 e = Empty()
                 self.extract_frame_pub.publish(e)
+        elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
+            self.last_heartbeat_time = time.time()
+
+    def heartbeat_send_callback(self, event):
+        self.connection.mav.firefly_heartbeat_send(0)
 
 
 if __name__ == "__main__":

@@ -30,10 +30,41 @@ class GCSTelemetry:
         self.set_local_pos_ref_flag = False
         self.capture_frame_flag = False
 
+        rospy.Timer(rospy.Duration(1), self.heartbeat_send_callback)
 
+        self.last_heartbeat_time = None
+        self.connected = False
+        self.watchdog_timeout = 2.0
 
     def run(self):
 
+        if (self.last_heartbeat_time is None) or (time.time() - self.last_heartbeat_time > self.watchdog_timeout):
+            if self.connected:
+                self.connected = False
+                print("Disconnected from onboard radio")
+        else:
+            if not self.connected:
+                self.connected = True
+                print("Connected to onboard radio")
+
+        self.read_incoming()
+
+        if self.clear_map_flag:
+            self.connection.mav.firefly_clear_map_send(0)
+            print("Clearing Map")
+            self.clear_map_flag = False
+
+        if self.set_local_pos_ref_flag:
+            self.connection.mav.firefly_set_local_pos_ref_send(0)
+            print("Setting Local Position Reference")
+            self.set_local_pos_ref_flag = False
+
+        if self.capture_frame_flag:
+            self.connection.mav.firefly_get_frame_send(1)
+            print("Capturing Frame")
+            self.capture_frame_flag = False
+
+    def read_incoming(self):
         msg = self.connection.recv_match()
         if msg is not None:
             msg = msg.to_dict()
@@ -64,21 +95,8 @@ class GCSTelemetry:
                 nav_msg.longitude = msg['longitude']
                 nav_msg.altitude = msg['altitude']
                 self.local_pos_ref_pub.publish(nav_msg)
-
-        if self.clear_map_flag:
-            self.connection.mav.firefly_clear_map_send(0)
-            print("Clearing Map")
-            self.clear_map_flag = False
-
-        if self.set_local_pos_ref_flag:
-            self.connection.mav.firefly_set_local_pos_ref_send(0)
-            print("Setting Local Position Reference")
-            self.set_local_pos_ref_flag = False
-
-        if self.capture_frame_flag:
-            self.connection.mav.firefly_get_frame_send(1)
-            print("Capturing Frame")
-            self.capture_frame_flag = False
+            elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
+                self.last_heartbeat_time = time.time()
 
     def clear_map_callback(self, empty_msg):
         self.clear_map_flag = True
@@ -88,6 +106,9 @@ class GCSTelemetry:
 
     def capture_frame_callback(self, empty_msg):
         self.capture_frame_flag = True
+
+    def heartbeat_send_callback(self, event):
+        self.connection.mav.firefly_heartbeat_send(0)
 
 
 if __name__ == "__main__":
