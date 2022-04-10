@@ -181,7 +181,7 @@ class OnboardTelemetry:
                 e = Empty()
                 self.extract_frame_pub.publish(e)
         elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
-            self.heartbeat_last_time = time.Time()
+            self.heartbeat_last_time = time.time()
 
     def heartbeat_send_callback(self, event):
         self.heartbeat_send_flag = True
