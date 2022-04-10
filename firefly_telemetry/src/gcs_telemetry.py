@@ -76,7 +76,7 @@ class GCSTelemetry:
                     self.capture_frame_send_flag = False
 
                 if self.heartbeat_send_flag:
-                    self.connection.mav.firefly_get_frame_send(1)
+                    self.connection.mav.firefly_heartbeat_send(1)
                     print("Sending Heartbeat")
                     self.heartbeat_send_flag = False
             except serial.serialutil.SerialException as e:

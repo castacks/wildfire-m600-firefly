@@ -142,7 +142,7 @@ class OnboardTelemetry:
                 self.send_pose_update()
 
                 if self.heartbeat_send_flag:
-                    self.connection.mav.firefly_get_frame_send(1)
+                    self.connection.mav.firefly_heartbeat_send(1)
                     print("Sending Heartbeat")
                     self.heartbeat_send_flag = False
             except serial.serialutil.SerialException as e:
@@ -181,7 +181,7 @@ class OnboardTelemetry:
                 e = Empty()
                 self.extract_frame_pub.publish(e)
         elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
-            self.heartbeat_send_flag = True
+            self.heartbeat_last_time = time.Time()
 
     def heartbeat_send_callback(self, event):
         self.heartbeat_send_flag = True
