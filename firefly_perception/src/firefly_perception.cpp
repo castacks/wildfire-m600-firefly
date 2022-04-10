@@ -55,7 +55,7 @@ public:
             cv::threshold(img, thresh, 25, 255, CV_THRESH_BINARY);
             thresh.convertTo(cv_img.image, CV_8U);
 
-            cv::imshow("Thresholded Image", cv_img.image);
+            //cv::imshow("Thresholded Image", cv_img.image);
 
             cv::waitKey(3);
         }
@@ -73,7 +73,7 @@ public:
         try
         {
             cv::Mat img = cv_bridge::toCvShare(msg,sensor_msgs::image_encodings::BGR8)->image;
-            cv::imshow("Gray Image", img);
+            //cv::imshow("Gray Image", img);
             cv::waitKey(3);
         }
 
