@@ -143,3 +143,11 @@ class MappingAccuracy {
 
 
 };
+
+int main(int argc, char** argv) {
+    ros::init(argc, argv, "mapping_accuracy");
+    // TODO: read params into gt_gps
+    MappingAccuracy node;
+    ros::spin();
+    return 0;
+}
