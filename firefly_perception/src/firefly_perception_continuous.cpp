@@ -15,6 +15,7 @@
 class ThermalImageReader
 {
     ros::NodeHandle nh_;
+    ros::NodeHandle private_nh_;
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_thresh;
     image_transport::Subscriber image_sub_gray;
@@ -24,10 +25,12 @@ class ThermalImageReader
     cv_bridge::CvImage cv_img;
     tf::TransformListener listener;
 
+    int threshold;
+
 
 public:
     ThermalImageReader()
-            : it_(nh_)
+            : it_(nh_), private_nh_("~")
     {
         image_sub_thresh = it_.subscribe("/seek_camera/temperatureImageCelcius", 1,
                                          &ThermalImageReader::imageCbThresh, this);
@@ -35,6 +38,9 @@ public:
                                        &ThermalImageReader::imageCbGray, this);
 
         image_pub_ = nh_.advertise<firefly_mapping::ImageWithPose>("image_to_project", 1, this);
+
+        private_nh_.param<int>("threshold", threshold, 25);  
+
     }
 
     ~ThermalImageReader()
@@ -50,7 +56,7 @@ public:
             cv::Mat img = cv_bridge::toCvShare(msg,"32FC1")->image;
 
             cv::Mat thresh;
-            cv::threshold(img, thresh, 25, 255, CV_THRESH_BINARY);
+            cv::threshold(img, thresh, threshold, 255, CV_THRESH_BINARY);
             thresh.convertTo(cv_img.image, CV_8U);
 
             cv::imshow("Thresholded Image", cv_img.image);
