@@ -1,0 +1,3 @@
+SUBSYSTEM=="tty", KERNEL=="ttyUSB[0-9]*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ACTION=="add", MODE="666", SYMLINK+="dji"
+SUBSYSTEM=="tty", KERNEL=="ttyUSB[0-9]*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", ACTION=="add", MODE="666", SYMLINK+="mavlink"
+
