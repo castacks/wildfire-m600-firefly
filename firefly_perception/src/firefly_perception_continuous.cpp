@@ -39,7 +39,8 @@ public:
 
         image_pub_ = nh_.advertise<firefly_mapping::ImageWithPose>("image_to_project", 1, this);
 
-        private_nh_.param<int>("threshold", threshold, 25);  
+        private_nh_.param<int>("threshold", threshold, 50);  
+        std::cout << "Threshold: " << threshold << std::endl;
 
     }
 
@@ -54,6 +55,9 @@ public:
         try
         {
             cv::Mat img = cv_bridge::toCvShare(msg,"32FC1")->image;
+            double min, max;
+            cv::minMaxIdx(img, &min, &max);
+            std::cout << "Max: " << max << std::endl;
 
             cv::Mat thresh;
             cv::threshold(img, thresh, threshold, 255, CV_THRESH_BINARY);

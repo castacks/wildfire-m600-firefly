@@ -26,6 +26,7 @@ class ThermalImageReader
     tf::TransformListener listener;
 
     int threshold;
+    bool continuous;
 
 
 public:
@@ -42,6 +43,8 @@ public:
         image_pub_ = nh_.advertise<firefly_mapping::ImageWithPose>("image_to_project", 1, this);
 
         private_nh_.param<int>("threshold", threshold, 25);  
+        private_nh_.param<int>("continuous", continuous, false);  
+
     }
 
     ~ThermalImageReader()
