@@ -29,6 +29,7 @@ class ThermalImageReader
 
     int threshold;
     bool continuous;
+    bool continuousMappingEnabled = false;
 
 
 public:
@@ -44,8 +45,8 @@ public:
 
         image_pub_ = nh_.advertise<firefly_mapping::ImageWithPose>("image_to_project", 1, this);
 
-        private_nh_.param<int>("threshold", threshold, 25);  
-        private_nh_.param<int>("continuous", continuous, false);  
+        private_nh_.param<int>("threshold", threshold, 50);  
+        private_nh_.param<bool>("continuous", continuous, false);  
 
     }
 
@@ -72,7 +73,7 @@ public:
                                          ros::Time(0), img_transform);
             }
             catch (tf::TransformException &ex) {
-                ROS_ERROR("%s",ex.what());
+                //ROS_ERROR("%s",ex.what());
                 img_with_tf_ready = false;
                 return;
             }
@@ -87,6 +88,21 @@ public:
             return;
         }
 
+        if (continuous && continuousMappingEnabled) {
+            firefly_mapping::ImageWithPose reply;
+            cv_img.toImageMsg(reply.image);
+
+            reply.pose.position.x = img_transform.getOrigin().x();
+            reply.pose.position.y = img_transform.getOrigin().y();
+            reply.pose.position.z = img_transform.getOrigin().z();
+
+            reply.pose.orientation.x = img_transform.getRotation().x();
+            reply.pose.orientation.y = img_transform.getRotation().y();
+            reply.pose.orientation.z = img_transform.getRotation().z();
+            reply.pose.orientation.w = img_transform.getRotation().w();
+
+            image_pub_.publish(reply);
+        }
         // Output modified video stream
     }
 
@@ -108,22 +124,31 @@ public:
 
     void img_extract_cb(std_msgs::Empty msg)
     {
-        if (!img_with_tf_ready) {
-            ROS_ERROR("Called extract_frame but either img or tf not available");
+        if (continuous) {
+            continuousMappingEnabled = !continuousMappingEnabled;
+
         }
-        firefly_mapping::ImageWithPose reply;
-        cv_img.toImageMsg(reply.image);
+        else {
+            if (!img_with_tf_ready) {
+                ROS_ERROR("Called extract_frame but either img or tf not available");
+                return;
+            }
+            firefly_mapping::ImageWithPose reply;
+            cv_img.toImageMsg(reply.image);
 
-        reply.pose.position.x = img_transform.getOrigin().x();
-        reply.pose.position.y = img_transform.getOrigin().y();
-        reply.pose.position.z = img_transform.getOrigin().z();
+            reply.pose.position.x = img_transform.getOrigin().x();
+            reply.pose.position.y = img_transform.getOrigin().y();
+            reply.pose.position.z = img_transform.getOrigin().z();
 
-        reply.pose.orientation.x = img_transform.getRotation().x();
-        reply.pose.orientation.y = img_transform.getRotation().y();
-        reply.pose.orientation.z = img_transform.getRotation().z();
-        reply.pose.orientation.w = img_transform.getRotation().w();
+            reply.pose.orientation.x = img_transform.getRotation().x();
+            reply.pose.orientation.y = img_transform.getRotation().y();
+            reply.pose.orientation.z = img_transform.getRotation().z();
+            reply.pose.orientation.w = img_transform.getRotation().w();
 
-        image_pub_.publish(reply);
+            image_pub_.publish(reply);
+
+        }
+        
     }
 };
 
