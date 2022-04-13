@@ -51,9 +51,9 @@ class OnboardTelemetry:
         self.bytes_per_sec_send_rate = 1152.0
         self.mavlink_packet_overhead_bytes = 12
 
+        self.last_heartbeat_time = None
         rospy.Timer(rospy.Duration(1), self.heartbeat_send_callback)
 
-        self.last_heartbeat_time = None
         self.connected = False
         self.watchdog_timeout = 2.0
 
@@ -176,14 +176,20 @@ class OnboardTelemetry:
 
         elif msg['mavpackettype'] == 'FIREFLY_RECORD_BAG':
             if msg['get_frame'] == 1:
+                print("Atempting to record ros bag")
                 DEFAULT_ROOT="/mnt/nvme0n1/data"
-                time = datetime.datetime.now()
-                time = time.strftime("%d-%m-%Y-%H:%M:%S")
-                dir = DEFAULT_ROOT+"/"+time
-                os.mkdir(dir)
+                time_rosbag = datetime.datetime.now()
+                time_rosbag = time_rosbag.strftime("%d-%m-%Y-%H:%M:%S")
+                dir = DEFAULT_ROOT+"/"+time_rosbag
+                # try:
+                #     os.mkdir(dir)
+                # except:
+                #     print("Path exists : ", os.path.exists(dir))
+                print("Starting ros bag recording to file : " + dir + time_rosbag + "_dji_sdk_and_thermal.bag")
                 os.system("rosbag record -a -O " + dir + "_dji_sdk_and_thermal.bag __name:='data_collect' -x '(.*)/compressed(.*)|(.*)/theora(.*)'")
-            elif msg['get_frame'] == 0:
-                os.system("rosnode kill /data_collect")
+            else:
+                print("Stopping ros bag recording")
+                os.system("rosnode kill data_collect")
 
     def heartbeat_send_callback(self, event):
         self.connection.mav.firefly_heartbeat_send(0)
