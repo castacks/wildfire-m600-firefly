@@ -24,6 +24,8 @@ class ThermalImageReader
     cv::Mat thresh;
     cv_bridge::CvImage cv_img;
     tf::TransformListener listener;
+    tf::StampedTransform img_transform;
+    bool img_with_tf_ready = false;
 
     int threshold;
 
@@ -62,6 +64,18 @@ public:
 
             //cv::imshow("Thresholded Image", cv_img.image);
 
+            try {
+                listener.lookupTransform("world", "thermal/camera_link",
+                                         ros::Time(0), img_transform);
+            }
+            catch (tf::TransformException &ex) {
+                ROS_ERROR("%s",ex.what());
+                img_with_tf_ready = false;
+                return;
+            }
+
+            img_with_tf_ready = true;
+
             cv::waitKey(3);
         }
         catch (cv_bridge::Exception& e)
@@ -91,29 +105,20 @@ public:
 
     void img_extract_cb(std_msgs::Empty msg)
     {
+        if (!img_with_tf_ready) {
+            ROS_ERROR("Called extract_frame but either img or tf not available");
+        }
         firefly_mapping::ImageWithPose reply;
         cv_img.toImageMsg(reply.image);
 
-        
+        reply.pose.position.x = img_transform.getOrigin().x();
+        reply.pose.position.y = img_transform.getOrigin().y();
+        reply.pose.position.z = img_transform.getOrigin().z();
 
-        tf::StampedTransform transform;
-        try {
-          listener.lookupTransform("world", "thermal/camera_link",
-                                   ros::Time(0), transform);
-        }
-        catch (tf::TransformException &ex) {
-          ROS_ERROR("%s",ex.what());
-          return;
-        }
-
-        reply.pose.position.x = transform.getOrigin().x();
-        reply.pose.position.y = transform.getOrigin().y();
-        reply.pose.position.z = transform.getOrigin().z();
-
-        reply.pose.orientation.x = transform.getRotation().x();
-        reply.pose.orientation.y = transform.getRotation().y();
-        reply.pose.orientation.z = transform.getRotation().z();
-        reply.pose.orientation.w = transform.getRotation().w();
+        reply.pose.orientation.x = img_transform.getRotation().x();
+        reply.pose.orientation.y = img_transform.getRotation().y();
+        reply.pose.orientation.z = img_transform.getRotation().z();
+        reply.pose.orientation.w = img_transform.getRotation().w();
 
         image_pub_.publish(reply);
     }
