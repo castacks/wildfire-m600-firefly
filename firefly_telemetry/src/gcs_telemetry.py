@@ -23,6 +23,11 @@ class GCSTelemetry:
         rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
         rospy.Subscriber("capture_frame", Empty, self.capture_frame_callback)
 
+        # See https://en.wikipedia.org/wiki/Sliding_window_protocol
+        self.map_received_buf = {}
+        self.nr = 0
+        self.wr = 20
+
         self.br = tf.TransformBroadcaster()
 
         self.clear_map_send_flag = False
@@ -91,24 +96,49 @@ class GCSTelemetry:
                 print(e)
             self.last_serial_attempt_time = time.time()
 
+    def process_new_map_packet(self, msg, received_fire_bins):
+        self.connection.mav.firefly_map_ack_send(msg['seq_num'])
+
+        if (msg['seq_num'] - self.nr) % 128 > self.wr:
+            # Reject packet
+            return
+        else:
+            updated_bins_msg = Int32MultiArray()
+            payload = msg['payload']
+            for i in range(int(msg['payload_length'] / 3)):
+                bin_bytes = payload[3 * i:3 * i + 3]
+                bin = int.from_bytes(bin_bytes, byteorder='big')
+                updated_bins_msg.data.append(bin)
+
+            if msg['seq_num'] == self.nr:
+                if received_fire_bins:
+                    self.new_fire_pub.publish(updated_bins_msg)
+                else:
+                    self.new_no_fire_pub.publish(updated_bins_msg)
+                self.nr = (self.nr + 1) % 128
+                while True:
+                    if self.nr in self.map_received_buf:
+                        updated_bins_msg = self.map_received_buf.pop(self.nr)
+                        if received_fire_bins:
+                            self.new_fire_pub.publish(updated_bins_msg)
+                        else:
+                            self.new_no_fire_pub.publish(updated_bins_msg)
+                        self.nr = (self.nr + 1) % 128
+                    else:
+                        break
+            else:
+                self.map_received_buf[msg['seq_num']] = updated_bins_msg
+
     def read_incoming(self):
         msg = self.connection.recv_match()
         if msg is not None:
             msg = msg.to_dict()
             print(msg)
 
-            if msg['mavpackettype'] == 'TUNNEL':
-                payload = msg['payload']
-                updated_bins_msg = Int32MultiArray()
-                for i in range(int(msg['payload_length']/3)):
-                    bin_bytes = payload[3*i:3*i+3]
-                    bin = int.from_bytes(bin_bytes, byteorder='big')
-                    updated_bins_msg.data.append(bin)
-
-                if msg['payload_type'] == 32768:
-                    self.new_fire_pub.publish(updated_bins_msg)
-                elif msg['payload_type'] == 32769:
-                    self.new_no_fire_pub.publish(updated_bins_msg)
+            if msg['mavpackettype'] == 'FIREFLY_NEW_FIRE_BINS':
+                self.process_new_map_packet(msg, True)
+            elif msg['mavpackettype'] == 'FIREFLY_NEW_NO_FIRE_BINS':
+                self.process_new_map_packet(msg, False)
             elif msg['mavpackettype'] == 'FIREFLY_POSE':
                 self.br.sendTransform((msg['x'], msg['y'], msg['z']),
                                       msg['q'],
