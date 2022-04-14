@@ -86,9 +86,9 @@ class OnboardTelemetry:
             else:
                 self.connection.mav.firefly_new_no_fire_bins_send(seq_num, payload_length, payload)
                 self.map_transmitted_buf.append((time.time(), False, seq_num, payload_length, payload))
-            rospy.loginfo("Warning: Had to resend packet with sequence id: ", seq_num)
+            rospy.logwarn("Warning: Had to resend packet with sequence id: %d" % seq_num)
 
-            rospy.sleep((self.mavlink_packet_overhead_bytes + 128)/self.bytes_per_sec_send_rate)
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 60)/self.bytes_per_sec_send_rate)
             return
         elif (self.nt - self.na) % 128 >= self.wt:
             # Waiting for acks
@@ -165,7 +165,7 @@ class OnboardTelemetry:
                 self.read_incoming()
                 if self.connectedToGCS:
                     self.send_map_update()
-                self.send_pose_update()
+                    self.send_pose_update()
 
                 if self.heartbeat_send_flag:
                     self.connection.mav.firefly_heartbeat_send(1)
@@ -207,7 +207,7 @@ class OnboardTelemetry:
                 e = Empty()
                 self.extract_frame_pub.publish(e)
         elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
-            self.heartbeat_last_time = time.time()
+            self.last_heartbeat_time = time.time()
         elif msg['mavpackettype'] == 'FIREFLY_MAP_ACK':
             ack_seq_num = msg['seq_num']
             # time.time(), False, self.nt, payload_length, payload
