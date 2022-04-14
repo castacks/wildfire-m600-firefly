@@ -42,7 +42,7 @@ class OnboardTelemetry:
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
 
-        rospy.Timer(rospy.Duration(1), self.pose_send_callback)
+        rospy.Timer(rospy.Duration(0.2), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
 
         self.bytes_per_sec_send_rate = 1000.0
@@ -86,6 +86,7 @@ class OnboardTelemetry:
             else:
                 self.connection.mav.firefly_new_no_fire_bins_send(seq_num, payload_length, payload)
                 self.map_transmitted_buf.append((time.time(), False, seq_num, payload_length, payload))
+            rospy.loginfo("Warning: Had to resend packet with sequence id: ", seq_num)
 
             rospy.sleep((self.mavlink_packet_overhead_bytes + 128)/self.bytes_per_sec_send_rate)
             return
@@ -143,12 +144,11 @@ class OnboardTelemetry:
                       transform.transform.rotation.y,
                       transform.transform.rotation.z,
                       transform.transform.rotation.w]
-            self.pose_send_flag = True
             self.connection.mav.firefly_pose_send(x, y, z, q)
             rospy.sleep((self.mavlink_packet_overhead_bytes + 28) / self.bytes_per_sec_send_rate)
         except tf2_ros.TransformException as e:
             print(e)
-            self.pose_send_flag = False
+        self.pose_send_flag = False
 
     def run(self):
         if (self.last_heartbeat_time is None) or (time.time() - self.last_heartbeat_time > self.watchdog_timeout):
@@ -214,7 +214,7 @@ class OnboardTelemetry:
             if (ack_seq_num - self.na) % 128 <= self.wt:
                 self.na = ack_seq_num
 
-                for i in range(len(self.map_transmitted_buf)):
+                for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
                     if (self.map_transmitted_buf[i][2] - self.na) % 128 < self.wt:
                         pass
                     else:
