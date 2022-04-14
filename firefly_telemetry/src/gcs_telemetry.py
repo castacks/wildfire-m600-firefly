@@ -97,11 +97,10 @@ class GCSTelemetry:
             self.last_serial_attempt_time = time.time()
 
     def process_new_map_packet(self, msg, received_fire_bins):
-        self.connection.mav.firefly_map_ack_send(msg['seq_num'])
 
         if (msg['seq_num'] - self.nr) % 128 > self.wr:
             # Reject packet
-            return
+            pass
         else:
             updated_bins_msg = Int32MultiArray()
             payload = msg['payload']
@@ -128,6 +127,9 @@ class GCSTelemetry:
                         break
             else:
                 self.map_received_buf[msg['seq_num']] = updated_bins_msg
+
+        self.connection.mav.firefly_map_ack_send(self.nr)
+
 
     def read_incoming(self):
         msg = self.connection.recv_match()

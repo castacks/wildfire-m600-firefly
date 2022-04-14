@@ -33,7 +33,7 @@ class OnboardTelemetry:
         self.nt = 0
         self.na = 0  # Set to -1 in uint8 format
         self.retransmit_timeout = 2.0
-        self.map_payload_size = 126  # Bytes
+        self.map_payload_size = 60  # Bytes
 
         self.pose_send_flag = False
 
