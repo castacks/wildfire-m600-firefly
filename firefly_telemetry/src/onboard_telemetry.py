@@ -209,18 +209,10 @@ class OnboardTelemetry:
         elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
             self.last_heartbeat_time = time.time()
         elif msg['mavpackettype'] == 'FIREFLY_MAP_ACK':
-            ack_seq_num = msg['seq_num']
-            # time.time(), False, self.nt, payload_length, payload
-            if (ack_seq_num - self.na) % 128 <= self.wt:
-                self.na = ack_seq_num
-
-                for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
-                    if (self.map_transmitted_buf[i][2] - self.na) % 128 < self.wt:
-                        pass
-                    else:
-                        self.map_transmitted_buf.pop(i)
-
-
+            # time.time(), False, self.nt, payload_length, payload`
+            for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
+                if self.map_transmitted_buf[i][2] == msg['seq_num']:
+                    self.map_transmitted_buf.pop(i)
 
     def heartbeat_send_callback(self, event):
         self.heartbeat_send_flag = True

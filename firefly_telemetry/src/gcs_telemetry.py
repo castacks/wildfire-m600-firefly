@@ -128,7 +128,7 @@ class GCSTelemetry:
             else:
                 self.map_received_buf[msg['seq_num']] = updated_bins_msg
 
-        self.connection.mav.firefly_map_ack_send(self.nr)
+        self.connection.mav.firefly_map_ack_send(msg['seq_num'])
 
 
     def read_incoming(self):
