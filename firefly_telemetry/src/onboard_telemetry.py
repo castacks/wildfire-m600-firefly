@@ -14,6 +14,7 @@ import time
 import serial
 import datetime
 from geometry_msgs.msg import Pose
+from std_msgs.msg import Bool
 
 os.environ['MAVLINK20'] = '1'
 
@@ -37,12 +38,14 @@ class OnboardTelemetry:
         self.na = 0  # Set to -1 in uint8 format
         self.retransmit_timeout = 2.0
         self.map_payload_size = 60  # Bytes
+        self.camera_health = None #camera health (type : Bool)
 
         self.pose_send_flag = False
 
         rospy.Subscriber("new_fire_bins", Int32MultiArray, self.new_fire_bins_callback)
         rospy.Subscriber("new_no_fire_bins", Int32MultiArray, self.new_no_fire_bins_callback)
         rospy.Subscriber("init_to_no_fire_with_pose_bins", Pose, self.init_to_no_fire_with_pose_callback)
+        rospy.Subscriber("/seek_camera/isHealthy", Bool, self.camera_health_callback)
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
 
@@ -87,6 +90,14 @@ class OnboardTelemetry:
     def init_to_no_fire_with_pose_callback(self, data):
         with self.new_bins_mutex:
             self.init_to_no_fire_poses.append(data)
+
+    def camera_health_callback(self, data):
+        if (data.data):
+            self.camera_health = True
+            rospy.loginfo("Camera Connected")
+        else:
+            self.camera_health = False
+            rospy.logerr("Camera Disconnected")
 
     def pose_send_callback(self, event):
         self.pose_send_flag = True
@@ -214,7 +225,10 @@ class OnboardTelemetry:
                     self.send_pose_update()
 
                 if self.heartbeat_send_flag:
-                    self.connection.mav.firefly_heartbeat_send(1)
+                    if self.camera_health:
+                        self.connection.mav.firefly_heartbeat_send(2)
+                    else:
+                        self.connection.mav.firefly_heartbeat_send(1)
                     rospy.logdebug("Sending Heartbeat")
                     self.heartbeat_send_flag = False
                     rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
