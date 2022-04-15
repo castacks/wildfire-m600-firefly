@@ -58,6 +58,7 @@ class OnboardTelemetry:
         self.watchdog_timeout = 2.0
         self.heartbeat_send_flag = False
 
+        self.recording_ros_bag = False
         try:
             self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
             self.connectedToOnboardRadio = True
@@ -212,7 +213,7 @@ class OnboardTelemetry:
         elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
             self.last_heartbeat_time = time.time()
         elif msg['mavpackettype'] == 'FIREFLY_RECORD_BAG':
-            if msg['get_frame'] == 1:
+            if msg['get_frame'] == 1 and not self.recording_ros_bag:
                 print("Atempting to record ros bag")
                 DEFAULT_ROOT="/mnt/nvme0n1/data"
                 time_rosbag = datetime.datetime.now()
@@ -223,15 +224,22 @@ class OnboardTelemetry:
                 # except:
                 #     print("Path exists : ", os.path.exists(dir))
                 print("Starting ros bag recording to file : " + dir + time_rosbag + "_dji_sdk_and_thermal.bag")
-                os.system("rosbag record -a -O " + dir + "_dji_sdk_and_thermal.bag __name:='data_collect' -x '(.*)/compressed(.*)|(.*)/theora(.*)'")
-            else:
+                os.system("rosbag record -a -O " + dir + "_dji_sdk_and_thermal.bag __name:='data_collect' -x '(.*)/compressed(.*)|(.*)/theora(.*)' &")
+                self.recording_ros_bag = True
+            elif msg['get_frame'] == 0 and self.recording_ros_bag:
                 print("Stopping ros bag recording")
-                os.system("rosnode kill data_collect")
+                os.system("rosnode kill data_collect &")
+                self.recording_ros_bag = False
         elif msg['mavpackettype'] == 'FIREFLY_MAP_ACK':
             # time.time(), False, self.nt, payload_length, payload`
             for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
                 if self.map_transmitted_buf[i][2] == msg['seq_num']:
                     self.map_transmitted_buf.pop(i)
+            if self.na == msg['seq_num']:
+                self.na = self.nt
+                for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
+                    if self.map_transmitted_buf[i][2] < self.na:
+                        self.na = self.map_transmitted_buf[i][2]
 
     def heartbeat_send_callback(self, event):
         self.heartbeat_send_flag = True
