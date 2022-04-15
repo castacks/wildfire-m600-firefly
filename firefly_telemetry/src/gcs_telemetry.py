@@ -9,6 +9,7 @@ from std_msgs.msg import Empty
 import time
 from sensor_msgs.msg import NavSatFix
 import serial
+from geometry_msgs.msg import Pose
 
 os.environ['MAVLINK20'] = '1'
 
@@ -17,6 +18,7 @@ class GCSTelemetry:
     def __init__(self):
         self.new_fire_pub = rospy.Publisher("new_fire_bins", Int32MultiArray, queue_size=100)
         self.new_no_fire_pub = rospy.Publisher("new_no_fire_bins", Int32MultiArray, queue_size=100)
+        self.init_to_no_fire_with_pose_pub = rospy.Publisher("init_to_no_fire_with_pose", Pose, queue_size=100)
         self.local_pos_ref_pub = rospy.Publisher("local_pos_ref", NavSatFix, queue_size=100)
 
         rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
@@ -113,37 +115,52 @@ class GCSTelemetry:
                 rospy.logerr(e)
             self.last_serial_attempt_time = time.time()
 
-    def process_new_map_packet(self, msg, received_fire_bins):
+    def process_new_map_packet(self, msg, map_packet_type):
 
         if (msg['seq_num'] - self.nr) % 128 > self.wr:
             # Reject packet
             pass
         else:
-            updated_bins_msg = Int32MultiArray()
-            payload = msg['payload']
-            for i in range(int(msg['payload_length'] / 3)):
-                bin_bytes = payload[3 * i:3 * i + 3]
-                bin = int.from_bytes(bin_bytes, byteorder='big')
-                updated_bins_msg.data.append(bin)
+            if map_packet_type == 2:
+                updated_bins_msg = Pose()
+                updated_bins_msg.position.x = msg['x']
+                updated_bins_msg.position.y = msg['y']
+                updated_bins_msg.position.z = msg['z']
+
+                updated_bins_msg.orientation.x = msg['q'][0]
+                updated_bins_msg.orientation.y = msg['q'][1]
+                updated_bins_msg.orientation.z = msg['q'][2]
+                updated_bins_msg.orientation.w = msg['q'][3]
+            else:
+                updated_bins_msg = Int32MultiArray()
+                payload = msg['payload']
+                for i in range(int(msg['payload_length'] / 3)):
+                    bin_bytes = payload[3 * i:3 * i + 3]
+                    bin = int.from_bytes(bin_bytes, byteorder='big')
+                    updated_bins_msg.data.append(bin)
 
             if msg['seq_num'] == self.nr:
-                if received_fire_bins:
+                if map_packet_type == 0:
                     self.new_fire_pub.publish(updated_bins_msg)
-                else:
+                elif map_packet_type == 1:
                     self.new_no_fire_pub.publish(updated_bins_msg)
+                elif map_packet_type == 2:
+                    self.init_to_no_fire_with_pose_pub.publish(updated_bins_msg)
                 self.nr = (self.nr + 1) % 128
                 while True:
                     if self.nr in self.map_received_buf:
-                        updated_bins_msg = self.map_received_buf.pop(self.nr)
-                        if received_fire_bins:
+                        map_packet_type, updated_bins_msg = self.map_received_buf.pop(self.nr)
+                        if map_packet_type == 0:
                             self.new_fire_pub.publish(updated_bins_msg)
-                        else:
+                        elif map_packet_type == 1:
                             self.new_no_fire_pub.publish(updated_bins_msg)
+                        elif map_packet_type == 2:
+                            self.init_to_no_fire_with_pose_pub.publish(updated_bins_msg)
                         self.nr = (self.nr + 1) % 128
                     else:
                         break
             else:
-                self.map_received_buf[msg['seq_num']] = updated_bins_msg
+                self.map_received_buf[msg['seq_num']] = (map_packet_type, updated_bins_msg)
 
         self.connection.mav.firefly_map_ack_send(msg['seq_num'])
 
@@ -154,9 +171,11 @@ class GCSTelemetry:
             rospy.logdebug(msg)
 
             if msg['mavpackettype'] == 'FIREFLY_NEW_FIRE_BINS':
-                self.process_new_map_packet(msg, True)
+                self.process_new_map_packet(msg, 0)
             elif msg['mavpackettype'] == 'FIREFLY_NEW_NO_FIRE_BINS':
-                self.process_new_map_packet(msg, False)
+                self.process_new_map_packet(msg, 1)
+            elif msg['mavpackettype'] == 'FIREFLY_INIT_TO_NO_FIRE_POSE':
+                self.process_new_map_packet(msg, 2)
             elif msg['mavpackettype'] == 'FIREFLY_POSE':
                 self.br.sendTransform((msg['x'], msg['y'], msg['z']),
                                       msg['q'],
