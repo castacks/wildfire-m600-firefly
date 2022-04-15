@@ -13,6 +13,7 @@ from firefly_telemetry.srv import SetLocalPosRef
 import time
 import serial
 import datetime
+from geometry_msgs.msg import Pose
 
 os.environ['MAVLINK20'] = '1'
 
@@ -24,8 +25,9 @@ class OnboardTelemetry:
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
-        self.new_fire_bins = []
-        self.new_no_fire_bins = []
+        self.new_fire_bins = set()
+        self.new_no_fire_bins = set()
+        self.init_to_no_fire_poses = []
         self.new_bins_mutex = Lock()
 
         # See https://en.wikipedia.org/wiki/Sliding_window_protocol
@@ -40,6 +42,7 @@ class OnboardTelemetry:
 
         rospy.Subscriber("new_fire_bins", Int32MultiArray, self.new_fire_bins_callback)
         rospy.Subscriber("new_no_fire_bins", Int32MultiArray, self.new_no_fire_bins_callback)
+        rospy.Subscriber("init_to_no_fire_with_pose_bins", Pose, self.init_to_no_fire_with_pose_callback)
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
 
@@ -71,11 +74,19 @@ class OnboardTelemetry:
 
     def new_fire_bins_callback(self, data):
         with self.new_bins_mutex:
-            self.new_fire_bins.extend(data.data)
+            for bin in data.data:
+                self.new_no_fire_bins.discard(bin)
+                self.new_fire_bins.add(bin)
 
     def new_no_fire_bins_callback(self, data):
         with self.new_bins_mutex:
-            self.new_no_fire_bins.extend(data.data)
+            for bin in data.data:
+                self.new_fire_bins.discard(bin)
+                self.new_no_fire_bins.add(bin)
+
+    def init_to_no_fire_with_pose_callback(self, data):
+        with self.new_bins_mutex:
+            self.init_to_no_fire_poses.extend(data)
 
     def pose_send_callback(self, event):
         self.pose_send_flag = True
@@ -85,16 +96,29 @@ class OnboardTelemetry:
                 time.time() - self.map_transmitted_buf[0][0] > self.retransmit_timeout):
             # Resend packet if timeout
 
-            _, sending_fire_bins, seq_num, payload_length, payload = self.map_transmitted_buf.pop(0)
-            if sending_fire_bins:
+            _, map_packet_type, seq_num, payload_length, payload = self.map_transmitted_buf.pop(0)
+            if map_packet_type == 0:
                 self.connection.mav.firefly_new_fire_bins_send(seq_num, payload_length, payload)
-                self.map_transmitted_buf.append((time.time(), True, seq_num, payload_length, payload))
-            else:
+                self.map_transmitted_buf.append((time.time(), 0, seq_num, payload_length, payload))
+                rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
+            elif map_packet_type == 1:
                 self.connection.mav.firefly_new_no_fire_bins_send(seq_num, payload_length, payload)
-                self.map_transmitted_buf.append((time.time(), False, seq_num, payload_length, payload))
+                self.map_transmitted_buf.append((time.time(), 1, seq_num, payload_length, payload))
+                rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
+            elif map_packet_type == 2:
+                x = payload.translation.x
+                y = payload.translation.y
+                z = payload.translation.z
+                q = [payload.rotation.x,
+                     payload.rotation.y,
+                     payload.rotation.z,
+                     payload.rotation.w]
+                self.connection.mav.firefly_init_to_no_fire_pose_send(x, y, z, q)
+                self.map_transmitted_buf.append((time.time(), 2, self.nt, -1, payload))
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
+
             rospy.logwarn("Warning: Had to resend packet with sequence id: %d" % seq_num)
 
-            rospy.sleep((self.mavlink_packet_overhead_bytes + 60) / self.bytes_per_sec_send_rate)
             return
         elif (self.nt - self.na) % 128 >= self.wt:
             # Waiting for acks
@@ -105,35 +129,48 @@ class OnboardTelemetry:
                 math.floor(self.map_payload_size / 3))  # Since payload is 126 bytes and each bin represented by 3 bytes
             with self.new_bins_mutex:
                 if len(self.new_fire_bins) > 0:  # Prioritize fire bins over no fire bins
-                    updates_to_send = self.new_fire_bins[:max_bins_to_send]
-                    self.new_fire_bins = self.new_fire_bins[max_bins_to_send:]
-                    sending_fire_bins = True
+                    updates_to_send = [self.new_fire_bins.pop()
+                                       for _ in range(max_bins_to_send) if len(self.new_fire_bins) > 0]
+                    map_packet_type = 0
+                elif len(self.init_to_no_fire_poses) > 0:
+                    updates_to_send = self.init_to_no_fire_poses.pop(0)
+                    map_packet_type = 2
                 elif len(self.new_no_fire_bins) > 0:
-                    updates_to_send = self.new_no_fire_bins[:max_bins_to_send]
-                    self.new_no_fire_bins = self.new_no_fire_bins[max_bins_to_send:]
-                    sending_fire_bins = False
+                    updates_to_send = [self.new_no_fire_bins.pop()
+                                       for _ in range(max_bins_to_send) if len(self.new_no_fire_bins) > 0]
+                    map_packet_type = 1
                 else:
                     return
 
-            payload = bytearray()
-            for update in updates_to_send:
-                payload.extend(struct.pack(">i", update)[-3:])
+            if map_packet_type == 0 or map_packet_type == 1:
+                payload = bytearray()
+                for update in updates_to_send:
+                    payload.extend(struct.pack(">i", update)[-3:])
 
-            payload_length = len(payload)
-            if len(payload) < self.map_payload_size:
-                payload.extend(bytearray(self.map_payload_size - len(payload)))  # Pad payload so it has 128 bytes
+                payload_length = len(payload)
+                if len(payload) < self.map_payload_size:
+                    payload.extend(bytearray(self.map_payload_size - len(payload)))  # Pad payload so it has 128 bytes
 
-            if sending_fire_bins:
-                self.connection.mav.firefly_new_fire_bins_send(self.nt, payload_length, payload)
-                self.map_transmitted_buf.append((time.time(), True, self.nt, payload_length, payload))
-            else:
-                self.connection.mav.firefly_new_no_fire_bins_send(self.nt, payload_length, payload)
-                self.map_transmitted_buf.append((time.time(), False, self.nt, payload_length, payload))
+                if map_packet_type == 0:
+                    self.connection.mav.firefly_new_fire_bins_send(self.nt, payload_length, payload)
+                    self.map_transmitted_buf.append((time.time(), 0, self.nt, payload_length, payload))
+                elif map_packet_type == 1:
+                    self.connection.mav.firefly_new_no_fire_bins_send(self.nt, payload_length, payload)
+                    self.map_transmitted_buf.append((time.time(), 1, self.nt, payload_length, payload))
+                rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
+            elif map_packet_type == 2:
+                x = updates_to_send.translation.x
+                y = updates_to_send.translation.y
+                z = updates_to_send.translation.z
+                q = [updates_to_send.rotation.x,
+                     updates_to_send.rotation.y,
+                     updates_to_send.rotation.z,
+                     updates_to_send.rotation.w]
+                self.connection.mav.firefly_init_to_no_fire_pose_send(x, y, z, q)
+                self.map_transmitted_buf.append((time.time(), 2, self.nt, -1, updates_to_send))
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
 
             self.nt = (self.nt + 1) % 128
-
-            # Map update message is 140 bytes. Sleep by this much to not overwhelm the serial baud rate
-            rospy.sleep((self.mavlink_packet_overhead_bytes + 128) / self.bytes_per_sec_send_rate)
 
     def send_pose_update(self):
         if not self.pose_send_flag:

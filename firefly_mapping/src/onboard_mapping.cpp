@@ -8,6 +8,7 @@
 #include <std_msgs/Empty.h>
 #include <chrono>
 #include <unordered_set>
+#include <geometry_msgs/Pose.h>
 
 
 class OnboardMapping {
@@ -18,6 +19,7 @@ public:
         map_pub = nh.advertise<nav_msgs::OccupancyGrid>("observed_firemap", 10);
         new_fire_pub = nh.advertise<std_msgs::Int32MultiArray>("new_fire_bins", 10);
         new_no_fire_pub = nh.advertise<std_msgs::Int32MultiArray>("new_no_fire_bins", 10);
+        init_to_no_fire_with_pose_pub = nh.advertise<geometry_msgs::Pose>("init_to_no_fire_with_pose_bins", 10);
         clear_sub = nh.subscribe("clear_map", 1000, &OnboardMapping::clear, this);
 
         K_inv << 1.0/fx,  0.0,    -cx/fx,
@@ -31,14 +33,14 @@ public:
         outputMap.info.origin.position.x = -100; //In meters
         outputMap.info.origin.position.y = -100; //In meters
         outputMap.data = std::vector<std::int8_t> (400*400, 50); // Initialize map to 50 percent certainty
-        map = std::vector<float> (400*400, 0.5); // Initialize map to 50 percent certainty
+        map = std::vector<float> (400*400, -1); // Initialize map to 50 percent certainty
         map_pub.publish(outputMap);
     }
 
 private:
     ros::NodeHandle nh;
     ros::Subscriber image_sub;
-    ros::Publisher map_pub, new_fire_pub, new_no_fire_pub;
+    ros::Publisher map_pub, new_fire_pub, new_no_fire_pub, init_to_no_fire_with_pose_pub;
     ros::Subscriber clear_sub;
 
     nav_msgs::OccupancyGrid outputMap;
@@ -79,6 +81,7 @@ private:
 
         std::unordered_set<int> new_fire_bins;
         std::unordered_set<int> new_no_fire_bins;
+        std::unordered_set<int> init_to_no_fire_bins; // Bins that were uninitialized but are no fire after update
 
         for (size_t i = 0; i < msg.image.width; i++) {
             for (size_t j = 0; j < msg.image.height; j++) {
@@ -107,14 +110,21 @@ private:
                 int mapBin = gridCol + gridRow * outputMap.info.width;
                 uint8_t pixelValue = msg.image.data[i + j * msg.image.width];
                 float prior = map[mapBin];
+                bool uninitialized = false;
+                if (prior == -1) { // Bin is uninitialized
+                    prior = 0.5;
+                    uninitialized = true;
+                }
 
                 if (pixelValue == 0) {
                     float probOfNegative = fnr * prior + tnr * (1 - prior);
                     float posterior = (fnr/probOfNegative) * prior;
                     map[mapBin] = posterior;
                     outputMap.data[mapBin] = posterior*100;
-
-                    if ((prior >= 0.5) && (posterior < 0.5)) { // If bin changed value
+                    if (uninitialized && (posterior < 0.5)) {
+                        init_to_no_fire_bins.insert(mapBin);
+                    }
+                    else if (!uninitialized && (prior >= 0.5) && (posterior < 0.5)) { // If bin changed value
                         new_fire_bins.erase(mapBin);
                         new_no_fire_bins.insert(mapBin);
                     }
@@ -126,11 +136,21 @@ private:
                     outputMap.data[mapBin] = 100;
                     if ((prior <= 0.5) && (posterior > 0.5)) { // If bin changed value
                         new_no_fire_bins.erase(mapBin);
+                        init_to_no_fire_bins.erase(mapBin);
                         new_fire_bins.insert(mapBin);
                     }
                 }
 
             }
+        }
+
+        if (init_to_no_fire_bins.size() < 28) { // If small, it's better to send these bins as toggles rather than as pose
+            for (int bin: init_to_no_fire_bins) {
+                new_fire_bins.insert(bin);
+            }
+        }
+        else {
+            init_to_no_fire_with_pose_pub.publish(msg.pose);
         }
 
         std_msgs::Int32MultiArray new_fire_bins_msg;
