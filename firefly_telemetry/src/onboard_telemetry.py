@@ -46,7 +46,7 @@ class OnboardTelemetry:
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
 
-        rospy.Timer(rospy.Duration(0.2), self.pose_send_callback)
+        rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
 
         self.bytes_per_sec_send_rate = 1000.0
@@ -213,6 +213,7 @@ class OnboardTelemetry:
                     self.connection.mav.firefly_heartbeat_send(1)
                     rospy.logdebug("Sending Heartbeat")
                     self.heartbeat_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
             except serial.serialutil.SerialException as e:
                 self.connectedToOnboardRadio = False
                 rospy.logerr(e)
