@@ -7,7 +7,6 @@ from std_msgs.msg import Int32MultiArray, Empty
 from pymavlink import mavutil
 import os
 from threading import Lock
-from enum import Enum
 import tf2_ros
 import struct
 from firefly_telemetry.srv import SetLocalPosRef
@@ -16,11 +15,6 @@ import serial
 import datetime
 
 os.environ['MAVLINK20'] = '1'
-
-
-class PayloadTunnelType(Enum):
-    FireBins = 32768
-    NonFireBins = 32769
 
 
 class OnboardTelemetry:
@@ -34,6 +28,14 @@ class OnboardTelemetry:
         self.new_no_fire_bins = []
         self.new_bins_mutex = Lock()
 
+        # See https://en.wikipedia.org/wiki/Sliding_window_protocol
+        self.wt = 20
+        self.map_transmitted_buf = []
+        self.nt = 0
+        self.na = 0  # Set to -1 in uint8 format
+        self.retransmit_timeout = 2.0
+        self.map_payload_size = 60  # Bytes
+
         self.pose_send_flag = False
 
         rospy.Subscriber("new_fire_bins", Int32MultiArray, self.new_fire_bins_callback)
@@ -41,10 +43,10 @@ class OnboardTelemetry:
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
 
-        rospy.Timer(rospy.Duration(1), self.pose_send_callback)
+        rospy.Timer(rospy.Duration(0.2), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
 
-        self.bytes_per_sec_send_rate = 1152.0
+        self.bytes_per_sec_send_rate = 1000.0
         self.mavlink_packet_overhead_bytes = 12
 
         self.last_heartbeat_time = None
@@ -77,36 +79,60 @@ class OnboardTelemetry:
         self.pose_send_flag = True
 
     def send_map_update(self):
-        updates_to_send = None
-        sending_fire_bins = None
-        max_bins_to_send = int(math.floor(128/3)) # Since max payload is 128 bytes and each bin represented by 3 bytes
-        with self.new_bins_mutex:
-            if len(self.new_fire_bins) > 0:
-                updates_to_send = self.new_fire_bins[:max_bins_to_send]
-                self.new_fire_bins = self.new_fire_bins[max_bins_to_send:]
-                sending_fire_bins = True
-            elif len(self.new_no_fire_bins) > 0:
-                updates_to_send = self.new_no_fire_bins[:max_bins_to_send]
-                self.new_no_fire_bins = self.new_no_fire_bins[max_bins_to_send:]
-                sending_fire_bins = False
+        if (len(self.map_transmitted_buf) != 0) and (time.time() - self.map_transmitted_buf[0][0] > self.retransmit_timeout):
+            # Resend packet if timeout
+
+            _, sending_fire_bins, seq_num, payload_length, payload = self.map_transmitted_buf.pop(0)
+            if sending_fire_bins:
+                self.connection.mav.firefly_new_fire_bins_send(seq_num, payload_length, payload)
+                self.map_transmitted_buf.append((time.time(), True, seq_num, payload_length, payload))
             else:
-                return
+                self.connection.mav.firefly_new_no_fire_bins_send(seq_num, payload_length, payload)
+                self.map_transmitted_buf.append((time.time(), False, seq_num, payload_length, payload))
+            rospy.logwarn("Warning: Had to resend packet with sequence id: %d" % seq_num)
 
-        payload = bytearray()
-        for update in updates_to_send:
-            payload.extend(struct.pack(">i", update)[-3:])
-
-        payload_length = len(payload)
-        if len(payload) < 128:
-            payload.extend(bytearray(128-len(payload)))  # Pad payload so it has 128 bytes
-
-        if sending_fire_bins:
-            self.connection.mav.tunnel_send(0, 0, PayloadTunnelType.FireBins.value, payload_length, payload)
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 60)/self.bytes_per_sec_send_rate)
+            return
+        elif (self.nt - self.na) % 128 >= self.wt:
+            # Waiting for acks
+            return
         else:
-            self.connection.mav.tunnel_send(0, 0, PayloadTunnelType.NonFireBins.value, payload_length, payload)
+            # Send the next packet
 
-        # Tunnel message is 145 bytes. Sleep by this much to not overwhelm the serial baud rate
-        rospy.sleep((self.mavlink_packet_overhead_bytes + 128 + 5)/self.bytes_per_sec_send_rate)
+            updates_to_send = None
+            sending_fire_bins = None
+            max_bins_to_send = int(math.floor(self.map_payload_size/3)) # Since payload is 126 bytes and each bin represented by 3 bytes
+            with self.new_bins_mutex:
+                if len(self.new_fire_bins) > 0: # Prioritize fire bins over no fire bins
+                    updates_to_send = self.new_fire_bins[:max_bins_to_send]
+                    self.new_fire_bins = self.new_fire_bins[max_bins_to_send:]
+                    sending_fire_bins = True
+                elif len(self.new_no_fire_bins) > 0:
+                    updates_to_send = self.new_no_fire_bins[:max_bins_to_send]
+                    self.new_no_fire_bins = self.new_no_fire_bins[max_bins_to_send:]
+                    sending_fire_bins = False
+                else:
+                    return
+
+            payload = bytearray()
+            for update in updates_to_send:
+                payload.extend(struct.pack(">i", update)[-3:])
+
+            payload_length = len(payload)
+            if len(payload) < self.map_payload_size:
+                payload.extend(bytearray(self.map_payload_size-len(payload)))  # Pad payload so it has 128 bytes
+
+            if sending_fire_bins:
+                self.connection.mav.firefly_new_fire_bins_send(self.nt, payload_length, payload)
+                self.map_transmitted_buf.append((time.time(), True, self.nt, payload_length, payload))
+            else:
+                self.connection.mav.firefly_new_no_fire_bins_send(self.nt, payload_length, payload)
+                self.map_transmitted_buf.append((time.time(), False, self.nt, payload_length, payload))
+
+            self.nt = (self.nt + 1) % 128
+
+            # Map update message is 140 bytes. Sleep by this much to not overwhelm the serial baud rate
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 128)/self.bytes_per_sec_send_rate)
 
     def send_pose_update(self):
         if not self.pose_send_flag:
@@ -121,12 +147,11 @@ class OnboardTelemetry:
                       transform.transform.rotation.y,
                       transform.transform.rotation.z,
                       transform.transform.rotation.w]
-            self.pose_send_flag = True
             self.connection.mav.firefly_pose_send(x, y, z, q)
             rospy.sleep((self.mavlink_packet_overhead_bytes + 28) / self.bytes_per_sec_send_rate)
         except tf2_ros.TransformException as e:
             print(e)
-            self.pose_send_flag = False
+        self.pose_send_flag = False
 
     def run(self):
         if (self.last_heartbeat_time is None) or (time.time() - self.last_heartbeat_time > self.watchdog_timeout):
@@ -141,8 +166,9 @@ class OnboardTelemetry:
         if self.connectedToOnboardRadio:
             try:
                 self.read_incoming()
-                self.send_map_update()
-                self.send_pose_update()
+                if self.connectedToGCS:
+                    self.send_map_update()
+                    self.send_pose_update()
 
                 if self.heartbeat_send_flag:
                     self.connection.mav.firefly_heartbeat_send(1)
@@ -201,6 +227,11 @@ class OnboardTelemetry:
             else:
                 print("Stopping ros bag recording")
                 os.system("rosnode kill data_collect")
+        elif msg['mavpackettype'] == 'FIREFLY_MAP_ACK':
+            # time.time(), False, self.nt, payload_length, payload`
+            for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
+                if self.map_transmitted_buf[i][2] == msg['seq_num']:
+                    self.map_transmitted_buf.pop(i)
 
     def heartbeat_send_callback(self, event):
         self.heartbeat_send_flag = True
