@@ -18,7 +18,7 @@ class GCSTelemetry:
     def __init__(self):
         self.new_fire_pub = rospy.Publisher("new_fire_bins", Int32MultiArray, queue_size=100)
         self.new_no_fire_pub = rospy.Publisher("new_no_fire_bins", Int32MultiArray, queue_size=100)
-        self.init_to_no_fire_with_pose_pub = rospy.Publisher("init_to_no_fire_with_pose", Pose, queue_size=100)
+        self.init_to_no_fire_with_pose_pub = rospy.Publisher("init_to_no_fire_with_pose_bins", Pose, queue_size=100)
         self.local_pos_ref_pub = rospy.Publisher("local_pos_ref", NavSatFix, queue_size=100)
 
         rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
