@@ -106,14 +106,14 @@ class OnboardTelemetry:
                 self.map_transmitted_buf.append((time.time(), 1, seq_num, payload_length, payload))
                 rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
             elif map_packet_type == 2:
-                x = payload.translation.x
-                y = payload.translation.y
-                z = payload.translation.z
-                q = [payload.rotation.x,
-                     payload.rotation.y,
-                     payload.rotation.z,
-                     payload.rotation.w]
-                self.connection.mav.firefly_init_to_no_fire_pose_send(x, y, z, q)
+                x = payload.position.x
+                y = payload.position.y
+                z = payload.position.z
+                q = [payload.orientation.x,
+                     payload.orientation.y,
+                     payload.orientation.z,
+                     payload.orientation.w]
+                self.connection.mav.firefly_init_to_no_fire_pose_send(self.nt, x, y, z, q)
                 self.map_transmitted_buf.append((time.time(), 2, self.nt, -1, payload))
                 rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
 
@@ -159,14 +159,14 @@ class OnboardTelemetry:
                     self.map_transmitted_buf.append((time.time(), 1, self.nt, payload_length, payload))
                 rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
             elif map_packet_type == 2:
-                x = updates_to_send.translation.x
-                y = updates_to_send.translation.y
-                z = updates_to_send.translation.z
-                q = [updates_to_send.rotation.x,
-                     updates_to_send.rotation.y,
-                     updates_to_send.rotation.z,
-                     updates_to_send.rotation.w]
-                self.connection.mav.firefly_init_to_no_fire_pose_send(x, y, z, q)
+                x = updates_to_send.position.x
+                y = updates_to_send.position.y
+                z = updates_to_send.position.z
+                q = [updates_to_send.orientation.x,
+                     updates_to_send.orientation.y,
+                     updates_to_send.orientation.z,
+                     updates_to_send.orientation.w]
+                self.connection.mav.firefly_init_to_no_fire_pose_send(self.nt, x, y, z, q)
                 self.map_transmitted_buf.append((time.time(), 2, self.nt, -1, updates_to_send))
                 rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
 
