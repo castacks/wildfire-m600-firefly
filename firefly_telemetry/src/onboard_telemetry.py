@@ -86,7 +86,7 @@ class OnboardTelemetry:
 
     def init_to_no_fire_with_pose_callback(self, data):
         with self.new_bins_mutex:
-            self.init_to_no_fire_poses.extend(data)
+            self.init_to_no_fire_poses.append(data)
 
     def pose_send_callback(self, event):
         self.pose_send_flag = True

@@ -111,7 +111,7 @@ private:
                 uint8_t pixelValue = msg.image.data[i + j * msg.image.width];
                 float prior = map[mapBin];
                 bool uninitialized = false;
-                if (prior == -1) { // Bin is uninitialized
+                if (prior < 0) { // Bin is uninitialized
                     prior = 0.5;
                     uninitialized = true;
                 }
@@ -143,8 +143,7 @@ private:
 
             }
         }
-
-        if (init_to_no_fire_bins.size() < 28) { // If small, it's better to send these bins as toggles rather than as pose
+        if (init_to_no_fire_bins.size() < 10) { // If small, it's better to send these bins as toggles rather than as pose
             for (int bin: init_to_no_fire_bins) {
                 new_fire_bins.insert(bin);
             }
@@ -176,7 +175,7 @@ private:
     void clear(const std_msgs::Empty &empty_msg) {
         std::cout << "Clearing Map" << std::endl;
         outputMap.data = std::vector<std::int8_t> (400*400, 50); // Set map to 50 percent certainty
-        map = std::vector<float> (400*400, 0.5); // Set map to 50 percent certainty
+        map = std::vector<float> (400*400, -1); // Set map to 50 percent certainty
         map_pub.publish(outputMap);
     }
 };
