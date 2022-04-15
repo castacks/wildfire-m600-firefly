@@ -1,6 +1,8 @@
 #include "ros/ros.h"
 #include <nav_msgs/OccupancyGrid.h>
 #include <std_msgs/Int32MultiArray.h>
+#include <std_msgs/Float32.h>
+#include <XmlRpcValue.h>
 #include <vector>
 #include <utility>
 #include <map>
@@ -13,8 +15,6 @@ map: new detection index mapped to gt vector index
 */
 
 
-const std::vector<float> gt_gps;
-
 
 class MappingAccuracy {
 
@@ -25,7 +25,8 @@ class MappingAccuracy {
             map_sub = nh.subscribe("observed_firemap", 10, &MappingAccuracy::map_callback, this);
             new_fire_sub = nh.subscribe("new_fire_bins", 1000, &MappingAccuracy::new_fire_bins_callback, this);
             new_no_fire_sub = nh.subscribe("new_no_fire_bins", 1000, &MappingAccuracy::new_no_fire_bins_callback, this);
-
+            detect_acc_pub = nh.advertise<std_msgs::Float32>("detection_accuracy", 10);
+            assoc_acc_pub = nh.advertise<std_msgs::Float32>("association_accuracy", 10);
 
         }
 
@@ -62,8 +63,10 @@ class MappingAccuracy {
 
             }
             // update accuracies
-            detect_acc = detect_acc_nr/detect_acc_dr;
-            assoc_acc = assoc_acc_nr/assoc_acc_dr;
+            detect_acc.data = detect_acc_nr/detect_acc_dr;
+            assoc_acc.data = assoc_acc_nr/assoc_acc_dr;
+            detect_acc_pub.publish(detect_acc);
+            assoc_acc_pub.publish(assoc_acc);
         }
 
         void new_no_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
@@ -106,8 +109,10 @@ class MappingAccuracy {
 
             }
             // update accuracies
-            detect_acc = detect_acc_nr/detect_acc_dr;
-            assoc_acc = assoc_acc_nr/assoc_acc_dr;
+            detect_acc.data = detect_acc_nr/detect_acc_dr;
+            assoc_acc.data = assoc_acc_nr/assoc_acc_dr;
+            detect_acc_pub.publish(detect_acc);
+            assoc_acc_pub.publish(assoc_acc);
         }
 
 
@@ -117,21 +122,31 @@ class MappingAccuracy {
         ros::Subscriber map_sub;
         ros::Subscriber new_fire_sub;
         ros::Subscriber new_no_fire_sub;
+        ros::Publisher detect_acc_pub;
+        ros::Publisher assoc_acc_pub;
         std::vector<std::pair<int, int> > gt;
         std::map<std::pair<int, int>, int> associated_gts;
         std::map<std::pair<int, int>, int> new_detections;
-        float assoc_acc = 0;
-        float detect_acc = 0;
         float assoc_acc_nr = 0;
         float assoc_acc_dr = 0;
         float detect_acc_nr = 0;
         float detect_acc_dr = 0;
+        std_msgs::Float32 detect_acc;
+        std_msgs::Float32 assoc_acc;
 
         void init_gts() {
             // init gt vector - read from YAML
-            for (size_t i = 0; i < gt_gps.size()/2; ++i) {
-                int row = (int) ((gt_gps[2*i]-current_map.info.origin.position.y)/current_map.info.resolution);
-                int col = (int) ((gt_gps[2*i+1]-current_map.info.origin.position.x)/current_map.info.resolution);
+
+            XmlRpc::XmlRpcValue gt_locs;
+            ros::param::get("gt_locs", gt_locs);
+
+            for (size_t i = 0; i < gt_locs.size()/2; ++i) {
+
+                double x_xml = gt_locs[2*i];
+                double y_xml = gt_locs[2*i+1];
+
+                int row = (int) ((y_xml-current_map.info.origin.position.y)/current_map.info.resolution);
+                int col = (int) ((x_xml-current_map.info.origin.position.x)/current_map.info.resolution);
 
                 std::pair<int, int> p(row, col);
 
@@ -146,7 +161,7 @@ class MappingAccuracy {
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "mapping_accuracy");
-    // TODO: read params into gt_gps
+    while(!ros::param::has("gt_locs")) continue;
     MappingAccuracy node;
     ros::spin();
     return 0;
