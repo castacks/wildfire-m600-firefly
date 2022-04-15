@@ -190,7 +190,7 @@ class GCSTelemetry:
         self.record_ros_bag_send_flag = True
 
     def stop_record_ros_bag_callback(self, empty_msg):
-        self.stop_record_ros_bag_send_flag = False
+        self.stop_record_ros_bag_send_flag = True
 
 
 
