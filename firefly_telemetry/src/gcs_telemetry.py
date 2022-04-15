@@ -41,6 +41,9 @@ class GCSTelemetry:
         self.record_ros_bag_send_flag = False
         self.stop_record_ros_bag_send_flag = False
 
+        self.bytes_per_sec_send_rate = 1000.0
+        self.mavlink_packet_overhead_bytes = 12
+
         rospy.Timer(rospy.Duration(1), self.heartbeat_send_callback)
 
         self.last_heartbeat_time = None
@@ -77,31 +80,37 @@ class GCSTelemetry:
                     self.connection.mav.firefly_clear_map_send(0)
                     rospy.loginfo("Clearing Map")
                     self.clear_map_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
                 if self.set_local_pos_ref_send_flag:
                     self.connection.mav.firefly_set_local_pos_ref_send(0)
                     rospy.loginfo("Setting Local Position Reference")
                     self.set_local_pos_ref_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
                 if self.capture_frame_send_flag:
                     self.connection.mav.firefly_get_frame_send(1)
                     rospy.loginfo("Capturing Frame")
                     self.capture_frame_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
                 if self.heartbeat_send_flag:
                     self.connection.mav.firefly_heartbeat_send(1)
                     rospy.logdebug("Sending Heartbeat")
                     self.heartbeat_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
                 if self.record_ros_bag_send_flag:
                     rospy.loginfo("Recording ROS Bags")
                     self.connection.mav.firefly_record_bag_send(1)
                     self.record_ros_bag_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
             
                 if self.stop_record_ros_bag_send_flag:
                     rospy.loginfo("Stopping ROS Bag recording")
                     self.connection.mav.firefly_record_bag_send(0)
                     self.stop_record_ros_bag_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
             except serial.serialutil.SerialException as e:
                 self.connectedToGCSRadio = False
