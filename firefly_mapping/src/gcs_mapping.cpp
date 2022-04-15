@@ -107,7 +107,9 @@ private:
                 size_t gridCol = (size_t) ((intersect(0)-minX)/resolution);
 
                 int mapBin = gridCol + gridRow * outputMap.info.width;
-                outputMap.data[mapBin] = 0;
+                if (outputMap.data[mapBin] == 50) {
+                    outputMap.data[mapBin] = 0;
+                }
 
             }
         }
