@@ -122,6 +122,7 @@ class OnboardTelemetry:
             return
         elif (self.nt - self.na) % 128 >= self.wt:
             # Waiting for acks
+            rospy.logwarn("Reached window buffer - waiting for acks")
             return
         else:
             # Send the next packet
