@@ -98,11 +98,23 @@ class OnboardTelemetry:
 
             _, map_packet_type, seq_num, payload_length, payload = self.map_transmitted_buf.pop(0)
             if map_packet_type == 0:
-                self.connection.mav.firefly_new_fire_bins_send(seq_num, payload_length, payload)
+                try:
+                    self.connection.mav.firefly_new_fire_bins_send(seq_num, payload_length, payload)
+                except serial.serialutil.SerialException as e:
+                    self.map_transmitted_buf.append((time.time(), 0, seq_num, payload_length, payload))
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
+                    rospy.logwarn("Warning: Had to resend packet with sequence id: %d" % seq_num)
+                    raise e
                 self.map_transmitted_buf.append((time.time(), 0, seq_num, payload_length, payload))
                 rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
             elif map_packet_type == 1:
-                self.connection.mav.firefly_new_no_fire_bins_send(seq_num, payload_length, payload)
+                try:
+                    self.connection.mav.firefly_new_no_fire_bins_send(seq_num, payload_length, payload)
+                except serial.serialutil.SerialException as e:
+                    self.map_transmitted_buf.append((time.time(), 1, seq_num, payload_length, payload))
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
+                    rospy.logwarn("Warning: Had to resend packet with sequence id: %d" % seq_num)
+                    raise e
                 self.map_transmitted_buf.append((time.time(), 1, seq_num, payload_length, payload))
                 rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
             elif map_packet_type == 2:
@@ -113,7 +125,13 @@ class OnboardTelemetry:
                      payload.orientation.y,
                      payload.orientation.z,
                      payload.orientation.w]
-                self.connection.mav.firefly_init_to_no_fire_pose_send(self.nt, x, y, z, q)
+                try:
+                    self.connection.mav.firefly_init_to_no_fire_pose_send(self.nt, x, y, z, q)
+                except serial.serialutil.SerialException as e:
+                    self.map_transmitted_buf.append((time.time(), 2, self.nt, -1, payload))
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
+                    rospy.logwarn("Warning: Had to resend packet with sequence id: %d" % seq_num)
+                    raise e
                 self.map_transmitted_buf.append((time.time(), 2, self.nt, -1, payload))
                 rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
 
@@ -153,10 +171,22 @@ class OnboardTelemetry:
                     payload.extend(bytearray(self.map_payload_size - len(payload)))  # Pad payload so it has 128 bytes
 
                 if map_packet_type == 0:
-                    self.connection.mav.firefly_new_fire_bins_send(self.nt, payload_length, payload)
+                    try:
+                        self.connection.mav.firefly_new_fire_bins_send(self.nt, payload_length, payload)
+                    except serial.serialutil.SerialException as e:
+                        self.map_transmitted_buf.append((time.time(), 0, self.nt, payload_length, payload))
+                        self.nt = (self.nt + 1) % 128
+                        rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
+                        raise e
                     self.map_transmitted_buf.append((time.time(), 0, self.nt, payload_length, payload))
                 elif map_packet_type == 1:
-                    self.connection.mav.firefly_new_no_fire_bins_send(self.nt, payload_length, payload)
+                    try:
+                        self.connection.mav.firefly_new_no_fire_bins_send(self.nt, payload_length, payload)
+                    except serial.serialutil.SerialException as e:
+                        self.map_transmitted_buf.append((time.time(), 1, self.nt, payload_length, payload))
+                        self.nt = (self.nt + 1) % 128
+                        rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
+                        raise e
                     self.map_transmitted_buf.append((time.time(), 1, self.nt, payload_length, payload))
                 rospy.sleep((self.mavlink_packet_overhead_bytes + self.map_payload_size) / self.bytes_per_sec_send_rate)
             elif map_packet_type == 2:
@@ -167,7 +197,13 @@ class OnboardTelemetry:
                      updates_to_send.orientation.y,
                      updates_to_send.orientation.z,
                      updates_to_send.orientation.w]
-                self.connection.mav.firefly_init_to_no_fire_pose_send(self.nt, x, y, z, q)
+                try:
+                    self.connection.mav.firefly_init_to_no_fire_pose_send(self.nt, x, y, z, q)
+                except serial.serialutil.SerialException as e:
+                    self.map_transmitted_buf.append((time.time(), 2, self.nt, -1, updates_to_send))
+                    self.nt = (self.nt + 1) % 128
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
+                    raise e
                 self.map_transmitted_buf.append((time.time(), 2, self.nt, -1, updates_to_send))
                 rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
 
