@@ -7,7 +7,6 @@ import os
 import tf
 from std_msgs.msg import Empty
 import time
-import datetime
 from sensor_msgs.msg import NavSatFix
 import serial
 
@@ -49,9 +48,11 @@ class GCSTelemetry:
         try:
             self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
             self.connectedToGCSRadio = True
-            print("Opened connection to GCS radio")
+            rospy.loginfo("Opened connection to GCS radio")
         except serial.serialutil.SerialException:
             self.connectedToGCSRadio = False
+            rospy.logerr("Failed to open connection to GCS radio")
+
         self.last_serial_attempt_time = time.time()
         self.serial_reconnect_wait_time = 1.0
 
@@ -60,11 +61,11 @@ class GCSTelemetry:
         if (self.last_heartbeat_time is None) or (time.time() - self.last_heartbeat_time > self.watchdog_timeout):
             if self.connectedToOnboard:
                 self.connectedToOnboard = False
-                print("Disconnected from onboard radio")
+                rospy.logerr("Disconnected from onboard radio")
         else:
             if not self.connectedToOnboard:
                 self.connectedToOnboard = True
-                print("Connected to onboard radio")
+                rospy.loginfo("Connected to onboard radio")
 
         if self.connectedToGCSRadio:
             try:
@@ -72,44 +73,44 @@ class GCSTelemetry:
 
                 if self.clear_map_send_flag:
                     self.connection.mav.firefly_clear_map_send(0)
-                    print("Clearing Map")
+                    rospy.loginfo("Clearing Map")
                     self.clear_map_send_flag = False
 
                 if self.set_local_pos_ref_send_flag:
                     self.connection.mav.firefly_set_local_pos_ref_send(0)
-                    print("Setting Local Position Reference")
+                    rospy.loginfo("Setting Local Position Reference")
                     self.set_local_pos_ref_send_flag = False
 
                 if self.capture_frame_send_flag:
                     self.connection.mav.firefly_get_frame_send(1)
-                    print("Capturing Frame")
+                    rospy.loginfo("Capturing Frame")
                     self.capture_frame_send_flag = False
 
                 if self.heartbeat_send_flag:
                     self.connection.mav.firefly_heartbeat_send(1)
-                    print("Sending Heartbeat")
+                    rospy.logdebug("Sending Heartbeat")
                     self.heartbeat_send_flag = False
 
                 if self.record_ros_bag_send_flag:
-                    print("Recording ROS Bags")
+                    rospy.loginfo("Recording ROS Bags")
                     self.connection.mav.firefly_record_bag_send(1)
                     self.record_ros_bag_send_flag = False
             
                 if self.stop_record_ros_bag_send_flag:
-                    print("Stopping ROS Bag recording")
+                    rospy.loginfo("Stopping ROS Bag recording")
                     self.connection.mav.firefly_record_bag_send(0)
                     self.stop_record_ros_bag_send_flag = False
 
             except serial.serialutil.SerialException as e:
                 self.connectedToGCSRadio = False
-                print(e)
+                rospy.logerr(e)
         elif time.time() - self.last_serial_attempt_time >= self.serial_reconnect_wait_time:
             try:
                 self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
-                print("Opened connection to GCS radio")
+                rospy.loginfo("Opened connection to GCS radio")
                 self.connectedToGCSRadio = True
             except serial.serialutil.SerialException as e:
-                print(e)
+                rospy.logerr(e)
             self.last_serial_attempt_time = time.time()
 
     def process_new_map_packet(self, msg, received_fire_bins):
@@ -146,12 +147,11 @@ class GCSTelemetry:
 
         self.connection.mav.firefly_map_ack_send(msg['seq_num'])
 
-
     def read_incoming(self):
         msg = self.connection.recv_match()
         if msg is not None:
             msg = msg.to_dict()
-            print(msg)
+            rospy.logdebug(msg)
 
             if msg['mavpackettype'] == 'FIREFLY_NEW_FIRE_BINS':
                 self.process_new_map_packet(msg, True)
@@ -191,7 +191,6 @@ class GCSTelemetry:
 
     def stop_record_ros_bag_callback(self, empty_msg):
         self.stop_record_ros_bag_send_flag = True
-
 
 
 if __name__ == "__main__":

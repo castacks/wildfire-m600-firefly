@@ -30,6 +30,7 @@ class ThermalImageReader
     int threshold;
     bool continuous;
     bool continuousMappingEnabled = false;
+    bool show_video;
 
 
 public:
@@ -47,6 +48,7 @@ public:
 
         private_nh_.param<int>("threshold", threshold, 50);  
         private_nh_.param<bool>("continuous", continuous, false);  
+        private_nh_.param<bool>("show_video", show_video, false);  
 
     }
 
@@ -66,17 +68,13 @@ public:
             cv::threshold(img, thresh, threshold, 255, CV_THRESH_BINARY);
             thresh.convertTo(cv_img.image, CV_8U);
 
-            cv::imshow("Thresholded Image", cv_img.image);
+            if (show_video) {
+                cv::imshow("Thresholded Image", cv_img.image);
+            }
 
-            try {
-                listener.lookupTransform("world", "thermal/camera_link",
+
+            listener.lookupTransform("world", "thermal/camera_link",
                                          ros::Time(0), img_transform);
-            }
-            catch (tf::TransformException &ex) {
-                //ROS_ERROR("%s",ex.what());
-                img_with_tf_ready = false;
-                return;
-            }
 
             img_with_tf_ready = true;
 
@@ -86,6 +84,10 @@ public:
         {
             ROS_ERROR("cv_bridge exception: %s", e.what());
             return;
+        }
+        catch (tf::TransformException &ex) {
+                img_with_tf_ready = false;
+                return;
         }
 
         if (continuous && continuousMappingEnabled) {
@@ -103,7 +105,6 @@ public:
 
             image_pub_.publish(reply);
         }
-        // Output modified video stream
     }
 
     void imageCbGray(const sensor_msgs::ImageConstPtr& msg)
@@ -111,7 +112,9 @@ public:
         try
         {
             cv::Mat img = cv_bridge::toCvShare(msg,sensor_msgs::image_encodings::BGR8)->image;
-            cv::imshow("Gray Image", img);
+            if (show_video) {
+                cv::imshow("Gray Image", img);
+            }
             cv::waitKey(3);
         }
 

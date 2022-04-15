@@ -18,7 +18,6 @@ public:
         map_pub = nh.advertise<nav_msgs::OccupancyGrid>("observed_firemap", 10);
         new_fire_pub = nh.advertise<std_msgs::Int32MultiArray>("new_fire_bins", 10);
         new_no_fire_pub = nh.advertise<std_msgs::Int32MultiArray>("new_no_fire_bins", 10);
-//        clear_srv = nh.advertiseService("clear_map", &OnboardMapping::clear, this);
         clear_sub = nh.subscribe("clear_map", 1000, &OnboardMapping::clear, this);
 
         K_inv << 1.0/fx,  0.0,    -cx/fx,
@@ -40,7 +39,6 @@ private:
     ros::NodeHandle nh;
     ros::Subscriber image_sub;
     ros::Publisher map_pub, new_fire_pub, new_no_fire_pub;
-//    ros::ServiceServer clear_srv;
     ros::Subscriber clear_sub;
 
     nav_msgs::OccupancyGrid outputMap;
@@ -49,10 +47,6 @@ private:
     Eigen::Vector3d ground_normal{0, 0, 1}; //Should point up from ground - if pointing into ground, will cause errors
     float ground_offset = 0;
 
-//    float fx = 411.3366;
-//    float fy = 412.6712;
-//    float cx = 320.4049;
-//    float cy = 251.967;
     float fx = 338.136183;
     float fy = 336.039570;
     float cx = 160.829;
@@ -159,13 +153,6 @@ private:
         return;
     }
 
-//    bool clear(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
-//        std::cout << "Clearing Map" << std::endl;
-//        outputMap.data = std::vector<std::int8_t> (400*400, 50); // Set map to 50 percent certainty
-//        map = std::vector<float> (400*400, 0.5); // Set map to 50 percent certainty
-//        map_pub.publish(outputMap);
-//        return true;
-//    }
     void clear(const std_msgs::Empty &empty_msg) {
         std::cout << "Clearing Map" << std::endl;
         outputMap.data = std::vector<std::int8_t> (400*400, 50); // Set map to 50 percent certainty

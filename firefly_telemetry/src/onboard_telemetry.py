@@ -52,7 +52,6 @@ class OnboardTelemetry:
         self.last_heartbeat_time = None
         rospy.Timer(rospy.Duration(1), self.heartbeat_send_callback)
 
-
         self.last_heartbeat_time = None
         self.connectedToGCS = False
         self.watchdog_timeout = 2.0
@@ -62,9 +61,11 @@ class OnboardTelemetry:
         try:
             self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
             self.connectedToOnboardRadio = True
-            print("Opened connection to onboard radio")
+            rospy.loginfo("Opened connection to onboard radio")
         except serial.serialutil.SerialException:
             self.connectedToOnboardRadio = False
+            rospy.logerr("Failed to open connection to onboard radio")
+
         self.last_serial_attempt_time = time.time()
         self.serial_reconnect_wait_time = 1.0
 
@@ -80,7 +81,8 @@ class OnboardTelemetry:
         self.pose_send_flag = True
 
     def send_map_update(self):
-        if (len(self.map_transmitted_buf) != 0) and (time.time() - self.map_transmitted_buf[0][0] > self.retransmit_timeout):
+        if (len(self.map_transmitted_buf) != 0) and (
+                time.time() - self.map_transmitted_buf[0][0] > self.retransmit_timeout):
             # Resend packet if timeout
 
             _, sending_fire_bins, seq_num, payload_length, payload = self.map_transmitted_buf.pop(0)
@@ -92,19 +94,17 @@ class OnboardTelemetry:
                 self.map_transmitted_buf.append((time.time(), False, seq_num, payload_length, payload))
             rospy.logwarn("Warning: Had to resend packet with sequence id: %d" % seq_num)
 
-            rospy.sleep((self.mavlink_packet_overhead_bytes + 60)/self.bytes_per_sec_send_rate)
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 60) / self.bytes_per_sec_send_rate)
             return
         elif (self.nt - self.na) % 128 >= self.wt:
             # Waiting for acks
             return
         else:
             # Send the next packet
-
-            updates_to_send = None
-            sending_fire_bins = None
-            max_bins_to_send = int(math.floor(self.map_payload_size/3)) # Since payload is 126 bytes and each bin represented by 3 bytes
+            max_bins_to_send = int(
+                math.floor(self.map_payload_size / 3))  # Since payload is 126 bytes and each bin represented by 3 bytes
             with self.new_bins_mutex:
-                if len(self.new_fire_bins) > 0: # Prioritize fire bins over no fire bins
+                if len(self.new_fire_bins) > 0:  # Prioritize fire bins over no fire bins
                     updates_to_send = self.new_fire_bins[:max_bins_to_send]
                     self.new_fire_bins = self.new_fire_bins[max_bins_to_send:]
                     sending_fire_bins = True
@@ -121,7 +121,7 @@ class OnboardTelemetry:
 
             payload_length = len(payload)
             if len(payload) < self.map_payload_size:
-                payload.extend(bytearray(self.map_payload_size-len(payload)))  # Pad payload so it has 128 bytes
+                payload.extend(bytearray(self.map_payload_size - len(payload)))  # Pad payload so it has 128 bytes
 
             if sending_fire_bins:
                 self.connection.mav.firefly_new_fire_bins_send(self.nt, payload_length, payload)
@@ -133,7 +133,7 @@ class OnboardTelemetry:
             self.nt = (self.nt + 1) % 128
 
             # Map update message is 140 bytes. Sleep by this much to not overwhelm the serial baud rate
-            rospy.sleep((self.mavlink_packet_overhead_bytes + 128)/self.bytes_per_sec_send_rate)
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 128) / self.bytes_per_sec_send_rate)
 
     def send_pose_update(self):
         if not self.pose_send_flag:
@@ -145,24 +145,24 @@ class OnboardTelemetry:
             y = transform.transform.translation.y
             z = transform.transform.translation.z
             q = [transform.transform.rotation.x,
-                      transform.transform.rotation.y,
-                      transform.transform.rotation.z,
-                      transform.transform.rotation.w]
+                 transform.transform.rotation.y,
+                 transform.transform.rotation.z,
+                 transform.transform.rotation.w]
             self.connection.mav.firefly_pose_send(x, y, z, q)
             rospy.sleep((self.mavlink_packet_overhead_bytes + 28) / self.bytes_per_sec_send_rate)
         except tf2_ros.TransformException as e:
-            print(e)
+            pass
         self.pose_send_flag = False
 
     def run(self):
         if (self.last_heartbeat_time is None) or (time.time() - self.last_heartbeat_time > self.watchdog_timeout):
             if self.connectedToGCS:
                 self.connectedToGCS = False
-                print("Disconnected from GCS")
+                rospy.logerr("Disconnected from GCS")
         else:
             if not self.connectedToGCS:
                 self.connectedToGCS = True
-                print("Connected to GCS")
+                rospy.loginfo("Connected to GCS")
 
         if self.connectedToOnboardRadio:
             try:
@@ -173,18 +173,18 @@ class OnboardTelemetry:
 
                 if self.heartbeat_send_flag:
                     self.connection.mav.firefly_heartbeat_send(1)
-                    print("Sending Heartbeat")
+                    rospy.logdebug("Sending Heartbeat")
                     self.heartbeat_send_flag = False
             except serial.serialutil.SerialException as e:
                 self.connectedToOnboardRadio = False
-                print(e)
+                rospy.logerr(e)
         elif time.time() - self.last_serial_attempt_time >= self.serial_reconnect_wait_time:
             try:
                 self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
-                print("Opened connection to Onboard radio")
+                rospy.loginfo("Opened connection to Onboard radio")
                 self.connectedToOnboardRadio = True
             except serial.serialutil.SerialException as e:
-                print(e)
+                rospy.logerr(e)
             self.last_serial_attempt_time = time.time()
 
     def read_incoming(self):
@@ -192,7 +192,7 @@ class OnboardTelemetry:
         if msg is None:
             return
         msg = msg.to_dict()
-        print(msg)
+        rospy.logdebug(msg)
 
         if msg['mavpackettype'] == 'FIREFLY_CLEAR_MAP':
             self.clear_map_pub.publish(Empty())
@@ -204,7 +204,7 @@ class OnboardTelemetry:
                 response = set_local_pos_ref()
                 self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
             except rospy.ServiceException as e:
-                print("Service call failed: %s" % e)
+                rospy.logerr("Service call failed: %s" % e)
         elif msg['mavpackettype'] == 'FIREFLY_GET_FRAME':
             if msg['get_frame'] == 1:
                 # tell perception handler to extract frame
@@ -214,20 +214,17 @@ class OnboardTelemetry:
             self.last_heartbeat_time = time.time()
         elif msg['mavpackettype'] == 'FIREFLY_RECORD_BAG':
             if msg['get_frame'] == 1 and not self.recording_ros_bag:
-                print("Atempting to record ros bag")
-                DEFAULT_ROOT="/mnt/nvme0n1/data"
+                rospy.loginfo("Atempting to record ros bag")
+                DEFAULT_ROOT = "/mnt/nvme0n1/data"
                 time_rosbag = datetime.datetime.now()
                 time_rosbag = time_rosbag.strftime("%d-%m-%Y-%H:%M:%S")
-                dir = DEFAULT_ROOT+"/"+time_rosbag
-                # try:
-                #     os.mkdir(dir)
-                # except:
-                #     print("Path exists : ", os.path.exists(dir))
-                print("Starting ros bag recording to file : " + dir + time_rosbag + "_dji_sdk_and_thermal.bag")
-                os.system("rosbag record -a -O " + dir + "_dji_sdk_and_thermal.bag __name:='data_collect' -x '(.*)/compressed(.*)|(.*)/theora(.*)' &")
+                dir = DEFAULT_ROOT + "/" + time_rosbag
+                rospy.loginfo("Starting ros bag recording to file : " + dir + time_rosbag + "_dji_sdk_and_thermal.bag")
+                os.system(
+                    "rosbag record -a -O " + dir + "_dji_sdk_and_thermal.bag __name:='data_collect' -x '(.*)/compressed(.*)|(.*)/theora(.*)' &")
                 self.recording_ros_bag = True
             elif msg['get_frame'] == 0 and self.recording_ros_bag:
-                print("Stopping ros bag recording")
+                rospy.loginfo("Stopping ros bag recording")
                 os.system("rosnode kill data_collect &")
                 self.recording_ros_bag = False
         elif msg['mavpackettype'] == 'FIREFLY_MAP_ACK':

@@ -6,7 +6,7 @@
 
   <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen"/>
   <node pkg="firefly_telemetry" type="onboard_telemetry.py" name="onboard_telemetry" output="screen"/>
-  <node pkg="firefly_perception" type="firefly_perception" name="firefly_perception_continuous" output="screen">
+  <node pkg="firefly_perception" type="firefly_perception" name="firefly_perception" output="screen">
     <param name="threshold" value="50"/>
     <param name="continuous" value="true"/>
   </node>  
