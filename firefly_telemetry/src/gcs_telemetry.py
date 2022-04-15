@@ -95,6 +95,7 @@ class GCSTelemetry:
                 nav_msg.longitude = msg['longitude']
                 nav_msg.altitude = msg['altitude']
                 self.local_pos_ref_pub.publish(nav_msg)
+                rospy.set_param("local_pos_ref", [msg['latitude'], msg['longitude'], msg['altitude']])
             elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
                 self.last_heartbeat_time = time.time()
 
