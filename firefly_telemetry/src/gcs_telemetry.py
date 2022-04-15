@@ -7,6 +7,7 @@ import os
 import tf
 from std_msgs.msg import Empty
 import time
+import datetime
 from sensor_msgs.msg import NavSatFix
 import serial
 
@@ -22,6 +23,8 @@ class GCSTelemetry:
         rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
         rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
         rospy.Subscriber("capture_frame", Empty, self.capture_frame_callback)
+        rospy.Subscriber("record_rosbag", Empty, self.record_ros_bag_callback)
+        rospy.Subscriber("stop_record_rosbag", Empty, self.stop_record_ros_bag_callback)
 
         self.br = tf.TransformBroadcaster()
 
@@ -29,6 +32,8 @@ class GCSTelemetry:
         self.set_local_pos_ref_send_flag = False
         self.capture_frame_send_flag = False
         self.heartbeat_send_flag = False
+        self.record_ros_bag_send_flag = False
+        self.stop_record_ros_bag_send_flag = False
 
         rospy.Timer(rospy.Duration(1), self.heartbeat_send_callback)
 
@@ -79,6 +84,17 @@ class GCSTelemetry:
                     self.connection.mav.firefly_heartbeat_send(1)
                     print("Sending Heartbeat")
                     self.heartbeat_send_flag = False
+
+                if self.record_ros_bag_send_flag:
+                    print("Recording ROS Bags")
+                    self.connection.mav.firefly_record_bag_send(1)
+                    self.record_ros_bag_send_flag = False
+            
+                if self.stop_record_ros_bag_send_flag:
+                    print("Stopping ROS Bag recording")
+                    self.connection.mav.firefly_record_bag_send(0)
+                    self.stop_record_ros_bag_send_flag = False
+
             except serial.serialutil.SerialException as e:
                 self.connectedToGCSRadio = False
                 print(e)
@@ -137,6 +153,13 @@ class GCSTelemetry:
     def heartbeat_send_callback(self, event):
         self.heartbeat_send_flag = True
 
+    def record_ros_bag_callback(self, empty_msg):
+        self.record_ros_bag_send_flag = True
+
+    def stop_record_ros_bag_callback(self, empty_msg):
+        self.stop_record_ros_bag_send_flag = False
+
+
 
 if __name__ == "__main__":
     rospy.init_node("gcs_telemetry", anonymous=True)
@@ -144,3 +167,4 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
         onboard_telemetry.run()
+

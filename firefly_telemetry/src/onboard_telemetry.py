@@ -13,6 +13,7 @@ import struct
 from firefly_telemetry.srv import SetLocalPosRef
 import time
 import serial
+import datetime
 
 os.environ['MAVLINK20'] = '1'
 
