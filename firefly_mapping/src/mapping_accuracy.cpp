@@ -78,15 +78,7 @@ class MappingAccuracy {
                 --detect_acc_dr;
                 row = bin/400;
                 col = bin%400;
-                // int min_index = -1;
-                // float min_dist = -1, dist;
-                // for(int i = 0; i < gt.size(); ++i) { // get closest gt bin and index
-                //     dist = sqrt(pow((gt[i].first - row), 2) + pow((gt[i].second - col), 2));
-                //     if(min_dist != -1 and dist < min_dist) {
-                //         min_dist = dist;
-                //         min_index = i;
-                //     }
-                // }
+
                 int min_index = -1;
                 auto p = std::make_pair(row, col);
                 if(new_detections[p] != -1) {
@@ -96,17 +88,6 @@ class MappingAccuracy {
                     if(associated_gts[gt[min_index]] == 1) --assoc_acc_nr;
                     --associated_gts[gt[min_index]];
                 }
-
-                // if(min_dist <= 5) {
-                //     ++detect_acc_nr;
-                //     if(associated_gts[gt[min_index]] == 0) ++assoc_acc_nr;
-                //     ++associated_gts[gt[min_index]];
-                //     new_detections[std::make_pair(row, col)] = min_index;
-                // }
-                // else {
-                //     new_detections[std::make_pair(row, col)] = -1;
-                // }
-
             }
             // update accuracies
             detect_acc.data = detect_acc_nr/detect_acc_dr;
