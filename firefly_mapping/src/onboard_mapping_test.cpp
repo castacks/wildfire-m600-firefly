@@ -68,9 +68,30 @@ private:
         std::unordered_set<int> new_no_fire_bins;
 
         outputMap.data = std::vector<std::int8_t> (400*400, 50);
-        size_t gtRow = (size_t) ((0.0003317448153091762-minY)/resolution);
-        size_t gtCol = (size_t) ((12.053241997035023-minX)/resolution);
+
+        size_t gtRow = (size_t) ((4.237-minY)/resolution);
+        size_t gtCol = (size_t) ((7.027-minX)/resolution);
         int gtBin = gtCol + gtRow * 400;
+        outputMap.data[gtBin] = 0;
+
+        gtRow = (size_t) ((-10.81-minY)/resolution);
+        gtCol = (size_t) ((12.377-minX)/resolution);
+        gtBin = gtCol + gtRow * 400;
+        outputMap.data[gtBin] = 0;
+
+        gtRow = (size_t) ((-23.514-minY)/resolution);
+        gtCol = (size_t) ((22.349-minX)/resolution);
+        gtBin = gtCol + gtRow * 400;
+        outputMap.data[gtBin] = 0;
+
+        gtRow = (size_t) ((-8.378-minY)/resolution);
+        gtCol = (size_t) ((36.790-minX)/resolution);
+        gtBin = gtCol + gtRow * 400;
+        outputMap.data[gtBin] = 0;
+
+        gtRow = (size_t) ((24.326-minY)/resolution);
+        gtCol = (size_t) ((23.308-minX)/resolution);
+        gtBin = gtCol + gtRow * 400;
         outputMap.data[gtBin] = 0;
 
         for (size_t i = 0; i < msg.image.width; i++) {

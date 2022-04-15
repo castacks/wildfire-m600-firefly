@@ -15,6 +15,7 @@
 class ThermalImageReader
 {
     ros::NodeHandle nh_;
+    ros::NodeHandle private_nh_;
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_thresh;
     image_transport::Subscriber image_sub_gray;
@@ -23,11 +24,17 @@ class ThermalImageReader
     cv::Mat thresh;
     cv_bridge::CvImage cv_img;
     tf::TransformListener listener;
+    tf::StampedTransform img_transform;
+    bool img_with_tf_ready = false;
+
+    int threshold;
+    bool continuous;
+    bool continuousMappingEnabled = false;
 
 
 public:
     ThermalImageReader()
-            : it_(nh_)
+            : it_(nh_), private_nh_("~")
     {
         image_sub_thresh = it_.subscribe("/seek_camera/temperatureImageCelcius", 1,
                                    &ThermalImageReader::imageCbThresh, this);
@@ -37,6 +44,10 @@ public:
         img_extract_sub = nh_.subscribe("extract_frame",1,  &ThermalImageReader::img_extract_cb,  this);
 
         image_pub_ = nh_.advertise<firefly_mapping::ImageWithPose>("image_to_project", 1, this);
+
+        private_nh_.param<int>("threshold", threshold, 50);  
+        private_nh_.param<bool>("continuous", continuous, false);  
+
     }
 
     ~ThermalImageReader()
@@ -52,10 +63,22 @@ public:
             cv::Mat img = cv_bridge::toCvShare(msg,"32FC1")->image;
 
             cv::Mat thresh;
-            cv::threshold(img, thresh, 25, 255, CV_THRESH_BINARY);
+            cv::threshold(img, thresh, threshold, 255, CV_THRESH_BINARY);
             thresh.convertTo(cv_img.image, CV_8U);
 
             cv::imshow("Thresholded Image", cv_img.image);
+
+            try {
+                listener.lookupTransform("world", "thermal/camera_link",
+                                         ros::Time(0), img_transform);
+            }
+            catch (tf::TransformException &ex) {
+                //ROS_ERROR("%s",ex.what());
+                img_with_tf_ready = false;
+                return;
+            }
+
+            img_with_tf_ready = true;
 
             cv::waitKey(3);
         }
@@ -65,6 +88,21 @@ public:
             return;
         }
 
+        if (continuous && continuousMappingEnabled) {
+            firefly_mapping::ImageWithPose reply;
+            cv_img.toImageMsg(reply.image);
+
+            reply.pose.position.x = img_transform.getOrigin().x();
+            reply.pose.position.y = img_transform.getOrigin().y();
+            reply.pose.position.z = img_transform.getOrigin().z();
+
+            reply.pose.orientation.x = img_transform.getRotation().x();
+            reply.pose.orientation.y = img_transform.getRotation().y();
+            reply.pose.orientation.z = img_transform.getRotation().z();
+            reply.pose.orientation.w = img_transform.getRotation().w();
+
+            image_pub_.publish(reply);
+        }
         // Output modified video stream
     }
 
@@ -86,31 +124,31 @@ public:
 
     void img_extract_cb(std_msgs::Empty msg)
     {
-        firefly_mapping::ImageWithPose reply;
-        cv_img.toImageMsg(reply.image);
+        if (continuous) {
+            continuousMappingEnabled = !continuousMappingEnabled;
 
+        }
+        else {
+            if (!img_with_tf_ready) {
+                ROS_ERROR("Called extract_frame but either img or tf not available");
+                return;
+            }
+            firefly_mapping::ImageWithPose reply;
+            cv_img.toImageMsg(reply.image);
+
+            reply.pose.position.x = img_transform.getOrigin().x();
+            reply.pose.position.y = img_transform.getOrigin().y();
+            reply.pose.position.z = img_transform.getOrigin().z();
+
+            reply.pose.orientation.x = img_transform.getRotation().x();
+            reply.pose.orientation.y = img_transform.getRotation().y();
+            reply.pose.orientation.z = img_transform.getRotation().z();
+            reply.pose.orientation.w = img_transform.getRotation().w();
+
+            image_pub_.publish(reply);
+
+        }
         
-
-        tf::StampedTransform transform;
-        try {
-          listener.lookupTransform("world", "thermal/camera_link",
-                                   ros::Time(0), transform);
-        }
-        catch (tf::TransformException &ex) {
-          ROS_ERROR("%s",ex.what());
-          return;
-        }
-
-        reply.pose.position.x = transform.getOrigin().x();
-        reply.pose.position.y = transform.getOrigin().y();
-        reply.pose.position.z = transform.getOrigin().z();
-
-        reply.pose.orientation.x = transform.getRotation().x();
-        reply.pose.orientation.y = transform.getRotation().y();
-        reply.pose.orientation.z = transform.getRotation().z();
-        reply.pose.orientation.w = transform.getRotation().w();
-
-        image_pub_.publish(reply);
     }
 };
 

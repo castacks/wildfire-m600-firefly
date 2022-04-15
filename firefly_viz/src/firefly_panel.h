@@ -43,16 +43,26 @@ namespace rviz {
 
         void capture_frame();
 
+        void record_ros_bag();
+
+        void stop_record_ros_bag();
+
     protected:
 
 
         QPushButton *clear_button_;
         QPushButton *set_local_pos_ref_button_;
         QPushButton *capture_frame_button_;
+        QPushButton *ros_record_button_;
+        QPushButton *ros_stop_record_button_;
+
 
         ros::Publisher clear_map_pub_;
         ros::Publisher set_local_pos_ref_pub_;
         ros::Publisher capture_frame_pub_;
+        ros::Publisher ros_record_;
+        ros::Publisher stop_ros_record_;
+        
 
         ros::NodeHandle nh_;
 
