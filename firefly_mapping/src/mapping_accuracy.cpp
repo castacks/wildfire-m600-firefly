@@ -46,7 +46,7 @@ class MappingAccuracy {
                 float min_dist = -1, dist;
                 for(int i = 0; i < gt.size(); ++i) { // get closest gt bin and index
                     dist = sqrt(pow((gt[i].first - row), 2) + pow((gt[i].second - col), 2));
-                    if(min_dist != -1 and dist < min_dist) {
+                    if(min_index == -1 or dist < min_dist) {
                         min_dist = dist;
                         min_index = i;
                     }
@@ -73,6 +73,7 @@ class MappingAccuracy {
             // update associated_gts and new_detections. update accuracies
 
             int row, col;
+            std::pair<int, int> p;
 
             for(int bin : msg.data) {
                 --detect_acc_dr;
@@ -80,7 +81,7 @@ class MappingAccuracy {
                 col = bin%400;
 
                 int min_index = -1;
-                auto p = std::make_pair(row, col);
+                p = std::make_pair(row, col);
                 if(new_detections[p] != -1) {
                     min_index = new_detections[p];
                     new_detections[p] = -1;
@@ -120,6 +121,7 @@ class MappingAccuracy {
 
             XmlRpc::XmlRpcValue gt_locs;
             ros::param::get("gt_locs", gt_locs);
+            std::pair<int, int> p;
 
             for (size_t i = 0; i < gt_locs.size()/2; ++i) {
 
@@ -129,7 +131,7 @@ class MappingAccuracy {
                 int row = (int) ((y_xml-current_map.info.origin.position.y)/current_map.info.resolution);
                 int col = (int) ((x_xml-current_map.info.origin.position.x)/current_map.info.resolution);
 
-                std::pair<int, int> p(row, col);
+                p = std::make_pair(row, col);
 
                 gt.push_back(p);
                 associated_gts[p] = 0;
