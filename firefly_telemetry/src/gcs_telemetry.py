@@ -217,6 +217,10 @@ class GCSTelemetry:
             elif msg['mavpackettype'] == 'FIREFLY_BATTERY_STATUS':
                 temperature_status = msg['temp']
                 self.temperature_status_gcs.publish(temperature_status)
+            elif msg['mavpackettype'] == 'ALTITUDE':
+                #mobile app is relative altitude : https://developer.dji.com/onboard-sdk/documentation/guides/component-guide-altitude.html
+                altitude = msg['altitude_relative'] 
+                self.altitude_status_gcs.publish(altitude)
 
     def clear_map_callback(self, empty_msg):
         self.clear_map_send_flag = True

@@ -14,7 +14,8 @@ import time
 import serial
 import datetime
 from geometry_msgs.msg import Pose
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float32
+from sensor_msgs.msg import BatteryState, NavSatFix
 
 os.environ['MAVLINK20'] = '1'
 
@@ -39,6 +40,9 @@ class OnboardTelemetry:
         self.retransmit_timeout = 2.0
         self.map_payload_size = 60  # Bytes
         self.camera_health = None #camera health (type : Bool)
+        self.altitude = None
+        self.battery_charge = None
+        self.onboard_temperature = None
 
         self.pose_send_flag = False
 
@@ -46,6 +50,10 @@ class OnboardTelemetry:
         rospy.Subscriber("new_no_fire_bins", Int32MultiArray, self.new_no_fire_bins_callback)
         rospy.Subscriber("init_to_no_fire_with_pose_bins", Pose, self.init_to_no_fire_with_pose_callback)
         rospy.Subscriber("/seek_camera/isHealthy", Bool, self.camera_health_callback)
+        rospy.Subscriber("/dji_sdk/gps_position", NavSatFix , self.get_altitude_callback)
+        rospy.Subscriber("/dji_sdk/battery_state", BatteryState, self.battery_health_callback)
+        rospy.Subscriber("onboard_temperature", Float32, self.onboard_temperature_callback)
+
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
 
@@ -57,11 +65,17 @@ class OnboardTelemetry:
 
         self.last_heartbeat_time = None
         rospy.Timer(rospy.Duration(1), self.heartbeat_send_callback)
+        rospy.Timer(rospy.Duration(1), self.altitude_send_callback)
+        rospy.Timer(rospy.Duration(1), self.battery_status_send_callback)
+        rospy.Timer(rospy.Duration(1), self.temperature_send_callback)
 
         self.last_heartbeat_time = None
         self.connectedToGCS = False
         self.watchdog_timeout = 2.0
         self.heartbeat_send_flag = False
+        self.battery_status_send_flag = False
+        self.altitude_status_send_flag = False
+        self.temperature_status_send_flag = False
 
         self.recording_ros_bag = False
         try:
@@ -98,6 +112,15 @@ class OnboardTelemetry:
         else:
             self.camera_health = False
             rospy.logerr("Camera Disconnected")
+
+    def get_altitude_callback(self, data):
+        self.altitude = data.altitude
+    
+    def battery_health_callback(self, data):
+        self.battery_charge = data.percentage
+    
+    def onboard_temperature_callback(self, data):
+        self.onboard_temperature = data.data
 
     def pose_send_callback(self, event):
         self.pose_send_flag = True
@@ -232,6 +255,22 @@ class OnboardTelemetry:
                     rospy.logdebug("Sending Heartbeat")
                     self.heartbeat_send_flag = False
                     rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+              
+                #send altitude
+                if altitude_status_send_flag: 
+                    self.connection.mav.altitude_send(0, 0, 0, 0, self.altitude, 0, 0)
+                    altitude_status_send_flag = False
+
+                #send battery status
+                if battery_status_send_flag:
+                    self.connection.mav.firefly_battery_status_send(self.battery_charge)
+                    battery_status_send_flag = False
+                
+                #send temperature
+                if temperature_status_send_flag:
+                    self.connection.mav.firefly_onboard_temp_send(self.onboard_temperature)
+                    temperature_status_send_flag = False
+
             except serial.serialutil.SerialException as e:
                 self.connectedToOnboardRadio = False
                 rospy.logerr(e)
@@ -298,6 +337,14 @@ class OnboardTelemetry:
     def heartbeat_send_callback(self, event):
         self.heartbeat_send_flag = True
 
+    def altitude_send_callback(self, event):
+        self.altitude_status_send_flag = True
+    
+    def battery_status_send_callback(self, event):
+        self.battery_status_send_flag = True
+
+    def temperature_send_callback(self, event):
+        self.temperature_status_send_flag = True
 
 if __name__ == "__main__":
     rospy.init_node("onboard_telemetry", anonymous=True)

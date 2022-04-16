@@ -10,10 +10,13 @@ QLabel *camera_status = new QLabel;
 QLabel *temperature = new QLabel;
 QLabel *altitude = new QLabel;
 
+float base_station_altitude_;
+
 void battery_status_gcs_callback(std_msgs::Float32 msg);
 void temperature_status_gcs_callback(std_msgs::Float32 msg);
 void camera_health_gcs_callback(std_msgs::Bool msg);
 void altitude_status_gcs_callback(std_msgs::Float32 msg);
+void base_station_altitude_gcs_callback(sensor_msgs::NavSatFix msg);
 
 namespace rviz {
     FireflyPanel::FireflyPanel(QWidget *parent)
@@ -88,6 +91,7 @@ namespace rviz {
         battery_status_gcs_ = nh_.subscribe("/battery_status_telem", 10, battery_status_gcs_callback);
         temperature_status_gcs_ = nh_.subscribe("/temperature_status_telem", 10, temperature_status_gcs_callback);
         altitude_status_gcs_ = nh_.subscribe("/altitude_status_telem", 10, altitude_status_gcs_callback);
+        base_station_altitude_gcs_ = nh_.subscribe("/local_pos_ref", 10, base_station_altitude_gcs_callback);
     }
 
     void FireflyPanel::clear() {
@@ -144,9 +148,12 @@ void temperature_status_gcs_callback(std_msgs::Float32 msg) {
 
 void altitude_status_gcs_callback(std_msgs::Float32 msg) {
    if (msg.data)
-        altitude->setText(QString::number(msg.data));
+        altitude->setText(QString::number(msg.data - base_station_altitude_));
 }
 
+void base_station_altitude_gcs_callback(sensor_msgs::NavSatFix msg) {
+    base_station_altitude_ = msg.altitude;
+}
 // Tell pluginlib about this class.  Every class which should be
 // loadable by pluginlib::ClassLoader must have these two lines
 // compiled in its .cpp file, outside of any namespace scope.
