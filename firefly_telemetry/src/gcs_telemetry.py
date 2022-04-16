@@ -5,7 +5,7 @@ from std_msgs.msg import Int32MultiArray
 from pymavlink import mavutil
 import os
 import tf
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Bool, Float32
 import time
 from sensor_msgs.msg import NavSatFix
 import serial
@@ -20,6 +20,10 @@ class GCSTelemetry:
         self.new_no_fire_pub = rospy.Publisher("new_no_fire_bins", Int32MultiArray, queue_size=100)
         self.init_to_no_fire_with_pose_pub = rospy.Publisher("init_to_no_fire_with_pose_bins", Pose, queue_size=100)
         self.local_pos_ref_pub = rospy.Publisher("local_pos_ref", NavSatFix, queue_size=100)
+        self.camera_health_gcs_status = rospy.Publisher("camera_health_telem", Bool, queue_size=10)
+        self.battery_status_gcs = rospy.Publisher("battery_status_telem", Float32, queue_size=10)
+        self.altitude_status_gcs = rospy.Publisher("altitude_telem", Float32, queue_size=10)
+        self.temperature_status_gcs = rospy.Publisher("temperature_status_telem", Float32, queue_size=10)
 
         rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
         rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
@@ -200,7 +204,19 @@ class GCSTelemetry:
                 self.local_pos_ref_pub.publish(nav_msg)
                 rospy.set_param("local_pos_ref", [msg['latitude'], msg['longitude'], msg['altitude']])
             elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
+                #get camera status and publish to node
+                telemetry_status = msg['get_frame']
+                if telemetry_status == 1:
+                    self.camera_health_gcs_status.publish(False)
+                elif telemetry_status == 2:
+                    self.camera_health_gcs_status.publish(True)
                 self.last_heartbeat_time = time.time()
+            elif msg['mavpackettype'] == 'FIREFLY_ONBOARD_TEMP':
+                battery_status = msg['battery']
+                self.battery_status_gcs.publish(battery_status)
+            elif msg['mavpackettype'] == 'FIREFLY_BATTERY_STATUS':
+                temperature_status = msg['temp']
+                self.temperature_status_gcs.publish(temperature_status)
 
     def clear_map_callback(self, empty_msg):
         self.clear_map_send_flag = True
