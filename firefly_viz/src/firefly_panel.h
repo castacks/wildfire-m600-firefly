@@ -9,6 +9,8 @@
 #include <rviz/panel.h>
 #include <QPushButton>
 #include <std_msgs/Empty.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Float32.h>
 
 namespace rviz {
 
@@ -63,6 +65,10 @@ namespace rviz {
         ros::Publisher ros_record_;
         ros::Publisher stop_ros_record_;
         
+        ros::Subscriber camera_health_gcs_;
+        ros::Subscriber battery_status_gcs_;
+        ros::Subscriber temperature_status_gcs_;
+        ros::Subscriber altitude_status_gcs_;
 
         ros::NodeHandle nh_;
 
