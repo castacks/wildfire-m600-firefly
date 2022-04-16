@@ -10,8 +10,8 @@
 
 /*
 vector of pairs: gts
-map: indices of gt bins mapped to number of associations
-map: new detection index mapped to gt vector index
+map->gtfire:  ground truth locations of fires initialized from gps_hotspots.yaml
+map->gtmap: constantly maintained ground truth map for the expected values of each bin wrt gtfires. used to compute accuracy truth values.
 */
 
 
@@ -21,6 +21,10 @@ class MappingAccuracy {
     public:
         MappingAccuracy() {
 
+            assoc_acc_nr = 0;
+            assoc_acc_dr = 0;
+            detect_acc_nr = 0;
+            detect_acc_dr = 0;
             init_gts();
             map_sub = nh.subscribe("observed_firemap", 10, &MappingAccuracy::map_callback, this);
             new_fire_sub = nh.subscribe("new_fire_bins", 1000, &MappingAccuracy::new_fire_bins_callback, this);
@@ -35,30 +39,45 @@ class MappingAccuracy {
         }
 
         void new_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
-            // calculate euclidean distance. update associated_gts and new_detections. update accuracies
+            // calculate euclidean distance. update associated_gts and gtmap. update accuracies
             int row, col;
 
             for(int bin : msg.data) {
-                ++detect_acc_dr;
                 row = bin/400;
                 col = bin%400;
                 int min_index = -1;
                 float min_dist = -1, dist;
-                for(int i = 0; i < gt.size(); ++i) { // get closest gt bin and index
-                    dist = sqrt(pow((gt[i].first - row), 2) + pow((gt[i].second - col), 2));
-                    if(min_index == -1 or dist < min_dist) {
-                        min_dist = dist;
-                        min_index = i;
+                if(gtmap.find(std::make_pair(row, col)) == gtmap.end())
+                {
+
+                    ++detect_acc_dr;
+                    for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
+                        dist = sqrt(pow((gtfire[i].first - row), 2) + pow((gtfire[i].second - col), 2));
+                        if(min_index == -1 or dist < min_dist) {
+                            min_dist = dist;
+                            min_index = i;
+                        }
+                    }
+                    if(min_dist <= 5) {
+                        // gtmap[std::make_pair(row,col)] = 1;
+                        ++detect_acc_nr;
+                        if(associated_gts[gtfire[min_index]] == 0) ++assoc_acc_nr;
+                        ++associated_gts[gtfire[min_index]];
+                        gtmap[std::make_pair(row, col)] = min_index;
+                    }
+                    else {
+                        // gtmap[std::make_pair(row,col)] = 0;
+                        gtmap[std::make_pair(row, col)] = -1;
                     }
                 }
-                if(min_dist <= 5) {
-                    ++detect_acc_nr;
-                    if(associated_gts[gt[min_index]] == 0) ++assoc_acc_nr;
-                    ++associated_gts[gt[min_index]];
-                    new_detections[std::make_pair(row, col)] = min_index;
-                }
-                else {
-                    new_detections[std::make_pair(row, col)] = -1;
+                else{
+                    if(gtmap[std::make_pair(row,col)] != -1)
+                    {
+                        ++detect_acc_nr;
+                    }
+                    else{
+                        --detect_acc_nr;
+                    }
                 }
 
             }
@@ -70,24 +89,47 @@ class MappingAccuracy {
         }
 
         void new_no_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
-            // update associated_gts and new_detections. update accuracies
+            // update associated_gts and gtmap. update accuracies
 
             int row, col;
             std::pair<int, int> p;
 
             for(int bin : msg.data) {
-                --detect_acc_dr;
                 row = bin/400;
                 col = bin%400;
 
                 int min_index = -1;
+                float min_dist = -1, dist;
                 p = std::make_pair(row, col);
-                if(new_detections[p] != -1) {
-                    min_index = new_detections[p];
-                    new_detections[p] = -1;
-                    --detect_acc_nr;
-                    if(associated_gts[gt[min_index]] == 1) --assoc_acc_nr;
-                    --associated_gts[gt[min_index]];
+                if(gtmap.find(p) == gtmap.end())
+                {
+                    for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
+                        dist = sqrt(pow((gtfire[i].first - row), 2) + pow((gtfire[i].second - col), 2));
+                        if(min_index == -1 or dist < min_dist) {
+                            min_dist = dist;
+                            min_index = i;
+                        }
+                    }
+                    if(min_dist <= 5) {
+                        gtmap[std::make_pair(row, col)] = min_index;
+                    }
+                    else {
+                        ++detect_acc_nr;
+                        gtmap[std::make_pair(row, col)] = -1;
+                    }
+                }
+                else
+                {
+
+                    if(gtmap[p] != -1) {
+                        min_index = gtmap[p];
+                        --detect_acc_nr;
+                        if(associated_gts[gtfire[min_index]] == 1) --assoc_acc_nr;
+                        --associated_gts[gtfire[min_index]];
+                    }
+                    else{
+                        ++detect_acc_nr;
+                    }
                 }
             }
             // update accuracies
@@ -106,9 +148,9 @@ class MappingAccuracy {
         ros::Subscriber new_no_fire_sub;
         ros::Publisher detect_acc_pub;
         ros::Publisher assoc_acc_pub;
-        std::vector<std::pair<int, int> > gt;
+        std::vector<std::pair<int, int> > gtfire;
         std::map<std::pair<int, int>, int> associated_gts;
-        std::map<std::pair<int, int>, int> new_detections;
+        std::map<std::pair<int, int>, int> gtmap;
         float assoc_acc_nr = 0;
         float assoc_acc_dr = 0;
         float detect_acc_nr = 0;
@@ -133,10 +175,10 @@ class MappingAccuracy {
 
                 p = std::make_pair(row, col);
 
-                gt.push_back(p);
+                gtfire.push_back(p);
                 associated_gts[p] = 0;
             }
-            assoc_acc_dr = gt.size();
+            assoc_acc_dr = gtfire.size();
         }
 
 
