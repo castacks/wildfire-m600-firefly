@@ -32,11 +32,10 @@ class GPS2LocalENU:
         self.y = None
         self.z = None
 
-
         if rospy.has_param('~lat0rtk') and rospy.has_param('~lon0rtk'):
             self.use_rtk_offset = True
-            self.lat0rtk = rospy.get_param('~lat0rtk', 1000)
-            self.lon0rtk = rospy.get_param('~lon0rtk', 1000)
+            self.lat0rtk = rospy.get_param('~lat0rtk')
+            self.lon0rtk = rospy.get_param('~lon0rtk')
         else:
             self.use_rtk_offset = False
             self.lat0rtk = None
@@ -61,20 +60,20 @@ class GPS2LocalENU:
         self.lat0 = self.lat
         self.lon0 = self.lon
         self.h0 = self.h
-        self.publish_tf()
 
         response = SetLocalPosRefResponse()
-        if self.use_rtk_offset:
+        if self.use_rtk_offset and (self.lat0rtk is not None) and (self.lon0rtk is not None):
             response.latitude = self.lat0rtk
             response.longitude = self.lon0rtk
             response.altitude = self.h0
-            self.x_offset, self.y_offset, _ = pm.enu.geodetic2enu(self.lat0, self.lon0, self.h0, self.lat0rtk, self.lat0rtk, self.h0)
-            rospy.loginfo("X Offset: %d, Y Offset: " % (self.x_offset, self.y_offset))
+            self.x_offset, self.y_offset, _ = pm.enu.geodetic2enu(self.lat0, self.lon0, self.h0, self.lat0rtk, self.lon0rtk, self.h0)
+            rospy.logerr("X Offset: %d, Y Offset: %d" % (self.x_offset, self.y_offset))
         else:
             response.latitude = self.lat0
             response.longitude = self.lon0
-            response.altitude = self.h0           
+            response.altitude = self.h0  
 
+        self.publish_tf() 
         return response
 
     def publish_tf(self):
@@ -90,7 +89,7 @@ class GPS2LocalENU:
         # TODO: Check that both GPS and attitude time stamps are recent
         # TODO: Change TF time stamp to be latest between GPS and attitude time stamps
         self.x, self.y, self.z = pm.enu.geodetic2enu(self.lat, self.lon, self.h, self.lat0, self.lon0, self.h0)
-        if self.use_rtk_offset:
+        if self.use_rtk_offset and (self.x_offset is not None) and (self.y_offset is not None):
             self.x += self.x_offset
             self.y += self.y_offset
         self.br.sendTransform((self.x, self.y, self.z),
