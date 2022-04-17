@@ -6,8 +6,8 @@
   <arg name="open_flir" default="false"/>
   <arg name="continuous" default="true"/>
   <arg name="use_rtk_offset" default="false"/>
-  <arg name="lat0rtk" default="42"/>
-  <arg name="lon0rtk" default="-70"/>
+  <arg name="lat0rtk" default="40.441751"/>
+  <arg name="lon0rtk" default="-79.9441072"/>
 
 
   <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen"/>
