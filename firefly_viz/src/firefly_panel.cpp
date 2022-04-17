@@ -67,7 +67,7 @@ namespace rviz {
         layout->addWidget(temperature_status_text, 4, 0);
         layout->addWidget(temperature, 4, 1);
         layout->addWidget(altitude_status_text, 5, 0);
-        layout->addWidget(altitude, 4, 1);
+        layout->addWidget(altitude, 5, 1);
         
 
         setLayout(layout);
@@ -90,7 +90,7 @@ namespace rviz {
         camera_health_gcs_ = nh_.subscribe("/camera_health_telem", 10, camera_health_gcs_callback);
         battery_status_gcs_ = nh_.subscribe("/battery_status_telem", 10, battery_status_gcs_callback);
         temperature_status_gcs_ = nh_.subscribe("/temperature_status_telem", 10, temperature_status_gcs_callback);
-        altitude_status_gcs_ = nh_.subscribe("/altitude_status_telem", 10, altitude_status_gcs_callback);
+        altitude_status_gcs_ = nh_.subscribe("/altitude_telem", 10, altitude_status_gcs_callback);
         base_station_altitude_gcs_ = nh_.subscribe("/local_pos_ref", 10, base_station_altitude_gcs_callback);
     }
 
@@ -135,6 +135,7 @@ void battery_status_gcs_callback(std_msgs::Float32 msg) {
 }
 
 void camera_health_gcs_callback(std_msgs::Bool msg) {
+    std::cout<<"IN CAMERA HEALTH"<<std::endl;
     if (msg.data)
         camera_status->setText("Working");
     else
@@ -142,11 +143,13 @@ void camera_health_gcs_callback(std_msgs::Bool msg) {
 }
 
 void temperature_status_gcs_callback(std_msgs::Float32 msg) {
+    std::cout<<"IN TEMPERATURE"<<std::endl;
    if (msg.data)
         temperature->setText(QString::number(msg.data));
 }
 
 void altitude_status_gcs_callback(std_msgs::Float32 msg) {
+    std::cout<<"IN ALTITUDE"<<std::endl;
    if (msg.data)
         altitude->setText(QString::number(msg.data - base_station_altitude_));
 }
@@ -160,8 +163,3 @@ void base_station_altitude_gcs_callback(sensor_msgs::NavSatFix msg) {
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(rviz::FireflyPanel,rviz::Panel )
 // END_TUTORIAL
-
-
-//1. change gcs telem to include battery and temperature
-//2. MAVLINK msg type update
-//3. update onboard_telem.py
