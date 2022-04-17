@@ -32,6 +32,19 @@ class GPS2LocalENU:
         self.y = None
         self.z = None
 
+
+        if rospy.has_param('~lat0rtk') and rospy.has_param('~lon0rtk'):
+            self.use_rtk_offset = True
+            self.lat0rtk = rospy.get_param('~lat0rtk', 1000)
+            self.lon0rtk = rospy.get_param('~lon0rtk', 1000)
+        else:
+            self.use_rtk_offset = False
+            self.lat0rtk = None
+            self.lon0rtk = None
+        self.x_offset = None
+        self.y_offset = None
+
+
     def attitude_callback(self, data):
         self.attitude = data.quaternion
         self.attitude_stamp = data.header.stamp
@@ -51,9 +64,16 @@ class GPS2LocalENU:
         self.publish_tf()
 
         response = SetLocalPosRefResponse()
-        response.latitude = self.lat0
-        response.longitude = self.lon0
-        response.altitude = self.h0
+        if self.use_rtk_offset:
+            response.latitude = self.lat0rtk
+            response.longitude = self.lon0rtk
+            response.altitude = self.h0
+            self.x_offset, self.y_offset, _ = pm.enu.geodetic2enu(self.lat0, self.lon0, self.h0, self.lat0rtk, self.lat0rtk, self.h0)
+            rospy.loginfo("X Offset: %d, Y Offset: " % (self.x_offset, self.y_offset))
+        else:
+            response.latitude = self.lat0
+            response.longitude = self.lon0
+            response.altitude = self.h0           
 
         return response
 
@@ -70,6 +90,9 @@ class GPS2LocalENU:
         # TODO: Check that both GPS and attitude time stamps are recent
         # TODO: Change TF time stamp to be latest between GPS and attitude time stamps
         self.x, self.y, self.z = pm.enu.geodetic2enu(self.lat, self.lon, self.h, self.lat0, self.lon0, self.h0)
+        if self.use_rtk_offset:
+            self.x += self.x_offset
+            self.y += self.y_offset
         self.br.sendTransform((self.x, self.y, self.z),
                               (self.attitude.x, self.attitude.y, self.attitude.z, self.attitude.w),
                               rospy.Time.now(),
