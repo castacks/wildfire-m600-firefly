@@ -261,17 +261,17 @@ class OnboardTelemetry:
                 if self.altitude_status_send_flag: 
                     self.connection.mav.firefly_altitude_send(float(self.altitude))
                     altitude_status_send_flag = False
-
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 4) / self.bytes_per_sec_send_rate)
                 #send battery status
                 if self.battery_status_send_flag:
                     self.connection.mav.firefly_battery_status_send(self.battery_charge)
                     battery_status_send_flag = False
-                
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 4) / self.bytes_per_sec_send_rate)
                 #send temperature
                 if self.temperature_status_send_flag:
                     self.connection.mav.firefly_onboard_temp_send(self.onboard_temperature)
                     temperature_status_send_flag = False
-
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 4) / self.bytes_per_sec_send_rate)
             except serial.serialutil.SerialException as e:
                 self.connectedToOnboardRadio = False
                 rospy.logerr(e)
