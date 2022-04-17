@@ -108,13 +108,10 @@ class OnboardTelemetry:
     def camera_health_callback(self, data):
         if (data.data):
             self.camera_health = True
-            rospy.loginfo("Camera Connected")
         else:
             self.camera_health = False
-            rospy.logerr("Camera Disconnected")
 
     def get_altitude_callback(self, data):
-        print("ALTITUDE: ", data.altitude, type(data.altitude))
         self.altitude = data.altitude
     
     def battery_health_callback(self, data):
