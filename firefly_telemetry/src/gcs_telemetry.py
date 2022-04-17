@@ -55,7 +55,7 @@ class GCSTelemetry:
         self.watchdog_timeout = 2.0
 
         try:
-            self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
+            self.connection = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600, dialect='firefly')
             self.connectedToGCSRadio = True
             rospy.loginfo("Opened connection to GCS radio")
         except serial.serialutil.SerialException:
@@ -205,21 +205,21 @@ class GCSTelemetry:
                 rospy.set_param("local_pos_ref", [msg['latitude'], msg['longitude'], msg['altitude']])
             elif msg['mavpackettype'] == 'FIREFLY_HEARTBEAT':
                 #get camera status and publish to node
-                telemetry_status = msg['get_frame']
+                telemetry_status = msg['empty']
                 if telemetry_status == 1:
                     self.camera_health_gcs_status.publish(False)
                 elif telemetry_status == 2:
                     self.camera_health_gcs_status.publish(True)
                 self.last_heartbeat_time = time.time()
-            elif msg['mavpackettype'] == 'FIREFLY_ONBOARD_TEMP':
+            elif msg['mavpackettype'] == 'FIREFLY_BATTERY_STATUS':
                 battery_status = msg['battery']
                 self.battery_status_gcs.publish(battery_status)
-            elif msg['mavpackettype'] == 'FIREFLY_BATTERY_STATUS':
+            elif msg['mavpackettype'] == 'FIREFLY_ONBOARD_TEMP':
                 temperature_status = msg['temp']
                 self.temperature_status_gcs.publish(temperature_status)
-            elif msg['mavpackettype'] == 'ALTITUDE':
+            elif msg['mavpackettype'] == 'FIREFLY_ALTITUDE':
                 #mobile app is relative altitude : https://developer.dji.com/onboard-sdk/documentation/guides/component-guide-altitude.html
-                altitude = msg['altitude_relative'] 
+                altitude = msg['alt'] 
                 self.altitude_status_gcs.publish(altitude)
 
     def clear_map_callback(self, empty_msg):
