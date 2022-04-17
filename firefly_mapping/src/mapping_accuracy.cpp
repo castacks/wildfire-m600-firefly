@@ -21,10 +21,10 @@ class MappingAccuracy {
     public:
         MappingAccuracy() {
 
-            assoc_acc_nr = 0;
-            assoc_acc_dr = 0;
-            detect_acc_nr = 0;
-            detect_acc_dr = 0;
+            // assoc_acc_nr = 0;
+            // assoc_acc_dr = 0;
+            // detect_acc_nr = 0;
+            // detect_acc_dr = 0;
             init_gts();
             map_sub = nh.subscribe("observed_firemap", 10, &MappingAccuracy::map_callback, this);
             new_fire_sub = nh.subscribe("new_fire_bins", 1000, &MappingAccuracy::new_fire_bins_callback, this);
@@ -36,6 +36,8 @@ class MappingAccuracy {
 
         void map_callback(const nav_msgs::OccupancyGrid& map) {
             current_map = map;
+                // std::cout<<" map x map y res "<<map.info.origin.position.x<<"  "<<map.info.origin.position.y<<"  "<<map.info.resolution<<std::endl;
+
         }
 
         void new_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
@@ -47,17 +49,19 @@ class MappingAccuracy {
                 col = bin%400;
                 int min_index = -1;
                 float min_dist = -1, dist;
+                for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
+                    dist = sqrt(pow((gtfire[i].first - row), 2) + pow((gtfire[i].second - col), 2));
+                    std::cout<<"ddistance computed  "<< dist<<std::endl;
+                    if(min_index == -1 or dist < min_dist) {
+                        min_dist = dist;
+                        min_index = i;
+                    }
+                }
                 if(gtmap.find(std::make_pair(row, col)) == gtmap.end())
                 {
 
+                        std::cout<<"gt increment initialized " << associated_gts[gtfire[min_index]] << std::endl;
                     ++detect_acc_dr;
-                    for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
-                        dist = sqrt(pow((gtfire[i].first - row), 2) + pow((gtfire[i].second - col), 2));
-                        if(min_index == -1 or dist < min_dist) {
-                            min_dist = dist;
-                            min_index = i;
-                        }
-                    }
                     if(min_dist <= 5) {
                         // gtmap[std::make_pair(row,col)] = 1;
                         ++detect_acc_nr;
@@ -71,9 +75,12 @@ class MappingAccuracy {
                     }
                 }
                 else{
+                        std::cout<<"gt increment " << associated_gts[gtfire[min_index]] << std::endl;
                     if(gtmap[std::make_pair(row,col)] != -1)
                     {
                         ++detect_acc_nr;
+                        if(associated_gts[gtfire[min_index]] == 0) ++assoc_acc_nr;
+                        ++associated_gts[gtfire[min_index]];
                     }
                     else{
                         --detect_acc_nr;
@@ -82,7 +89,9 @@ class MappingAccuracy {
 
             }
             // update accuracies
+            // detect_acc.data = assoc_acc_nr;
             detect_acc.data = detect_acc_nr/detect_acc_dr;
+            // assoc_acc.data = assoc_acc_dr;
             assoc_acc.data = assoc_acc_nr/assoc_acc_dr;
             detect_acc_pub.publish(detect_acc);
             assoc_acc_pub.publish(assoc_acc);
@@ -103,8 +112,10 @@ class MappingAccuracy {
                 p = std::make_pair(row, col);
                 if(gtmap.find(p) == gtmap.end())
                 {
+                    ++detect_acc_dr;
                     for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
                         dist = sqrt(pow((gtfire[i].first - row), 2) + pow((gtfire[i].second - col), 2));
+                        // std::cout<<"ddistance computed  no fire"<< dist<<std::endl;
                         if(min_index == -1 or dist < min_dist) {
                             min_dist = dist;
                             min_index = i;
@@ -121,6 +132,7 @@ class MappingAccuracy {
                 else
                 {
 
+                        std::cout<<"gt decrement"<< associated_gts[gtfire[min_index]] <<std::endl;
                     if(gtmap[p] != -1) {
                         min_index = gtmap[p];
                         --detect_acc_nr;
@@ -134,7 +146,9 @@ class MappingAccuracy {
             }
             // update accuracies
             detect_acc.data = detect_acc_nr/detect_acc_dr;
+            // detect_acc.data = assoc_acc_nr;
             assoc_acc.data = assoc_acc_nr/assoc_acc_dr;
+            // assoc_acc.data = assoc_acc_dr;
             detect_acc_pub.publish(detect_acc);
             assoc_acc_pub.publish(assoc_acc);
         }
@@ -170,8 +184,13 @@ class MappingAccuracy {
                 double x_xml = gt_locs[2*i];
                 double y_xml = gt_locs[2*i+1];
 
-                int row = (int) ((y_xml-current_map.info.origin.position.y)/current_map.info.resolution);
-                int col = (int) ((x_xml-current_map.info.origin.position.x)/current_map.info.resolution);
+                // int row = (int) ((y_xml-current_map.info.origin.position.y)/current_map.info.resolution);
+                int row = (int) ((y_xml + 100)/0.5);
+                // int col = (int) ((x_xml-current_map.info.origin.position.x)/current_map.info.resolution);
+                int col = (int) ((x_xml + 100)/0.5);
+
+                // std::cout<<" row col xxml yml   "<<row<< " "<<col<<"  "<<x_xml<<" "<<y_xml<<std::endl;
+
 
                 p = std::make_pair(row, col);
 
