@@ -167,9 +167,7 @@ class MappingAccuracy {
                 double x_xml = gt_locs[2*i];
                 double y_xml = gt_locs[2*i+1];
 
-                // int row = (int) ((y_xml-current_map.info.origin.position.y)/current_map.info.resolution);
                 int row = (int) ((y_xml + 100)/0.5);
-                // int col = (int) ((x_xml-current_map.info.origin.position.x)/current_map.info.resolution);
                 int col = (int) ((x_xml + 100)/0.5);
 
 
