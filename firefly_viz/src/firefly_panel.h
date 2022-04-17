@@ -71,6 +71,8 @@ namespace rviz {
         ros::Subscriber temperature_status_gcs_;
         ros::Subscriber altitude_status_gcs_;
         ros::Subscriber base_station_altitude_gcs_;
+        ros::Subscriber detection_accuracy_gcs;
+        ros::Subscriber association_accuracy_gcs;
 
         ros::NodeHandle nh_;
 
