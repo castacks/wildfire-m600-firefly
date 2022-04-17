@@ -40,9 +40,9 @@ class OnboardTelemetry:
         self.retransmit_timeout = 2.0
         self.map_payload_size = 60  # Bytes
         self.camera_health = None #camera health (type : Bool)
-        self.altitude = None
-        self.battery_charge = None
-        self.onboard_temperature = None
+        self.altitude = 0
+        self.battery_charge = 0
+        self.onboard_temperature = 0
 
         self.pose_send_flag = False
 
@@ -114,6 +114,7 @@ class OnboardTelemetry:
             rospy.logerr("Camera Disconnected")
 
     def get_altitude_callback(self, data):
+        print("ALTITUDE: ", data.altitude, type(data.altitude))
         self.altitude = data.altitude
     
     def battery_health_callback(self, data):
@@ -257,17 +258,17 @@ class OnboardTelemetry:
                     rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
               
                 #send altitude
-                if altitude_status_send_flag: 
-                    self.connection.mav.altitude_send(0, 0, 0, 0, self.altitude, 0, 0)
+                if self.altitude_status_send_flag: 
+                    self.connection.mav.firefly_altitude_send(float(self.altitude))
                     altitude_status_send_flag = False
 
                 #send battery status
-                if battery_status_send_flag:
+                if self.battery_status_send_flag:
                     self.connection.mav.firefly_battery_status_send(self.battery_charge)
                     battery_status_send_flag = False
                 
                 #send temperature
-                if temperature_status_send_flag:
+                if self.temperature_status_send_flag:
                     self.connection.mav.firefly_onboard_temp_send(self.onboard_temperature)
                     temperature_status_send_flag = False
 
