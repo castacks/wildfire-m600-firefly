@@ -1,0 +1,6 @@
+map_frame_id: "world"
+map_width: 400
+map_height: 400
+map_res: 0.5
+map_origin_x: -100
+map_origin_y: -100

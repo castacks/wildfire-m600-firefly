@@ -162,13 +162,20 @@ class MappingAccuracy {
             ros::param::get("gt_locs", gt_locs);
             std::pair<int, int> p;
 
+            int map_x, map_y;
+            float map_res;
+
+            ros::param::get("map_origin_x", map_x);
+            ros::param::get("map_origin_y", map_y);
+            ros::param::get("map_res", map_res);
+
             for (size_t i = 0; i < gt_locs.size()/2; ++i) {
 
                 double x_xml = gt_locs[2*i];
                 double y_xml = gt_locs[2*i+1];
 
-                int row = (int) ((y_xml + 100)/0.5);
-                int col = (int) ((x_xml + 100)/0.5);
+                int row = (int) ((y_xml - map_y)/map_res);
+                int col = (int) ((x_xml - map_x)/map_res);
 
 
 

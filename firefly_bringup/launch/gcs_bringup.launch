@@ -2,6 +2,8 @@
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find firefly_bringup)/config/rosconsole.config"/>
   <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find firefly_bringup)/config/python_logging.conf"/>
 
+  <rosparam command="load" file="$(find firefly_mapping)/config/map_params.yaml"/>
+
   <node pkg="firefly_mapping" type="gcs_mapping" name="gcs_mapping" output="screen"/>
   <node pkg="firefly_telemetry" type="gcs_telemetry.py" name="gcs_telemetry" output="screen"/>
   <node pkg="firefly_mapping" type="gps_to_local.py" name="gps_to_local" output="screen"/>

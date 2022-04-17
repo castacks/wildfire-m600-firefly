@@ -19,13 +19,23 @@ public:
         map_pub_timer = nh.createTimer(ros::Duration(1.0), &GCSMapping::publish_map_callback, this);
         clear_sub = nh.subscribe("clear_map", 1000, &GCSMapping::clear, this);
 
-        outputMap.header.frame_id = "world";
-        outputMap.info.resolution = 0.5;
-        outputMap.info.width = 400; //Number of Cells
-        outputMap.info.height = 400; //Number of Cells
-        outputMap.info.origin.position.x = -100; //In meters
-        outputMap.info.origin.position.y = -100; //In meters
-        outputMap.data = std::vector<std::int8_t> (400*400, 50); // Initialize map to 50 percent certainty
+        int w, h;
+        ros::param::get("map_frame_id", outputMap.header.frame_id);
+        ros::param::get("map_width", w);
+        ros::param::get("map_height", h);
+        ros::param::get("map_res", outputMap.info.resolution);
+        ros::param::get("map_origin_x", outputMap.info.origin.position.x);
+        ros::param::get("map_origin_y", outputMap.info.origin.position.y);
+
+        // outputMap.header.frame_id = "world";
+        // outputMap.info.resolution = 0.5;
+        outputMap.info.width = w; //Number of Cells
+        // outputMap.info.width = 400; //Number of Cells
+        outputMap.info.height = h; //Number of Cells
+        // outputMap.info.height = 400; //Number of Cells
+        // outputMap.info.origin.position.x = -100; //In meters
+        // outputMap.info.origin.position.y = -100; //In meters
+        outputMap.data = std::vector<std::int8_t> (outputMap.info.width*outputMap.info.height, 50); // Initialize map to 50 percent certainty
 
         K_inv << 1.0/fx,  0.0,    -cx/fx,
                 0.0,     1.0/fy, -cy/fy,
