@@ -55,7 +55,7 @@ class GCSTelemetry:
         self.watchdog_timeout = 2.0
 
         try:
-            self.connection = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600, dialect='firefly')
+            self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
             self.connectedToGCSRadio = True
             rospy.loginfo("Opened connection to GCS radio")
         except serial.serialutil.SerialException:
