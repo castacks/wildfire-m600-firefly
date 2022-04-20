@@ -7,4 +7,6 @@
   <node pkg="firefly_mapping" type="gps_to_local.py" name="gps_to_local" output="screen"/>
   <node pkg="firefly_mapping" type="mapping_accuracy" name="mapping_accuracy" output="screen"/>
   <node type="rviz" name="rviz" pkg="rviz" args="-d $(find firefly_mapping)/rviz/gcs.rviz" />
+  <node type="rqt_console" name="rqt_console" pkg="rqt_console"/>
+
 </launch>

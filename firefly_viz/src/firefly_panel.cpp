@@ -52,7 +52,7 @@ namespace rviz {
         temperature->setText("-9999");
         altitude->setText("-9999");
         detection_accuracy->setText("-9999");
-        association_accuracy->setText("-9999");
+        association_accuracy->setText("0");
 
         //Define values for fields
         battery_status_text->setText("Battery Level : ");

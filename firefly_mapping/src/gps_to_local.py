@@ -42,7 +42,9 @@ if __name__ == "__main__":
     output.info.origin.position.y = -100
     output.data = [0] * (400 * 400)
 
-    for x, y in xys:
+    for i in range(len(xys)//2):
+        x = xys[2*i]
+        y = xys[2*i+1]
 
         gtRow = int((y-minY)/resolution)
         gtCol = int((x-minX)/resolution)
