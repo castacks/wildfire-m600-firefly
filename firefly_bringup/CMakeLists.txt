@@ -157,6 +157,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/gps_to_local_enu.py
+  scripts/pcb_interface.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

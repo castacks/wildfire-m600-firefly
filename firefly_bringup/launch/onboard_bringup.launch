@@ -17,16 +17,19 @@
     <param name="continuous" value="$(arg continuous)"/>
   </node>  
 
-  <include file="$(find dji_sdk)/launch/sdk.launch" unless="$(arg replay_mode)"/>
-  <include file="$(find flir_ros_sync)/launch/example/flir_ros.launch" if="$(arg open_flir)"/>
-  <include file="$(find seek_driver)/launch/seek_driver.launch" unless="$(arg replay_mode)"/>
+  <include file="$(find dji_sdk)/launch/sdk.launch" unless="$(arg replay_mode)" output="screen"/>
+  <include file="$(find flir_ros_sync)/launch/example/flir_ros.launch" if="$(arg open_flir)" output="screen"/>
+  <include file="$(find seek_driver)/launch/seek_driver.launch" unless="$(arg replay_mode)" output="screen"/>
 
   <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.0543145 0.041098 -0.27658746 -1.5707963 0 3.14159 base_link thermal/camera_link 100"/>
 
-  <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu" if="$(arg use_rtk_offset)">
+  <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu" if="$(arg use_rtk_offset)" output="screen">
     <param name="lat0rtk" value="$(arg lat0rtk)"/>
     <param name="lon0rtk" value="$(arg lon0rtk)"/>
   </node>
 
-  <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu" unless="$(arg use_rtk_offset)"/>
+  <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu" unless="$(arg use_rtk_offset)" output="screen"/>
+
+  <node pkg="firefly_bringup" type="pcb_interface.py" name="pcb_interface" output="screen"/>
+
 </launch>
