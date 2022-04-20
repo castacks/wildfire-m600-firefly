@@ -6,8 +6,8 @@
   <arg name="open_flir" default="false"/>
   <arg name="continuous" default="true"/>
   <arg name="use_rtk_offset" default="false"/>
-  <arg name="lat0rtk" default="40.441751"/>
-  <arg name="lon0rtk" default="-79.9441072"/>
+  <arg name="lat0rtk" default="40.479537"/>
+  <arg name="lon0rtk" default="-79.8946071"/>
   <arg name="threshold" default="50"/>
 
 
