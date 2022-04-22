@@ -39,16 +39,18 @@ add_executable(waypoint_mission src/waypoint_mission.cpp)
 
 add_dependencies(waypoint_mission ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(waypoint_mission
-  ${catkin_LIBRARIES} ${DJIOSDK_LIBRARIES}
-)
+target_link_libraries(waypoint_mission ${catkin_LIBRARIES} ${DJIOSDK_LIBRARIES})
 
 add_executable(takeoff_land_test src/takeoff_land_test.cpp)
 
 add_dependencies(takeoff_land_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(takeoff_land_test
-        ${catkin_LIBRARIES} ${DJIOSDK_LIBRARIES}
-        )
+target_link_libraries(takeoff_land_test ${catkin_LIBRARIES} ${DJIOSDK_LIBRARIES})
+
+add_executable(simple_waypoint_test src/simple_waypoint_test.cpp)
+
+add_dependencies(simple_waypoint_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(simple_waypoint_test ${catkin_LIBRARIES} ${DJIOSDK_LIBRARIES})
 
 

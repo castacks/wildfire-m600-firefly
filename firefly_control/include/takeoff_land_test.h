@@ -12,12 +12,6 @@
 #include <dji_sdk/Activation.h>
 #include <dji_sdk/DroneTaskControl.h>
 #include <dji_sdk/SDKControlAuthority.h>
-#include <dji_sdk/MissionWpAction.h>
-#include <dji_sdk/MissionHpAction.h>
-#include <dji_sdk/MissionWpUpload.h>
-#include <dji_sdk/MissionHpUpload.h>
-#include <dji_sdk/MissionHpUpdateRadius.h>
-#include <dji_sdk/MissionHpUpdateYawRate.h>
 #include <dji_sdk/dji_sdk.h>
 
 // SDK core library
@@ -48,31 +42,6 @@ typedef struct ServiceAck
     {
     }
 } ServiceAck;
-
-void setWaypointInitDefaults(dji_sdk::MissionWaypointTask& waypointTask);
-
-std::vector<DJI::OSDK::WayPointSettings> createWaypoints(
-        int numWaypoints, DJI::OSDK::float64_t distanceIncrement,
-        DJI::OSDK::float32_t start_alt);
-
-std::vector<DJI::OSDK::WayPointSettings> generateWaypointsPolygon(
-        DJI::OSDK::WayPointSettings* start_data, DJI::OSDK::float64_t increment,
-        int num_wp);
-
-void uploadWaypoints(std::vector<DJI::OSDK::WayPointSettings>& wp_list,
-                     int                                       responseTimeout,
-                     dji_sdk::MissionWaypointTask&             waypointTask);
-
-bool runHotpointMission(int initialRadius, int responseTimeout);
-
-void setHotpointInitDefault(dji_sdk::MissionHotpointTask& hotpointTask);
-
-ServiceAck initWaypointMission(dji_sdk::MissionWaypointTask& waypointTask);
-
-ServiceAck initHotpointMission(dji_sdk::MissionHotpointTask& hotpointTask);
-
-ServiceAck missionAction(DJI::OSDK::DJI_MISSION_TYPE type,
-                         DJI::OSDK::MISSION_ACTION   action);
 
 ServiceAck activate();
 
