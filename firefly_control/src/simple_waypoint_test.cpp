@@ -2,9 +2,10 @@
 
 using namespace DJI::OSDK;
 
-std::vector<double> wp_lats {40.44188875438626, 40.44207944028408, 40.44195903879702, 40.44176963489253, 40.44188875438626};
-std::vector<double> wp_lons {-79.94408524752538, -79.94494277972677, -79.94498558213226, -79.94413017051346, -79.94408524752538};
+std::vector<double> wp_lats {40.44176963489253, 40.44188875438626, 40.44207944028408, 40.44195903879702, 40.44176963489253};
+std::vector<double> wp_lons {-79.94413017051346, -79.94408524752538, -79.94494277972677, -79.94498558213226, -79.94413017051346};
 std::vector<double> wp_alts {15, 15, 15, 15, 15};
+bool exec_flag = false;
 
 // global variables
 ros::ServiceClient waypoint_upload_service;
@@ -14,9 +15,14 @@ ros::ServiceClient sdk_ctrl_authority_service;
 ros::ServiceClient drone_task_service;
 sensor_msgs::NavSatFix gps_pos;
 ros::Subscriber gps_pos_subscriber;
+ros::Subscriber exec_subscriber;
 
 void gpsPosCallback(const sensor_msgs::NavSatFix::ConstPtr &msg) {
     gps_pos = *msg;
+}
+
+void execCallback(const std_msgs::Empty::ConstPtr &msg) {
+    exec_flag = true;
 }
 
 bool runWaypointMission(uint8_t numWaypoints, int responseTimeout) {
@@ -311,6 +317,9 @@ int main(int argc, char **argv) {
     gps_pos_subscriber = nh.subscribe<sensor_msgs::NavSatFix>(
             "dji_sdk/gps_position", 10, &gpsPosCallback);
 
+    exec_subscriber = nh.subscribe<std_msgs::Empty>(
+            "execute_auto_flight", 1, &execCallback);
+
     // Activate
     if (activate().result) {
         ROS_INFO("Activated successfully");
@@ -319,31 +328,37 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    // Obtain Control Authority
-    ServiceAck ack = obtainCtrlAuthority();
-    if (ack.result) {
-        ROS_INFO("Obtain SDK control Authority successfully");
-    } else {
-        if (ack.ack_data == 3 && ack.cmd_set == 1 && ack.cmd_id == 0) {
-            ROS_INFO("Obtain SDK control Authority in progess, "
-                     "send the cmd again");
-            obtainCtrlAuthority();
-        } else {
-            ROS_WARN("Failed Obtain SDK control Authority");
-            return -1;
+    while(ros::ok()) {
+        if (exec_flag) {
+            // Obtain Control Authority
+            ServiceAck ack = obtainCtrlAuthority();
+            if (ack.result) {
+                ROS_INFO("Obtain SDK control Authority successfully");
+            } else {
+                if (ack.ack_data == 3 && ack.cmd_set == 1 && ack.cmd_id == 0) {
+                    ROS_INFO("Obtain SDK control Authority in progess, "
+                             "send the cmd again");
+                    obtainCtrlAuthority();
+                } else {
+                    ROS_WARN("Failed Obtain SDK control Authority");
+                    exec_flag = false;
+                    continue;
 
+                }
+            }
+
+            // Setup variables for use
+            uint8_t wayptPolygonSides;
+            int responseTimeout = 1;
+
+            // Waypoint call
+            wayptPolygonSides = 6;
+            runWaypointMission(wayptPolygonSides, responseTimeout);
+
+            exec_flag = false;
         }
+        ros::spinOnce();
     }
-
-    // Setup variables for use
-    uint8_t wayptPolygonSides;
-    int responseTimeout = 1;
-
-    // Waypoint call
-    wayptPolygonSides = 6;
-    runWaypointMission(wayptPolygonSides, responseTimeout);
-
-    // ros::spin();
 
     return 0;
 }

@@ -5,6 +5,7 @@
   <arg name="replay_mode" default="false"/>
   <arg name="open_flir" default="false"/>
   <arg name="continuous" default="true"/>
+  <arg name="wp_following" default="false"/>
   <arg name="use_rtk_offset" default="false"/>
   <arg name="lat0rtk" default="40.479537"/>
   <arg name="lon0rtk" default="-79.8946071"/>
@@ -32,5 +33,7 @@
   <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu" unless="$(arg use_rtk_offset)" output="screen"/>
 
   <node pkg="firefly_bringup" type="pcb_interface.py" name="pcb_interface" output="screen"/>
+
+  <node pkg="firefly_control" type="simple_waypoint_test" name="simple_waypoint_test" if="$(arg wp_following)" output="screen"/>
 
 </launch>

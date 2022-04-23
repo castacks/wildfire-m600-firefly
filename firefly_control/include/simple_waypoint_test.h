@@ -19,6 +19,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <sensor_msgs/NavSatFix.h>
+#include <std_msgs/Empty.h>
 
 #include <vector>
 
@@ -82,6 +83,8 @@ ServiceAck takeoff();
 ServiceAck land();
 
 void gpsPosCallback(const sensor_msgs::NavSatFix::ConstPtr& msg);
+
+void execCallback(const std_msgs::Empty ::ConstPtr& msg);
 
 #endif // WAYPOINT_MISSION_H
 
