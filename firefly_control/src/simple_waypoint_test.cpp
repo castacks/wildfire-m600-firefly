@@ -320,16 +320,23 @@ int main(int argc, char **argv) {
     exec_subscriber = nh.subscribe<std_msgs::Empty>(
             "execute_auto_flight", 1, &execCallback);
 
-    // Activate
-    if (activate().result) {
-        ROS_INFO("Activated successfully");
-    } else {
-        ROS_WARN("Failed activation");
-        return -1;
-    }
-
+    bool activated = false;
     while(ros::ok()) {
         if (exec_flag) {
+
+            if (!activated) {
+                // Activate
+                if (activate().result) {
+                    ROS_INFO("Activated successfully");
+                    activated = true;
+                } else {
+                    ROS_WARN("Failed activation");
+                    activated = false;
+                    exec_flag = false;
+                    continue;
+                }
+            }
+
             // Obtain Control Authority
             ServiceAck ack = obtainCtrlAuthority();
             if (ack.result) {
