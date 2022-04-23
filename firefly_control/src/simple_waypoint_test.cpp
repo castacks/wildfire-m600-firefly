@@ -2,6 +2,10 @@
 
 using namespace DJI::OSDK;
 
+std::vector<double> wp_lats {40.44188875438626, 40.44207944028408, 40.44195903879702, 40.44176963489253, 40.44188875438626};
+std::vector<double> wp_lons {-79.94408524752538, -79.94494277972677, -79.94498558213226, -79.94413017051346, -79.94408524752538};
+std::vector<double> wp_alts {15, 15, 15, 15, 15};
+
 // global variables
 ros::ServiceClient waypoint_upload_service;
 ros::ServiceClient waypoint_action_service;
@@ -35,8 +39,10 @@ bool runWaypointMission(uint8_t numWaypoints, int responseTimeout) {
     float64_t increment = 0.000001 / C_PI * 180;
     float32_t start_alt = 15;
     ROS_INFO("Creating Waypoints..\n");
+//    std::vector<WayPointSettings> generatedWaypts =
+//            createWaypoints(numWaypoints, increment, start_alt);
     std::vector<WayPointSettings> generatedWaypts =
-            createWaypoints(numWaypoints, increment, start_alt);
+            createWaypointsCMUMall(start_alt);
 
     // Waypoint Mission: Upload the waypoints
     ROS_INFO("Uploading Waypoints..\n");
@@ -82,7 +88,7 @@ void setWaypointDefaults(WayPointSettings *wp) {
 void setWaypointInitDefaults(dji_sdk::MissionWaypointTask &waypointTask) {
     waypointTask.velocity_range = 10;
     waypointTask.idle_velocity = 2;
-    waypointTask.action_on_finish = dji_sdk::MissionWaypointTask::FINISH_RETURN_TO_HOME;
+    waypointTask.action_on_finish = dji_sdk::MissionWaypointTask::FINISH_AUTO_LANDING;
     waypointTask.mission_exec_times = 1;
     waypointTask.yaw_mode = dji_sdk::MissionWaypointTask::YAW_MODE_LOCK;
     waypointTask.trace_mode = dji_sdk::MissionWaypointTask::TRACE_POINT;
@@ -103,6 +109,21 @@ std::vector<DJI::OSDK::WayPointSettings> createWaypoints(int numWaypoints, float
 
     std::vector<DJI::OSDK::WayPointSettings> wpVector =
             generateWaypointsPolygon(&start_wp, distanceIncrement, numWaypoints);
+    return wpVector;
+}
+
+std::vector<DJI::OSDK::WayPointSettings> createWaypointsCMUMall(float32_t start_alt) {
+    // Create Start Waypoint
+    WayPointSettings start_wp;
+    setWaypointDefaults(&start_wp);
+    start_wp.latitude = gps_pos.latitude;
+    start_wp.longitude = gps_pos.longitude;
+    start_wp.altitude = start_alt;
+    ROS_INFO("Waypoint created at (LLA): %f \t%f \t%f\n", gps_pos.latitude,
+             gps_pos.longitude, start_alt);
+
+    std::vector<DJI::OSDK::WayPointSettings> wpVector =
+            generateWaypointsCMUMall(&start_wp);
     return wpVector;
 }
 
@@ -132,6 +153,33 @@ std::vector<DJI::OSDK::WayPointSettings> generateWaypointsPolygon(WayPointSettin
 
     // Come back home
     start_data->index = num_wp;
+    wp_list.push_back(*start_data);
+
+    return wp_list;
+}
+
+std::vector<DJI::OSDK::WayPointSettings> generateWaypointsCMUMall(WayPointSettings *start_data) {
+    // Let's create a vector to store our waypoints in.
+    std::vector<DJI::OSDK::WayPointSettings> wp_list;
+
+    // First waypoint
+    start_data->index = 0;
+    wp_list.push_back(*start_data);
+
+    // Iterative algorithm
+    int num_wp = wp_lats.size();
+    for (int i = 0; i < num_wp; i++) {
+        WayPointSettings wp;
+        setWaypointDefaults(&wp);
+        wp.index = i+1;
+        wp.latitude = wp_lats[i];
+        wp.longitude = wp_lons[i];
+        wp.altitude = wp_alts[i];
+        wp_list.push_back(wp);
+    }
+
+    // Come back home
+    start_data->index = num_wp  + 1;
     wp_list.push_back(*start_data);
 
     return wp_list;
@@ -295,7 +343,7 @@ int main(int argc, char **argv) {
     wayptPolygonSides = 6;
     runWaypointMission(wayptPolygonSides, responseTimeout);
 
-    ros::spin();
+    // ros::spin();
 
     return 0;
 }

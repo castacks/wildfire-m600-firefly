@@ -20,6 +20,8 @@
 #include <ros/ros.h>
 #include <sensor_msgs/NavSatFix.h>
 
+#include <vector>
+
 #define C_EARTH (double)6378137.0
 #define C_PI (double)3.141592653589793
 #define DEG2RAD(DEG) ((DEG) * ((C_PI) / (180.0)))
@@ -52,9 +54,13 @@ std::vector<DJI::OSDK::WayPointSettings> createWaypoints(
         int numWaypoints, DJI::OSDK::float64_t distanceIncrement,
         DJI::OSDK::float32_t start_alt);
 
+std::vector<DJI::OSDK::WayPointSettings> createWaypointsCMUMall(float32_t start_alt);
+
 std::vector<DJI::OSDK::WayPointSettings> generateWaypointsPolygon(
         DJI::OSDK::WayPointSettings* start_data, DJI::OSDK::float64_t increment,
         int num_wp);
+
+std::vector<DJI::OSDK::WayPointSettings> generateWaypointsCMUMall(WayPointSettings *start_data);
 
 void uploadWaypoints(std::vector<DJI::OSDK::WayPointSettings>& wp_list,
                      int                                       responseTimeout,
