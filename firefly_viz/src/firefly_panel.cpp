@@ -113,6 +113,10 @@ namespace rviz {
 
     void FireflyPanel::clear() {
         clear_map_pub_.publish(std_msgs::Empty());
+
+        capture_frame_button_->setText("Capture");
+        
+        capture_frame_button_->setEnabled(true);      
     }
 
     void FireflyPanel::set_local_pos_ref() {
@@ -121,14 +125,24 @@ namespace rviz {
 
     void FireflyPanel::capture_frame() {
         capture_frame_pub_.publish(std_msgs::Empty());
+
+        capture_frame_button_->setText("Capturing");
+        capture_frame_button_->setEnabled(false);        
     }
 
     void FireflyPanel::record_ros_bag() {
         ros_record_.publish(std_msgs::Empty());
+    
+        ros_record_button_->setText("ROS Bag Recording");
+        ros_record_button_->setEnabled(false);
     }
 
     void FireflyPanel::stop_record_ros_bag() {
-        stop_ros_record_.publish(std_msgs::Empty());        
+        stop_ros_record_.publish(std_msgs::Empty()); 
+
+        ros_record_button_->setText("ROS Bag Record");
+
+        ros_record_button_->setEnabled(true);
     }
 
 // Save all configuration data from this panel to the given
