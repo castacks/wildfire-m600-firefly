@@ -66,7 +66,7 @@ class MappingAccuracy {
                 {
 
                     ++detect_acc_dr;
-                    if(min_dist <= 5) {
+                    if(min_dist <= detection_radius) {
                         ++detect_acc_nr;
                         if(associated_gts[gtfire[min_index]] == 0) ++assoc_acc_nr;
                         ++associated_gts[gtfire[min_index]];
@@ -119,7 +119,7 @@ class MappingAccuracy {
                             min_index = i;
                         }
                     }
-                    if(min_dist <= 5) {
+                    if(min_dist <= detection_radius) {
                         gtmap[std::make_pair(row, col)] = min_index;
                     }
                     else {
@@ -167,6 +167,7 @@ class MappingAccuracy {
         float detect_acc_dr = 0;
         std_msgs::Float32 detect_acc;
         std_msgs::Float32 assoc_acc;
+        const float detection_radius = 2.0;
 
         void init_gts() {
             // init gt vector - read from YAML
