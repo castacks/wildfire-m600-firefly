@@ -65,9 +65,9 @@ class OnboardTelemetry:
 
         self.last_heartbeat_time = None
         rospy.Timer(rospy.Duration(1), self.heartbeat_send_callback)
-        rospy.Timer(rospy.Duration(1), self.altitude_send_callback)
-        rospy.Timer(rospy.Duration(1), self.battery_status_send_callback)
-        rospy.Timer(rospy.Duration(1), self.temperature_send_callback)
+        rospy.Timer(rospy.Duration(5), self.altitude_send_callback)
+        rospy.Timer(rospy.Duration(5), self.battery_status_send_callback)
+        rospy.Timer(rospy.Duration(5), self.temperature_send_callback)
 
         self.last_heartbeat_time = None
         self.connectedToGCS = False
@@ -108,13 +108,10 @@ class OnboardTelemetry:
     def camera_health_callback(self, data):
         if (data.data):
             self.camera_health = True
-            rospy.loginfo("Camera Connected")
         else:
             self.camera_health = False
-            rospy.logerr("Camera Disconnected")
 
     def get_altitude_callback(self, data):
-        print("ALTITUDE: ", data.altitude, type(data.altitude))
         self.altitude = data.altitude
     
     def battery_health_callback(self, data):
@@ -260,18 +257,18 @@ class OnboardTelemetry:
                 #send altitude
                 if self.altitude_status_send_flag: 
                     self.connection.mav.firefly_altitude_send(float(self.altitude))
-                    altitude_status_send_flag = False
-
+                    self.altitude_status_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 4) / self.bytes_per_sec_send_rate)
                 #send battery status
                 if self.battery_status_send_flag:
                     self.connection.mav.firefly_battery_status_send(self.battery_charge)
-                    battery_status_send_flag = False
-                
+                    self.battery_status_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 4) / self.bytes_per_sec_send_rate)
                 #send temperature
                 if self.temperature_status_send_flag:
                     self.connection.mav.firefly_onboard_temp_send(self.onboard_temperature)
-                    temperature_status_send_flag = False
-
+                    self.temperature_status_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 4) / self.bytes_per_sec_send_rate)
             except serial.serialutil.SerialException as e:
                 self.connectedToOnboardRadio = False
                 rospy.logerr(e)

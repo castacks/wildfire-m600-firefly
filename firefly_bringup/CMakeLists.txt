@@ -7,8 +7,7 @@ project(firefly_bringup)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  firefly_telemetry)
+find_package(catkin REQUIRED COMPONENTS)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -158,6 +157,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/gps_to_local_enu.py
+  scripts/pcb_interface.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

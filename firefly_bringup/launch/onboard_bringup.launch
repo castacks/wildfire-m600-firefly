@@ -5,13 +5,16 @@
   <arg name="replay_mode" default="false"/>
   <arg name="open_flir" default="false"/>
   <arg name="continuous" default="true"/>
-
+  <arg name="use_rtk_offset" default="false"/>
+  <arg name="lat0rtk" default="40.4417346"/>
+  <arg name="lon0rtk" default="-79.9441409"/>
+  <arg name="threshold" default="50"/>
 
 
   <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen"/>
   <node pkg="firefly_telemetry" type="onboard_telemetry.py" name="onboard_telemetry" output="screen"/>
   <node pkg="firefly_perception" type="firefly_perception" name="firefly_perception" output="screen">
-    <param name="threshold" value="50"/>
+    <param name="threshold" value="$(arg threshold)"/>
     <param name="continuous" value="$(arg continuous)"/>
   </node>  
 
@@ -21,5 +24,13 @@
 
   <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.0543145 0.041098 -0.27658746 -1.5707963 0 3.14159 base_link thermal/camera_link 100"/>
 
-  <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu"/>
+  <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu" if="$(arg use_rtk_offset)" output="screen">
+    <param name="lat0rtk" value="$(arg lat0rtk)"/>
+    <param name="lon0rtk" value="$(arg lon0rtk)"/>
+  </node>
+
+  <node pkg="firefly_bringup" type="gps_to_local_enu.py" name="gps_to_local_enu" unless="$(arg use_rtk_offset)" output="screen"/>
+
+  <node pkg="firefly_bringup" type="pcb_interface.py" name="pcb_interface" output="screen"/>
+
 </launch>

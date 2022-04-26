@@ -57,11 +57,14 @@ private:
     float minY = -100;
     float maxY = 100;
 
+    long mapped_bins = 0;
+
     Eigen::Matrix3d K_inv;
 
     void new_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
         for (int bin: msg.data) {
             outputMap.data[bin] = 100;
+            mapped_bins++;
         }
         new_update = true;
     }
@@ -69,6 +72,7 @@ private:
     void new_no_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
         for (int bin: msg.data) {
             outputMap.data[bin] = 0;
+            mapped_bins++;
         }
         new_update = true;
     }
@@ -109,6 +113,7 @@ private:
                 int mapBin = gridCol + gridRow * outputMap.info.width;
                 if (outputMap.data[mapBin] == 50) {
                     outputMap.data[mapBin] = 0;
+                    mapped_bins++;
                 }
 
             }
@@ -117,6 +122,7 @@ private:
     }
 
     void publish_map_callback(const ros::TimerEvent& e) {
+        std::cout << mapped_bins << std::endl;
         if (new_update) {
             map_pub.publish(outputMap);
             new_update = false;
@@ -124,7 +130,7 @@ private:
     }
 
     void clear(const std_msgs::Empty &empty_msg) {
-        std::cout << "Clearing Map" << std::endl;
+        ROS_INFO("Clearing Map");
         outputMap.data = std::vector<std::int8_t> (400*400, 50); // Set map to 50 percent certainty
         map_pub.publish(outputMap);
     }

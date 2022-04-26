@@ -32,6 +32,13 @@ class GPS2LocalENU:
         self.y = None
         self.z = None
 
+        if rospy.has_param('~lat0rtk') and rospy.has_param('~lon0rtk'):
+            self.lat0rtk = rospy.get_param('~lat0rtk')
+            self.lon0rtk = rospy.get_param('~lon0rtk')
+        else:
+            self.lat0rtk = None
+            self.lon0rtk = None
+
     def attitude_callback(self, data):
         self.attitude = data.quaternion
         self.attitude_stamp = data.header.stamp
@@ -48,13 +55,18 @@ class GPS2LocalENU:
         self.lat0 = self.lat
         self.lon0 = self.lon
         self.h0 = self.h
-        self.publish_tf()
 
         response = SetLocalPosRefResponse()
-        response.latitude = self.lat0
-        response.longitude = self.lon0
-        response.altitude = self.h0
+        if self.lat0rtk is not None and self.lon0rtk is not None:
+            response.latitude = self.lat0rtk
+            response.longitude = self.lon0rtk
+            response.altitude = self.h0
+        else:
+            response.latitude = self.lat0
+            response.longitude = self.lon0
+            response.altitude = self.h0  
 
+        self.publish_tf() 
         return response
 
     def publish_tf(self):

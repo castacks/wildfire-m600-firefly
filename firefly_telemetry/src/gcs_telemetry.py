@@ -176,6 +176,8 @@ class GCSTelemetry:
                 self.map_received_buf[msg['seq_num']] = (map_packet_type, updated_bins_msg)
 
         self.connection.mav.firefly_map_ack_send(msg['seq_num'])
+        rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
 
     def read_incoming(self):
         msg = self.connection.recv_match()
