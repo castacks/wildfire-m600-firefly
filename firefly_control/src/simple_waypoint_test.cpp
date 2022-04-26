@@ -6,6 +6,7 @@ std::vector<double> wp_lats {40.44176963489253, 40.44188875438626, 40.4420794402
 std::vector<double> wp_lons {-79.94413017051346, -79.94408524752538, -79.94494277972677, -79.94498558213226, -79.94413017051346};
 std::vector<double> wp_alts {15, 15, 15, 15, 15};
 bool exec_flag = false;
+bool kill_flag = false;
 
 // global variables
 ros::ServiceClient waypoint_upload_service;
@@ -16,6 +17,7 @@ ros::ServiceClient drone_task_service;
 sensor_msgs::NavSatFix gps_pos;
 ros::Subscriber gps_pos_subscriber;
 ros::Subscriber exec_subscriber;
+ros::Subscriber killswitch_subscriber;
 
 void gpsPosCallback(const sensor_msgs::NavSatFix::ConstPtr &msg) {
     gps_pos = *msg;
@@ -25,6 +27,10 @@ void execCallback(const std_msgs::Empty::ConstPtr &msg) {
     exec_flag = true;
 }
 
+void killswitchCallback()(const std_msgs::Empty::ConstPtr &msg) {
+    kill_flag = true;
+    exec_flag = false;
+}
 bool runWaypointMission(uint8_t numWaypoints, int responseTimeout) {
     ros::spinOnce();
 
@@ -297,6 +303,19 @@ ServiceAck land() {
             droneTaskControl.response.cmd_id, droneTaskControl.response.ack_data);
 }
 
+ServiceAck kill() {
+    dji_sdk::DroneTaskControl droneTaskControl;
+    droneTaskControl.request.task = 1;
+    drone_task_service.call(droneTaskControl);
+    if (!droneTaskControl.response.result) {
+        ROS_WARN("ack.info: set = %i id = %i", droneTaskControl.response.cmd_set,
+                 droneTaskControl.response.cmd_id);
+        ROS_WARN("ack.data: %i", droneTaskControl.response.ack_data);
+    }
+    return ServiceAck(
+            droneTaskControl.response.result, droneTaskControl.response.cmd_set,
+            droneTaskControl.response.cmd_id, droneTaskControl.response.ack_data);
+}
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "sdk_demo_mission");
@@ -319,9 +338,20 @@ int main(int argc, char **argv) {
 
     exec_subscriber = nh.subscribe<std_msgs::Empty>(
             "execute_auto_flight", 1, &execCallback);
+    
+    killswitch_subscriber = nh.subscribe<std_msgs::Empty>(
+            "kill_switch", 1, &killswitchCallback);
 
     bool activated = false;
     while(ros::ok()) {
+        if (kill_flag) {
+            if (kill().result) {
+                ROS_INFO("Returning Home");
+            } else {
+                ROS_WARN("Failed sending kill command");
+                return false;
+            }
+        }
         if (exec_flag) {
 
             if (!activated) {

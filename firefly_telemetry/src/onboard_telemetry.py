@@ -57,7 +57,7 @@ class OnboardTelemetry:
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
         self.exec_auto_pub = rospy.Publisher("execute_auto_flight", Empty, queue_size=100)
-
+        self.kill_switch = rospy.Publisher("kill_switch", Empty, queue_size=10)
 
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
@@ -303,6 +303,8 @@ class OnboardTelemetry:
                 rospy.logerr("Service call failed: %s" % e)
         if msg['mavpackettype'] == 'FIREFLY_EXEC_AUTO':
             self.exec_auto_pub.publish(Empty())
+        elif msg['mavpackettype'] == 'FIREFLY_KILL':
+            self.kill_switch.publish(Empty())
         elif msg['mavpackettype'] == 'FIREFLY_GET_FRAME':
             if msg['get_frame'] == 1:
                 # tell perception handler to extract frame

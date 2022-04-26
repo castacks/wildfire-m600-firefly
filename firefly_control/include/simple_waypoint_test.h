@@ -86,5 +86,7 @@ void gpsPosCallback(const sensor_msgs::NavSatFix::ConstPtr& msg);
 
 void execCallback(const std_msgs::Empty ::ConstPtr& msg);
 
+void killswitchCallback(const std_msgs::Empty ::ConstPtr& msg);
+
 #endif // WAYPOINT_MISSION_H
 
