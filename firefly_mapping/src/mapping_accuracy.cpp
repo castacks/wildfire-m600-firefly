@@ -83,9 +83,9 @@ class MappingAccuracy {
                         if(associated_gts[gtfire[min_index]] == 0) ++assoc_acc_nr;
                         ++associated_gts[gtfire[min_index]];
                     }
-                    else{
-                        --detect_acc_nr;
-                    }
+                    // else{
+                        // --detect_acc_nr;
+                    // }
                 }
 
             }
@@ -111,7 +111,7 @@ class MappingAccuracy {
                 p = std::make_pair(row, col);
                 if(gtmap.find(p) == gtmap.end())
                 {
-                    ++detect_acc_dr;
+                    // ++detect_acc_dr;
                     for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
                         dist = sqrt(pow((gtfire[i].first - row), 2) + pow((gtfire[i].second - col), 2));
                         if(min_index == -1 or dist < min_dist) {
@@ -123,22 +123,22 @@ class MappingAccuracy {
                         gtmap[std::make_pair(row, col)] = min_index;
                     }
                     else {
-                        ++detect_acc_nr;
+                        // ++detect_acc_nr;
                         gtmap[std::make_pair(row, col)] = -1;
                     }
                 }
                 else
                 {
-
+                    --detect_acc_dr;
                     if(gtmap[p] != -1) {
                         min_index = gtmap[p];
                         --detect_acc_nr;
                         if(associated_gts[gtfire[min_index]] == 1) --assoc_acc_nr;
                         --associated_gts[gtfire[min_index]];
                     }
-                    else{
-                        ++detect_acc_nr;
-                    }
+                    // else{
+                        // ++detect_acc_nr;
+                    // }
                 }
             }
             // update accuracies
