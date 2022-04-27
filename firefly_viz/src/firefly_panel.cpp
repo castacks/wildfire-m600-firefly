@@ -13,6 +13,8 @@ QLabel *detection_accuracy = new QLabel;
 QLabel *association_accuracy = new QLabel;
 
 float base_station_altitude_;
+bool capturing{true};
+bool runningMission{true};
 
 void battery_status_gcs_callback(std_msgs::Float32 msg);
 void temperature_status_gcs_callback(std_msgs::Float32 msg);
@@ -73,26 +75,27 @@ namespace rviz {
 
         //Buttons layout
         layout->addWidget(start_mission_button_, 0, 0, 1, 3);
-        layout->addWidget(kill_switch_button_, 1, 0, 1, 3);
-        layout->addWidget(clear_button_,2 , 0);
-        layout->addWidget(set_local_pos_ref_button_,2 ,1);
-        layout->addWidget(capture_frame_button_,2 , 2);
-        layout->addWidget(ros_record_button_,3 ,0);
-        layout->addWidget(ros_stop_record_button_,3 ,1);
+        layout->addWidget(clear_button_,1 , 0);
+        layout->addWidget(set_local_pos_ref_button_,1 ,1);
+        layout->addWidget(capture_frame_button_,1 , 2);
+        layout->addWidget(ros_record_button_,2 ,0);
+        layout->addWidget(ros_stop_record_button_,2 ,1);
 
         //Update layout
-        layout->addWidget(battery_status_text, 4, 0);
-        layout->addWidget(battery, 4, 1);
-        layout->addWidget(camera_status_text, 5, 0);
-        layout->addWidget(camera_status, 5, 1);
-        layout->addWidget(temperature_status_text, 6, 0);
-        layout->addWidget(temperature, 6, 1);
-        layout->addWidget(altitude_status_text, 7, 0);
-        layout->addWidget(altitude, 7, 1);
-        layout->addWidget(detection_accuracy_status_text, 8, 0);
-        layout->addWidget(detection_accuracy, 8, 1);
-        layout->addWidget(association_accuracy_status_text, 9, 0);
-        layout->addWidget(association_accuracy, 9, 1);
+        layout->addWidget(battery_status_text, 3, 0);
+        layout->addWidget(battery, 3, 1);
+        layout->addWidget(camera_status_text, 4, 0);
+        layout->addWidget(camera_status, 4, 1);
+        layout->addWidget(temperature_status_text, 5, 0);
+        layout->addWidget(temperature, 5, 1);
+        layout->addWidget(altitude_status_text, 6, 0);
+        layout->addWidget(altitude, 6, 1);
+        layout->addWidget(detection_accuracy_status_text, 7, 0);
+        layout->addWidget(detection_accuracy, 7, 1);
+        layout->addWidget(association_accuracy_status_text, 8, 0);
+        layout->addWidget(association_accuracy, 8, 1);
+
+        layout->addWidget(kill_switch_button_, 9, 0, 1, 3);
 
 
         setLayout(layout);
@@ -128,12 +131,22 @@ namespace rviz {
     void FireflyPanel::start_mission() {
         start_mission_pub_.publish(std_msgs::Empty());
        
-        QPalette pal_startMission = start_mission_button_->palette();
-        pal_startMission.setColor(QPalette::Button, QColor(Qt::green));
-        start_mission_button_->setAutoFillBackground(true);
-        start_mission_button_->setPalette(pal_startMission);
-        start_mission_button_->update();
-        start_mission_button_->setText("Running Mission");
+        if (runningMission)
+        {
+            QPalette pal_startMission = start_mission_button_->palette();
+            pal_startMission.setColor(QPalette::Button, QColor(Qt::green));
+            start_mission_button_->setAutoFillBackground(true);
+            start_mission_button_->setPalette(pal_startMission);
+            start_mission_button_->update();
+            start_mission_button_->setText("Running Mission");
+
+            runningMission = false;
+        }
+        else
+        {
+            start_mission_button_->setText("Start Flight");
+            runningMission = true;
+        }
     }
 
     void FireflyPanel::kill_switch() {
@@ -173,10 +186,15 @@ namespace rviz {
     void FireflyPanel::capture_frame() {
         capture_frame_pub_.publish(std_msgs::Empty());
 
-        capture_frame_button_->setText("Capturing");
-        capture_frame_button_->setEnabled(false);        
+        if (capturing){
+            capture_frame_button_->setText("Stop Capture");
+            capturing = false;
+        }
+        else{
+            capturing = true;
+            capture_frame_button_->setText("Capture");
+        }        
     }
-
     void FireflyPanel::record_ros_bag() {
         ros_record_.publish(std_msgs::Empty());
     
