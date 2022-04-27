@@ -49,6 +49,13 @@ namespace rviz {
         kill_switch_button_->setPalette(pal_killswitch);
         kill_switch_button_->update();
 
+        //define color for start mission button
+        QPalette pal_startMission = start_mission_button_->palette();
+        pal_startMission.setColor(QPalette::Button, QColor(Qt::green));
+        start_mission_button_->setAutoFillBackground(true);
+        start_mission_button_->setPalette(pal_startMission);
+        start_mission_button_->update();
+
         ///Initialize variables for fields
         QLabel *battery_status_text = new QLabel;
         QLabel *camera_status_text = new QLabel;
@@ -130,23 +137,6 @@ namespace rviz {
 
     void FireflyPanel::start_mission() {
         start_mission_pub_.publish(std_msgs::Empty());
-       
-        if (runningMission)
-        {
-            QPalette pal_startMission = start_mission_button_->palette();
-            pal_startMission.setColor(QPalette::Button, QColor(Qt::green));
-            start_mission_button_->setAutoFillBackground(true);
-            start_mission_button_->setPalette(pal_startMission);
-            start_mission_button_->update();
-            start_mission_button_->setText("Running Mission");
-
-            runningMission = false;
-        }
-        else
-        {
-            start_mission_button_->setText("Start Flight");
-            runningMission = true;
-        }
     }
 
     void FireflyPanel::kill_switch() {
