@@ -2,6 +2,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Empty.h>
 #include <XmlRpcValue.h>
 #include <vector>
 #include <utility>
@@ -27,11 +28,22 @@ class MappingAccuracy {
             new_no_fire_sub = nh.subscribe("new_no_fire_bins", 1000, &MappingAccuracy::new_no_fire_bins_callback, this);
             detect_acc_pub = nh.advertise<std_msgs::Float32>("detection_accuracy", 10);
             assoc_acc_pub = nh.advertise<std_msgs::Float32>("association_accuracy", 10);
-
+            clear_sub = nh.subscribe("clear_map", 1000, &MappingAccuracy::clear, this);
         }
 
         void map_callback(const nav_msgs::OccupancyGrid& map) {
             current_map = map;
+        }
+
+        void clear(const std_msgs::Empty &empty_msg) {
+            std::cout << "Clearing map" << std::endl;
+            assoc_acc_nr = 0;
+            detect_acc_nr = 0;
+            detect_acc_dr = 0;
+            gtmap.clear();
+            for(auto& i : associated_gts) {
+                i.second = 0;
+            }
         }
 
         void new_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
@@ -54,7 +66,7 @@ class MappingAccuracy {
                 {
 
                     ++detect_acc_dr;
-                    if(min_dist <= 5) {
+                    if(min_dist <= detection_radius) {
                         ++detect_acc_nr;
                         if(associated_gts[gtfire[min_index]] == 0) ++assoc_acc_nr;
                         ++associated_gts[gtfire[min_index]];
@@ -107,7 +119,7 @@ class MappingAccuracy {
                             min_index = i;
                         }
                     }
-                    if(min_dist <= 5) {
+                    if(min_dist <= detection_radius) {
                         gtmap[std::make_pair(row, col)] = min_index;
                     }
                     else {
@@ -143,6 +155,7 @@ class MappingAccuracy {
         ros::Subscriber map_sub;
         ros::Subscriber new_fire_sub;
         ros::Subscriber new_no_fire_sub;
+        ros::Subscriber clear_sub;
         ros::Publisher detect_acc_pub;
         ros::Publisher assoc_acc_pub;
         std::vector<std::pair<int, int> > gtfire;
@@ -154,6 +167,7 @@ class MappingAccuracy {
         float detect_acc_dr = 0;
         std_msgs::Float32 detect_acc;
         std_msgs::Float32 assoc_acc;
+        const float detection_radius = 2.0;
 
         void init_gts() {
             // init gt vector - read from YAML
