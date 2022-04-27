@@ -12,7 +12,7 @@
 /*
 vector of pairs: gts
 map->gtfire:  ground truth locations of fires initialized from gps_hotspots.yaml
-map->gtmap: constantly maintained ground truth map for the expected values of each bin wrt gtfires. used to compute accuracy truth values.
+map->fire_bin_to_gt: constantly maintained ground truth map for the expected values of each bin wrt gtfires. used to compute accuracy truth values.
 */
 
 
@@ -39,15 +39,18 @@ class MappingAccuracy {
             std::cout << "Clearing map" << std::endl;
             assoc_acc_nr = 0;
             detect_acc_nr = 0;
-            detect_acc_dr = 0;
-            gtmap.clear();
+            fire_bin_to_gt.clear();
             for(auto& i : associated_gts) {
                 i.second = 0;
             }
+            detect_acc.data = detect_acc_nr/fire_bin_to_gt.size();
+            assoc_acc.data = assoc_acc_nr/assoc_acc_dr;
+            detect_acc_pub.publish(detect_acc);
+            assoc_acc_pub.publish(assoc_acc);
         }
 
         void new_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
-            // calculate euclidean distance. update associated_gts and gtmap. update accuracies
+            // calculate euclidean distance. update associated_gts and fire_bin_to_gt. update accuracies
             int row, col;
 
             for(int bin : msg.data) {
@@ -57,47 +60,34 @@ class MappingAccuracy {
                 float min_dist = -1, dist;
                 for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
                     dist = sqrt(pow((gtfire[i].first - row), 2) + pow((gtfire[i].second - col), 2));
+                    dist = dist * 0.5; // Since bins are 0.5 meters wide
                     if(min_index == -1 or dist < min_dist) {
                         min_dist = dist;
                         min_index = i;
                     }
                 }
-                if(gtmap.find(std::make_pair(row, col)) == gtmap.end())
+                if(fire_bin_to_gt.find(std::make_pair(row, col)) == fire_bin_to_gt.end()) //New fire bin not in map
                 {
-
-                    ++detect_acc_dr;
                     if(min_dist <= detection_radius) {
                         ++detect_acc_nr;
                         if(associated_gts[gtfire[min_index]] == 0) ++assoc_acc_nr;
                         ++associated_gts[gtfire[min_index]];
-                        gtmap[std::make_pair(row, col)] = min_index;
+                        fire_bin_to_gt[std::make_pair(row, col)] = min_index;
                     }
                     else {
-                        gtmap[std::make_pair(row, col)] = -1;
+                        fire_bin_to_gt[std::make_pair(row, col)] = -1;
                     }
                 }
-                else{
-                    if(gtmap[std::make_pair(row,col)] != -1)
-                    {
-                        ++detect_acc_nr;
-                        if(associated_gts[gtfire[min_index]] == 0) ++assoc_acc_nr;
-                        ++associated_gts[gtfire[min_index]];
-                    }
-                    // else{
-                        // --detect_acc_nr;
-                    // }
-                }
-
             }
             // update accuracies
-            detect_acc.data = detect_acc_nr/detect_acc_dr;
+            detect_acc.data = detect_acc_nr/fire_bin_to_gt.size();
             assoc_acc.data = assoc_acc_nr/assoc_acc_dr;
             detect_acc_pub.publish(detect_acc);
             assoc_acc_pub.publish(assoc_acc);
         }
 
         void new_no_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
-            // update associated_gts and gtmap. update accuracies
+            // update associated_gts and fire_bin_to_gt. update accuracies
 
             int row, col;
             std::pair<int, int> p;
@@ -105,44 +95,20 @@ class MappingAccuracy {
             for(int bin : msg.data) {
                 row = bin/400;
                 col = bin%400;
-
-                int min_index = -1;
-                float min_dist = -1, dist;
                 p = std::make_pair(row, col);
-                if(gtmap.find(p) == gtmap.end())
+                if(fire_bin_to_gt.find(p) != fire_bin_to_gt.end()) //Converting fire bin to no fire bin
                 {
-                    // ++detect_acc_dr;
-                    for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
-                        dist = sqrt(pow((gtfire[i].first - row), 2) + pow((gtfire[i].second - col), 2));
-                        if(min_index == -1 or dist < min_dist) {
-                            min_dist = dist;
-                            min_index = i;
-                        }
-                    }
-                    if(min_dist <= detection_radius) {
-                        gtmap[std::make_pair(row, col)] = min_index;
-                    }
-                    else {
-                        // ++detect_acc_nr;
-                        gtmap[std::make_pair(row, col)] = -1;
-                    }
-                }
-                else
-                {
-                    --detect_acc_dr;
-                    if(gtmap[p] != -1) {
-                        min_index = gtmap[p];
+                    if(fire_bin_to_gt[p] != -1) { //Fire bin is near a hotspot
+                        int min_index = fire_bin_to_gt[p];
                         --detect_acc_nr;
                         if(associated_gts[gtfire[min_index]] == 1) --assoc_acc_nr;
                         --associated_gts[gtfire[min_index]];
                     }
-                    // else{
-                        // ++detect_acc_nr;
-                    // }
+                     fire_bin_to_gt.erase(p);
                 }
             }
             // update accuracies
-            detect_acc.data = detect_acc_nr/detect_acc_dr;
+            detect_acc.data = detect_acc_nr/fire_bin_to_gt.size();
             assoc_acc.data = assoc_acc_nr/assoc_acc_dr;
             detect_acc_pub.publish(detect_acc);
             assoc_acc_pub.publish(assoc_acc);
@@ -160,11 +126,10 @@ class MappingAccuracy {
         ros::Publisher assoc_acc_pub;
         std::vector<std::pair<int, int> > gtfire;
         std::map<std::pair<int, int>, int> associated_gts;
-        std::map<std::pair<int, int>, int> gtmap;
+        std::map<std::pair<int, int>, int> fire_bin_to_gt;
         float assoc_acc_nr = 0;
         float assoc_acc_dr = 0;
         float detect_acc_nr = 0;
-        float detect_acc_dr = 0;
         std_msgs::Float32 detect_acc;
         std_msgs::Float32 assoc_acc;
         const float detection_radius = 2.0;

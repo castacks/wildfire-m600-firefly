@@ -62,7 +62,7 @@ namespace rviz {
         camera_status->setText("Waiting for Update");
         temperature->setText("-9999");
         altitude->setText("-9999");
-        detection_accuracy->setText("-9999");
+        detection_accuracy->setText("0");
         association_accuracy->setText("0");
 
         //Define values for fields
@@ -172,11 +172,7 @@ namespace rviz {
         clear_map_pub_.publish(std_msgs::Empty());
 
         association_accuracy->setText("0");
-        
-        capture_frame_button_->setText("Capture");
-        
-        capture_frame_button_->setEnabled(true); 
-    
+        detection_accuracy->setText("0");
     }
 
     void FireflyPanel::set_local_pos_ref() {
