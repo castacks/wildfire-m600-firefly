@@ -349,7 +349,7 @@ int main(int argc, char **argv) {
                 ROS_INFO("Returning Home");
             } else {
                 ROS_WARN("Failed sending kill command");
-                return false;
+                continue;
             }
             kill_flag = false;
         }
