@@ -40,6 +40,10 @@ namespace rviz {
         // Here we declare some internal slots.
     protected Q_SLOTS:
 
+        void start_mission();
+
+        void kill_switch();
+
         void clear();
 
         void set_local_pos_ref();
@@ -53,6 +57,8 @@ namespace rviz {
     protected:
 
 
+        QPushButton *start_mission_button_;
+        QPushButton *kill_switch_button_;
         QPushButton *clear_button_;
         QPushButton *set_local_pos_ref_button_;
         QPushButton *capture_frame_button_;
@@ -60,6 +66,8 @@ namespace rviz {
         QPushButton *ros_stop_record_button_;
 
 
+        ros::Publisher start_mission_pub_;
+        ros::Publisher kill_switch_pub_;
         ros::Publisher clear_map_pub_;
         ros::Publisher set_local_pos_ref_pub_;
         ros::Publisher capture_frame_pub_;

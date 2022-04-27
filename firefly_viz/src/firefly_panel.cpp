@@ -32,11 +32,20 @@ namespace rviz {
         QGridLayout *layout = new QGridLayout;
 
         // define all buttons for GUI
+        start_mission_button_ = new QPushButton("Start Flight");
+        kill_switch_button_ = new QPushButton("KILL SWITCH");
         clear_button_ = new QPushButton("Clear");
         set_local_pos_ref_button_ = new QPushButton("Set Reference");
         capture_frame_button_ = new QPushButton("Capture");
         ros_record_button_ = new QPushButton("ROS Bag Record");
         ros_stop_record_button_ = new QPushButton("Stop ROS Bag Recording");
+
+        //define color for killswitch
+        QPalette pal_killswitch = kill_switch_button_->palette();
+        pal_killswitch.setColor(QPalette::Button, QColor(Qt::red));
+        kill_switch_button_->setAutoFillBackground(true);
+        kill_switch_button_->setPalette(pal_killswitch);
+        kill_switch_button_->update();
 
         ///Initialize variables for fields
         QLabel *battery_status_text = new QLabel;
@@ -63,31 +72,34 @@ namespace rviz {
         association_accuracy_status_text->setText("Association Accuracy : ");
 
         //Buttons layout
-        layout->addWidget(clear_button_,0,0);
-        layout->addWidget(set_local_pos_ref_button_,0,1);
-        layout->addWidget(capture_frame_button_,0,2);
-        layout->addWidget(ros_record_button_,1,0);
-        layout->addWidget(ros_stop_record_button_,1,1);
+        layout->addWidget(start_mission_button_, 0, 0, 1, 3);
+        layout->addWidget(kill_switch_button_, 1, 0, 1, 3);
+        layout->addWidget(clear_button_,2 , 0);
+        layout->addWidget(set_local_pos_ref_button_,2 ,1);
+        layout->addWidget(capture_frame_button_,2 , 2);
+        layout->addWidget(ros_record_button_,3 ,0);
+        layout->addWidget(ros_stop_record_button_,3 ,1);
 
         //Update layout
-        layout->addWidget(battery_status_text, 2, 0);
-        layout->addWidget(battery, 2, 1);
-        layout->addWidget(camera_status_text, 3, 0);
-        layout->addWidget(camera_status, 3, 1);
-        layout->addWidget(temperature_status_text, 4, 0);
-        layout->addWidget(temperature, 4, 1);
-        layout->addWidget(altitude_status_text, 5, 0);
-        layout->addWidget(altitude, 5, 1);
-        layout->addWidget(detection_accuracy_status_text, 6, 0);
-        layout->addWidget(detection_accuracy, 6, 1);
-        layout->addWidget(association_accuracy_status_text, 7, 0);
-        layout->addWidget(association_accuracy, 7, 1);
+        layout->addWidget(battery_status_text, 4, 0);
+        layout->addWidget(battery, 4, 1);
+        layout->addWidget(camera_status_text, 5, 0);
+        layout->addWidget(camera_status, 5, 1);
+        layout->addWidget(temperature_status_text, 6, 0);
+        layout->addWidget(temperature, 6, 1);
+        layout->addWidget(altitude_status_text, 7, 0);
+        layout->addWidget(altitude, 7, 1);
+        layout->addWidget(detection_accuracy_status_text, 8, 0);
+        layout->addWidget(detection_accuracy, 8, 1);
+        layout->addWidget(association_accuracy_status_text, 9, 0);
+        layout->addWidget(association_accuracy, 9, 1);
 
-        
 
         setLayout(layout);
 
         // Setting up actions for buttons
+        connect(start_mission_button_, SIGNAL(clicked()), this, SLOT(start_mission())); 
+        connect(kill_switch_button_, SIGNAL(clicked()), this, SLOT(kill_switch()));
         connect(clear_button_, SIGNAL(clicked()), this, SLOT(clear()));
         connect(set_local_pos_ref_button_, SIGNAL(clicked()), this, SLOT(set_local_pos_ref()));
         connect(capture_frame_button_, SIGNAL(clicked()), this, SLOT(capture_frame()));
@@ -95,6 +107,8 @@ namespace rviz {
         connect(ros_stop_record_button_, SIGNAL(clicked()), this, SLOT(stop_record_ros_bag()));
 
         //Publishers from GUI for Telemetry to read from
+        start_mission_pub_ = nh_.advertise<std_msgs::Empty>("execute_auto_flight", 10);
+        kill_switch_pub_ = nh_.advertise<std_msgs::Empty>("kill_switch", 10);
         clear_map_pub_ = nh_.advertise<std_msgs::Empty>("clear_map", 10);
         set_local_pos_ref_pub_ = nh_.advertise<std_msgs::Empty>("set_local_pos_ref", 10);
         capture_frame_pub_ = nh_.advertise<std_msgs::Empty>("capture_frame", 10);
@@ -111,6 +125,36 @@ namespace rviz {
         association_accuracy_gcs = nh_.subscribe("/association_accuracy", 10, association_accuracy_gcs_callback);
     }
 
+    void FireflyPanel::start_mission() {
+        start_mission_pub_.publish(std_msgs::Empty());
+       
+        QPalette pal_startMission = start_mission_button_->palette();
+        pal_startMission.setColor(QPalette::Button, QColor(Qt::green));
+        start_mission_button_->setAutoFillBackground(true);
+        start_mission_button_->setPalette(pal_startMission);
+        start_mission_button_->update();
+        start_mission_button_->setText("Running Mission");
+    }
+
+    void FireflyPanel::kill_switch() {
+        kill_switch_pub_.publish(std_msgs::Empty());
+
+        QPalette pal_startMission = start_mission_button_->palette();
+        pal_startMission.setColor(QPalette::Button, QColor(Qt::red));
+        start_mission_button_->setAutoFillBackground(true);
+        start_mission_button_->setPalette(pal_startMission);
+        start_mission_button_->update();
+
+        start_mission_button_->setText("Aborting Mission");
+        
+        start_mission_button_->setEnabled(false);   
+        clear_button_->setEnabled(false);   
+        set_local_pos_ref_button_->setEnabled(false);   
+        capture_frame_button_->setEnabled(false);   
+        ros_record_button_->setEnabled(false);   
+        ros_stop_record_button_->setEnabled(false); 
+    }
+
     void FireflyPanel::clear() {
         clear_map_pub_.publish(std_msgs::Empty());
 
@@ -118,7 +162,8 @@ namespace rviz {
         
         capture_frame_button_->setText("Capture");
         
-        capture_frame_button_->setEnabled(true);      
+        capture_frame_button_->setEnabled(true); 
+    
     }
 
     void FireflyPanel::set_local_pos_ref() {

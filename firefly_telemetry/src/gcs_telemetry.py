@@ -27,6 +27,8 @@ class GCSTelemetry:
 
         rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
         rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
+        rospy.Subscriber("execute_auto_flight", Empty, self.exec_auto_callback)
+        rospy.Subscriber("kill_switch", Empty, self.kill_switch_callback)
         rospy.Subscriber("capture_frame", Empty, self.capture_frame_callback)
         rospy.Subscriber("record_rosbag", Empty, self.record_ros_bag_callback)
         rospy.Subscriber("stop_record_rosbag", Empty, self.stop_record_ros_bag_callback)
@@ -40,6 +42,8 @@ class GCSTelemetry:
 
         self.clear_map_send_flag = False
         self.set_local_pos_ref_send_flag = False
+        self.exec_auto_send_flag = False
+        self.kill_switch_flag = False
         self.capture_frame_send_flag = False
         self.heartbeat_send_flag = False
         self.record_ros_bag_send_flag = False
@@ -90,6 +94,18 @@ class GCSTelemetry:
                     self.connection.mav.firefly_set_local_pos_ref_send(0)
                     rospy.loginfo("Setting Local Position Reference")
                     self.set_local_pos_ref_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+                if self.exec_auto_send_flag:
+                    self.connection.mav.firefly_exec_auto_send(0)
+                    rospy.loginfo("Executing Autonomous Flight")
+                    self.exec_auto_send_flag = False
+                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+                if self.kill_switch_flag:
+                    self.connection.mav.firefly_kill_send(0)
+                    rospy.loginfo("KILLSWITCH TRIGGERED")
+                    self.kill_switch_flag = False
                     rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
                 if self.capture_frame_send_flag:
@@ -229,6 +245,12 @@ class GCSTelemetry:
 
     def set_local_pos_ref_callback(self, empty_msg):
         self.set_local_pos_ref_send_flag = True
+
+    def exec_auto_callback(self, empty_msg):
+        self.exec_auto_send_flag = True
+
+    def kill_switch_callback(self, empty_msg):
+        self.kill_switch_flag = True
 
     def capture_frame_callback(self, empty_msg):
         self.capture_frame_send_flag = True
