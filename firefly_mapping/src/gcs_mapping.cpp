@@ -63,16 +63,20 @@ private:
 
     void new_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
         for (int bin: msg.data) {
+            if (outputMap.data[bin] == 50) {
+                mapped_bins++;
+            }
             outputMap.data[bin] = 100;
-            mapped_bins++;
         }
         new_update = true;
     }
 
     void new_no_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
         for (int bin: msg.data) {
+            if (outputMap.data[bin] == 50) {
+                mapped_bins++;
+            }
             outputMap.data[bin] = 0;
-            mapped_bins++;
         }
         new_update = true;
     }
@@ -133,6 +137,7 @@ private:
         ROS_INFO("Clearing Map");
         outputMap.data = std::vector<std::int8_t> (400*400, 50); // Set map to 50 percent certainty
         map_pub.publish(outputMap);
+        mapped_bins = 0;
     }
 
 };
