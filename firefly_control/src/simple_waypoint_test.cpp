@@ -27,7 +27,7 @@ void execCallback(const std_msgs::Empty::ConstPtr &msg) {
     exec_flag = true;
 }
 
-void killswitchCallback()(const std_msgs::Empty::ConstPtr &msg) {
+void killswitchCallback(const std_msgs::Empty::ConstPtr &msg) {
     kill_flag = true;
     exec_flag = false;
 }
@@ -351,6 +351,7 @@ int main(int argc, char **argv) {
                 ROS_WARN("Failed sending kill command");
                 return false;
             }
+            kill_flag = false;
         }
         if (exec_flag) {
 
