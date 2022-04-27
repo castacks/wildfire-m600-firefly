@@ -114,6 +114,8 @@ namespace rviz {
     void FireflyPanel::clear() {
         clear_map_pub_.publish(std_msgs::Empty());
 
+        association_accuracy->setText("0");
+        
         capture_frame_button_->setText("Capture");
         
         capture_frame_button_->setEnabled(true);      
