@@ -1,3 +1,15 @@
+/********************************************************************************
+ * Project FireFly : 2022 MRSD - Team D                                         *
+ * Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen and Akshay Venkatesh      *
+ *                                                                              *
+ * ThermalImageReader : Thermal camera data processing module                   *
+ *                                                                              *
+ * Reads thermal camera image topic, applies thresholding for fire detection,   *
+ * publishes segmented image with current pose from which image was taken       *
+ *                                                                              *
+ * Created:  03 Apr 2022                                                        *
+********************************************************************************/
+
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>

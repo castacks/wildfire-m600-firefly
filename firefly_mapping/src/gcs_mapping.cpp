@@ -1,3 +1,15 @@
+/********************************************************************************
+ * Project FireFly : 2022 MRSD - Team D                                         *
+ * Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen and Akshay Venkatesh      *
+ *                                                                              *
+ * GCSMapping : Ground Control Station Fire Map Generation Module               *
+ *                                                                              *
+ * Receives map updates from UAV over MAVLink, updates occupancy grid and       *
+ * publishes updated map to be subscribed to for visualization on RViz          *
+ *                                                                              *
+ * Created:  03 Apr 2022                                                        *
+********************************************************************************/
+
 #include "ros/ros.h"
 #include <nav_msgs/OccupancyGrid.h>
 #include <std_msgs/Int32MultiArray.h>

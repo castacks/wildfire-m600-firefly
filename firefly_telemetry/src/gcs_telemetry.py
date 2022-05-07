@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+'''
+#########################################################
+#########################################################
+Project FireFly : 2022 MRSD - Team D
+Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen and Akshay Venkatesh
+
+GCSTelemetry : Ground Control Station Telemetry Module
+
+Interfaces with Ground Control Station MAVLink, performs parsing and 
+handling of messages received from UAV and user commands from GUI 
+
+Created:  03 Apr 2022
+#########################################################
+#########################################################
+'''
 
 import rospy
 from std_msgs.msg import Int32MultiArray

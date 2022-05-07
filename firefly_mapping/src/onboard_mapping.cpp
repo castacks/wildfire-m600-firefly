@@ -1,3 +1,15 @@
+/********************************************************************************
+ * Project FireFly : 2022 MRSD - Team D                                         *
+ * Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen and Akshay Venkatesh      *
+ *                                                                              *
+ * OnboardMapping : UAV Onboard Fire Map Generation Module                      *
+ *                                                                              *
+ * Subscribes to thermal camera output; maintain and updates occupancy grid     *
+ * with fire/no fire labels. Publishes this grid to be transmitted to           *
+ * ground station for map visualization                                         *
+ *                                                                              *
+ * Created:  03 Apr 2022                                                        *
+********************************************************************************/
 #include "ros/ros.h"
 #include "firefly_mapping/ImageWithPose.h"
 #include <eigen_conversions/eigen_msg.h>

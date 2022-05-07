@@ -1,3 +1,14 @@
+/********************************************************************************
+ * Project FireFly : 2022 MRSD - Team D                                         *
+ * Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen and Akshay Venkatesh      *
+ *                                                                              *
+ * MappingAccuracy : System accuracy computation module                         *
+ *                                                                              *
+ * Performs computaion of detection and assocaition accuracy of real-time       *
+ * fire map being generated using pre-loaded ground truth hotspot GPS locations *
+ *                                                                              *
+ * Created:  11 Apr 2022                                                        *
+********************************************************************************/
 #include "ros/ros.h"
 #include <nav_msgs/OccupancyGrid.h>
 #include <std_msgs/Int32MultiArray.h>

@@ -1,5 +1,19 @@
 #!/usr/bin/env python2
+'''
+#########################################################
+#########################################################
+Project FireFly : 2022 MRSD - Team D
+Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen and Akshay Venkatesh
 
+OnboardTelemetry : UAV Onboard Telemetry Module
+
+Interfaces with UAV MAVLink, performs parsing and handling of commands 
+received from ground station and messages to be sent back from UAV
+
+Created:  03 Apr 2022
+#########################################################
+#########################################################
+'''
 import math
 
 import rospy
