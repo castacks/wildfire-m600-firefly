@@ -1,12 +1,22 @@
 <launch>
+  <!-- Specify to show all ROS logging levels-->
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find firefly_bringup)/config/rosconsole.config"/>
   <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find firefly_bringup)/config/python_logging.conf"/>
 
+  <!-- This node maintains the local fire map-->
   <node pkg="firefly_mapping" type="gcs_mapping" name="gcs_mapping" output="screen"/>
+
+  <!-- This node handles all telemetry with the drone -->
   <node pkg="firefly_telemetry" type="gcs_telemetry.py" name="gcs_telemetry" output="screen"/>
+
+  <!-- These two nodes are for validating the mapping accuracy -->
   <node pkg="firefly_mapping" type="gps_to_local.py" name="gps_to_local" output="screen"/>
   <node pkg="firefly_mapping" type="mapping_accuracy" name="mapping_accuracy" output="screen"/>
+
+  <!-- This node handles visualization -->
   <node type="rviz" name="rviz" pkg="rviz" args="-d $(find firefly_mapping)/rviz/gcs.rviz" />
+
+  <!-- This node helps with viewing diagnostics -->
   <node type="rqt_console" name="rqt_console" pkg="rqt_console"/>
 
 </launch>
