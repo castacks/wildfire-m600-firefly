@@ -1,0 +1,27 @@
+<launch>
+
+  <arg name="robot_name" default="firefly" />
+  <arg name="drone_interface" default="DJIInterface" />
+
+  <group ns="$(arg robot_name)">
+    <include file="$(find dji_sdk)/launch/sdk.launch" unless="$(arg replay_mode)" />
+
+
+    <!-- state estimation -->
+    <include file="$(find core_central)/launch/dji/sim/dji_sim_state_estimation.launch" pass_all_args="true" />
+
+    <!-- control -->
+    <include file="$(find core_central)/launch/dji/sim/dji_sim_control.launch" pass_all_args="true" />
+
+    <!-- autonomy -->
+    <include file="$(find firefly_control)/launch/autonomy.launch" pass_all_args="true" />
+
+    <!-- visualization -->
+    <include file="$(find core_central)/launch/common/visualization.launch" pass_all_args="true" />
+
+    <!-- logging -->
+    <!-- <node name="record" pkg="rosbag" type="record" args="-a -o ~/bags/dji" /> -->
+
+  </group>
+
+</launch>
