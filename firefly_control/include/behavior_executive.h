@@ -15,7 +15,7 @@
 
 #include <string>
 
-class BehaviorExecutiveBehaviorTree : public BaseNode {
+class BehaviorExecutive : public BaseNode {
  private:
   // variables
   std::string takeoff_state, landing_state;
@@ -23,16 +23,14 @@ class BehaviorExecutiveBehaviorTree : public BaseNode {
 
   // conditions
   std::vector<bt::Condition *> conditions;
-  bt::Condition *takeoff_commanded_condition;
-  bt::Condition *land_commanded_condition;
-  bt::Condition *pause_commanded_condition;
-  bt::Condition *fixed_trajectory_commanded_condition;
-  bt::Condition *explore_commanded_condition;
-  bt::Condition *autonomously_explore_commanded_condition;
-  bt::Condition *offboard_commanded_condition;
+
+  bt::Condition *request_control_commanded_condition;
   bt::Condition *arm_commanded_condition;
   bt::Condition *disarm_commanded_condition;
-  bt::Condition *rewind_commanded_condition;
+  bt::Condition *takeoff_commanded_condition;
+  bt::Condition *land_commanded_condition;
+  bt::Condition *traj_control_commanded_condition;
+
   bt::Condition *offboard_mode_condition;
   bt::Condition *armed_condition;
   bt::Condition *takeoff_complete_condition;
@@ -41,15 +39,12 @@ class BehaviorExecutiveBehaviorTree : public BaseNode {
 
   // actions
   std::vector<bt::Action *> actions;
-  bt::Action *takeoff_action;
-  bt::Action *land_action;
-  bt::Action *pause_action;
-  bt::Action *follow_fixed_trajectory_action;
-  bt::Action *explore_action;
   bt::Action *request_control_action;
   bt::Action *arm_action;
   bt::Action *disarm_action;
-  bt::Action *rewind_action;
+  bt::Action *takeoff_action;
+  bt::Action *land_action;
+  bt::Action *traj_control_action;
 
   // services
   ros::ServiceClient takeoff_landing_client;
@@ -83,9 +78,9 @@ class BehaviorExecutiveBehaviorTree : public BaseNode {
   void is_armed_callback(std_msgs::Bool msg);
 
  public:
-  BehaviorExecutiveBehaviorTree(std::string node_name);
+  BehaviorExecutive(std::string node_name);
 
   virtual bool initialize();
   virtual bool execute();
-  virtual ~BehaviorExecutiveBehaviorTree();
+  virtual ~BehaviorExecutive();
 };

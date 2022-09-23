@@ -30,6 +30,7 @@ import datetime
 from geometry_msgs.msg import Pose
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg import BatteryState, NavSatFix
+from behavior_tree_msgs.msg import BehaviorTreeCommand, BehaviorTreeCommands, Status
 
 os.environ['MAVLINK20'] = '1'
 
@@ -70,7 +71,7 @@ class OnboardTelemetry:
 
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
-        self.exec_auto_pub = rospy.Publisher("execute_auto_flight", Empty, queue_size=100)
+        self.behavior_tree_commands_pub = rospy.Publisher("behavior_tree_commands", Empty, queue_size=100)
         self.kill_switch = rospy.Publisher("kill_switch", Empty, queue_size=10)
 
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
@@ -304,6 +305,8 @@ class OnboardTelemetry:
         msg = msg.to_dict()
         rospy.logdebug(msg)
 
+        behavior_tree_commands = BehaviorTreeCommands()
+
         if msg['mavpackettype'] == 'FIREFLY_CLEAR_MAP':
             self.clear_map_pub.publish(Empty())
         elif msg['mavpackettype'] == 'FIREFLY_SET_LOCAL_POS_REF':
@@ -314,9 +317,7 @@ class OnboardTelemetry:
                 response = set_local_pos_ref()
                 self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
             except rospy.ServiceException as e:
-                rospy.logerr("Service call failed: %s" % e)
-        if msg['mavpackettype'] == 'FIREFLY_EXEC_AUTO':
-            self.exec_auto_pub.publish(Empty())
+                rospy.logerr("Service call failed: %s" % e)            
         elif msg['mavpackettype'] == 'FIREFLY_KILL':
             self.kill_switch.publish(Empty())
         elif msg['mavpackettype'] == 'FIREFLY_GET_FRAME':
@@ -351,6 +352,39 @@ class OnboardTelemetry:
                 for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
                     if self.map_transmitted_buf[i][2] < self.na:
                         self.na = self.map_transmitted_buf[i][2]
+        elif msg['mavpackettype'] == 'FIREFLY_REQUEST_CONTROL':
+            command = BehaviorTreeCommand()
+            command.condition_name = "Request Control Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg['mavpackettype'] == 'FIREFLY_ARM':
+            command = BehaviorTreeCommand()
+            command.condition_name = "Arm Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg['mavpackettype'] == 'FIREFLY_DISARM':
+            command = BehaviorTreeCommand()
+            command.condition_name = "Disarm Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg['mavpackettype'] == 'FIREFLY_TAKEOFF':
+            command = BehaviorTreeCommand()
+            command.condition_name = "Takeoff Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg['mavpackettype'] == 'FIREFLY_LAND':
+            command = BehaviorTreeCommand()
+            command.condition_name = "Land Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg['mavpackettype'] == 'FIREFLY_TRAJ_CONTROL':
+            command = BehaviorTreeCommand()
+            command.condition_name = "Traj Control Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+
+        if not behavior_tree_commands.commands.empty():
+            self.behavior_tree_commands_pub.publish(behavior_tree_commands)
 
     def heartbeat_send_callback(self, event):
         self.heartbeat_send_flag = True

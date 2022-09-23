@@ -6,7 +6,7 @@
 				(Armed)
 			[Disarm]
 	->
-		(Offboard Commanded)
+		(Request Control Commanded)
 		?
 			(Offboard Mode)
 			[Request Control]
