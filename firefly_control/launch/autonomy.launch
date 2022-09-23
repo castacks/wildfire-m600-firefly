@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="robot_name" default="firefly" />
+  <arg name="robot_name" default="uav1" />
   <arg name="drone_interface" default="DJIInterface" />
   <arg name="map_representation" default="PointCloudMapRepresentation" />
 
@@ -9,9 +9,9 @@
 
   <!-- behavior -->
   <node name="behavior_tree" pkg="behavior_tree" type="behavior_tree_node.py">
-    <param name="config" type="string" value="$(find firefly_control)/config/drone.tree" />
+    <param name="config" type="string" value="$(find firefly_control)/config/firefly.tree" />
   </node>
-  <node name="behavior_executive" pkg="firefly_control" type="behavior_tree" output="screen">
+  <node name="behavior_executive" pkg="firefly_control" type="behavior_executive" output="screen">
     <param name="execute_target" type="double" value="10." />
   </node>
   <include file="$(find core_drone_interface)/launch/drone_interface_node.launch" pass_all_args="true" />

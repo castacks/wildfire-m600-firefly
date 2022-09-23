@@ -71,7 +71,7 @@ class OnboardTelemetry:
 
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
-        self.behavior_tree_commands_pub = rospy.Publisher("behavior_tree_commands", Empty, queue_size=100)
+        self.behavior_tree_commands_pub = rospy.Publisher("behavior_tree_commands", BehaviorTreeCommands, queue_size=100)
         self.kill_switch = rospy.Publisher("kill_switch", Empty, queue_size=10)
 
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
@@ -383,7 +383,7 @@ class OnboardTelemetry:
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
 
-        if not behavior_tree_commands.commands.empty():
+        if len(behavior_tree_commands.commands) > 0:
             self.behavior_tree_commands_pub.publish(behavior_tree_commands)
 
     def heartbeat_send_callback(self, event):
