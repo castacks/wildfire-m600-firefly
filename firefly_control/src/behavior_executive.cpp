@@ -45,12 +45,14 @@ bool BehaviorExecutive::initialize() {
   request_control_action = new bt::Action("Request Control");
   arm_action = new bt::Action("Arm");
   disarm_action = new bt::Action("Disarm");
+  traj_control_action = new bt::Action("Traj Control");
 
   actions.push_back(takeoff_action);
   actions.push_back(land_action);
   actions.push_back(request_control_action);
   actions.push_back(arm_action);
   actions.push_back(disarm_action);
+  actions.push_back(traj_control_action);
 
   // init services
   takeoff_landing_client =
@@ -91,15 +93,34 @@ bool BehaviorExecutive::initialize() {
       "takeoff_state", 10, &BehaviorExecutive::takeoff_state_callback, this);
   landing_state_sub = nh->subscribe(
       "landing_state", 10, &BehaviorExecutive::landing_state_callback, this);
-  fixed_trajectory_command_sub = nh->subscribe(
-      "fixed_trajectory_command", 10,
-      &BehaviorExecutive::fixed_trajectory_command_callback, this);
   has_control_sub = nh->subscribe(
       "has_control", 10, &BehaviorExecutive::has_control_callback, this);
   is_armed_sub = nh->subscribe("is_armed", 10,
                                &BehaviorExecutive::is_armed_callback, this);
 
   return true;
+}
+
+static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
+  core_trajectory_msgs::FixedTrajectory fixed_trajectory;
+  fixed_trajectory.type = "rectangle";
+  diagnostic_msgs::KeyValue attrib1;
+  attrib1.key = "frame_id";
+  attrib1.value = "world";
+  diagnostic_msgs::KeyValue attrib2;
+  attrib2.key = "length";
+  attrib2.value = "25";
+  diagnostic_msgs::KeyValue attrib3;
+  attrib3.key = "width";
+  attrib3.value = "25";
+  diagnostic_msgs::KeyValue attrib4;
+  attrib4.key = "height";
+  attrib4.value = "30";
+  diagnostic_msgs::KeyValue attrib5;
+  attrib5.key = "velocity";
+  attrib5.value = "2";
+  fixed_trajectory.attributes = {attrib1, attrib2, attrib3, attrib4, attrib5};
+  return fixed_trajectory;
 }
 
 bool BehaviorExecutive::execute() {
@@ -231,6 +252,20 @@ bool BehaviorExecutive::execute() {
     }
   }
 
+  // follow fixed trajectory action
+  if (traj_control_action->is_active()) {
+    traj_control_action->set_running();
+
+    if (traj_control_action->active_has_changed()) {
+      core_trajectory_controller::TrajectoryMode srv;
+      srv.request.mode =
+          core_trajectory_controller::TrajectoryMode::Request::TRACK;
+      trajectory_mode_client.call(srv);
+      const auto fixed_trajectory = GetSquareFixedTraj();
+      fixed_trajectory_pub.publish(fixed_trajectory);
+    }
+  }
+
   for (int i = 0; i < conditions.size(); i++) conditions[i]->publish();
   for (int i = 0; i < actions.size(); i++)
     if (actions[i]->is_active()) actions[i]->publish();
@@ -273,11 +308,6 @@ void BehaviorExecutive::takeoff_state_callback(std_msgs::String msg) {
 
 void BehaviorExecutive::landing_state_callback(std_msgs::String msg) {
   landing_state = msg.data;
-}
-
-void BehaviorExecutive::fixed_trajectory_command_callback(
-    core_trajectory_msgs::FixedTrajectory msg) {
-  fixed_trajectory = msg;
 }
 
 void BehaviorExecutive::has_control_callback(std_msgs::Bool msg) {

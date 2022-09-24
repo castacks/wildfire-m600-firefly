@@ -9,6 +9,7 @@
 #include <core_takeoff_landing_planner/TakeoffLandingCommand.h>
 #include <core_trajectory_controller/TrajectoryMode.h>
 #include <core_trajectory_msgs/FixedTrajectory.h>
+#include <diagnostic_msgs/KeyValue.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
@@ -19,7 +20,6 @@ class BehaviorExecutive : public BaseNode {
  private:
   // variables
   std::string takeoff_state, landing_state;
-  core_trajectory_msgs::FixedTrajectory fixed_trajectory;
 
   // conditions
   std::vector<bt::Condition *> conditions;
@@ -63,7 +63,6 @@ class BehaviorExecutive : public BaseNode {
   ros::Subscriber behavior_tree_command_sub;
   ros::Subscriber takeoff_state_sub;
   ros::Subscriber landing_state_sub;
-  ros::Subscriber fixed_trajectory_command_sub;
   ros::Subscriber has_control_sub;
   ros::Subscriber is_armed_sub;
 
@@ -72,8 +71,6 @@ class BehaviorExecutive : public BaseNode {
       behavior_tree_msgs::BehaviorTreeCommands msg);
   void takeoff_state_callback(std_msgs::String msg);
   void landing_state_callback(std_msgs::String msg);
-  void fixed_trajectory_command_callback(
-      core_trajectory_msgs::FixedTrajectory msg);
   void has_control_callback(std_msgs::Bool msg);
   void is_armed_callback(std_msgs::Bool msg);
 

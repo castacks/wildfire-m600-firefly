@@ -18,12 +18,12 @@
 
   <!-- planning -->
   <include file="$(find core_takeoff_landing_planner)/launch/takeoff_landing_planner.launch" />
-  <node name="global_plan_fixed_trajectory_generator" pkg="core_trajectory_library" type="fixed_trajectory_generator.py">
+  <!-- <node name="global_plan_fixed_trajectory_generator" pkg="core_trajectory_library" type="fixed_trajectory_generator.py">
     <remap from="fixed_trajectory" to="global_plan_fixed_trajectory" />
     <remap from="trajectory_track" to="global_plan" />
-  </node>
-  <!-- <node name="fixed_trajectory_generator" pkg="core_trajectory_library" type="fixed_trajectory_generator.py"></node> -->
-  <include file="$(find core_local_planner)/launch/local_planner.launch" pass_all_args="true" />
+  </node> -->
+  <node name="fixed_trajectory_generator" pkg="firefly_control" type="fixed_trajectory_generator.py"></node>
+  <!-- <include file="$(find core_local_planner)/launch/local_planner.launch" pass_all_args="true" /> -->
   <include file="$(find core_trajectory_controller)/launch/trajectory_controller.launch" pass_all_args="true" />
 
   <!-- perception -->

@@ -25,3 +25,7 @@
 		?
 			(Armed)
 			[Arm]
+	->	
+		(Traj Control Commanded)
+		?
+			[Traj Control]
