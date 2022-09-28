@@ -112,16 +112,6 @@ def get_polygon_path(ccw_vertices, stepover_dist):
 
 
 if __name__ == "__main__":
-    # ceiling_xs = [-10, 0, 10]
-    # ceiling_ys = [5, 7, 5]
-    # floor_xs = [-10, 0, 10]
-    # floor_ys = [-5, -7, -5]
-    # path = get_cell_path(floor_xs, floor_ys, ceiling_xs, ceiling_ys, stepover_dist=2)
-
-    # plt.plot(floor_xs, floor_ys, linewidth=3.0)
-    # plt.plot(ceiling_xs, ceiling_ys, linewidth=3.0)
-    # plt.plot(path_xs, path_ys)
-
     ccw_vertices = [(10, 5), (0, 8), (-10, 5), (-10, -5), (10, -5)]
     ccw_vertices_xs = [ccw_vertices[i][0] for i in range(len(ccw_vertices))]
     ccw_vertices_ys = [ccw_vertices[i][1] for i in range(len(ccw_vertices))]
