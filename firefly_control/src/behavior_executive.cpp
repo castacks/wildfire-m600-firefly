@@ -103,7 +103,7 @@ bool BehaviorExecutive::initialize() {
 
 static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
   core_trajectory_msgs::FixedTrajectory fixed_trajectory;
-  fixed_trajectory.type = "Rectangle";
+  fixed_trajectory.type = "Horizontal_Lawnmower";
   diagnostic_msgs::KeyValue attrib1;
   attrib1.key = "frame_id";
   attrib1.value = "world";
@@ -119,7 +119,11 @@ static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
   diagnostic_msgs::KeyValue attrib5;
   attrib5.key = "velocity";
   attrib5.value = "0.5";
-  fixed_trajectory.attributes = {attrib1, attrib2, attrib3, attrib4, attrib5};
+  diagnostic_msgs::KeyValue attrib6;
+  attrib5.key = "stepover_dist";
+  attrib5.value = "5.0";
+  fixed_trajectory.attributes = {attrib1, attrib2, attrib3,
+                                 attrib4, attrib5, attrib6};
   return fixed_trajectory;
 }
 

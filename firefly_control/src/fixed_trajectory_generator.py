@@ -5,6 +5,7 @@ from core_trajectory_msgs.msg import WaypointXYZVYaw
 from core_trajectory_msgs.msg import TrajectoryXYZVYaw
 from core_trajectory_msgs.msg import FixedTrajectory
 import copy
+from coverage_planner import get_polygon_path
 
 def get_velocities(traj, velocity, max_acc):
     v_prev = 0.
@@ -375,6 +376,32 @@ def get_rectangle_waypoints(attributes):
     return traj
 
 
+def get_horizontal_lawnmower_waypoints(attributes):
+    frame_id = str(attributes['frame_id'])
+    length = float(attributes['length'])
+    width = float(attributes['width'])
+    height = float(attributes['height'])
+    velocity = float(attributes['velocity'])
+    stepover_dist = float(attributes['stepover_dist'])
+
+    ccw_vertices = [(0, 0),(width, 0),(width, length),(0, length)]
+    path = get_polygon_path(ccw_vertices, stepover_dist=stepover_dist)
+
+    traj = TrajectoryXYZVYaw()
+    traj.header.frame_id = frame_id
+
+    for (x,y) in path:
+        wp1 = WaypointXYZVYaw()
+        wp1.position.x = x
+        wp1.position.y = y
+        wp1.position.z = height
+        wp1.yaw = 0
+        wp1.velocity = velocity
+        traj.waypoints.append(wp1)
+
+    return traj
+
+
 def fixed_trajectory_callback(msg):
     attributes = {}
 
@@ -395,6 +422,8 @@ def fixed_trajectory_callback(msg):
         trajectory_msg = get_point_waypoints(attributes)
     elif msg.type == 'Rectangle':
         trajectory_msg = get_rectangle_waypoints(attributes)
+    elif msg.type == 'Horizontal_Lawnmower':
+        trajectory_msg = get_horizontal_lawnmower_waypoints(attributes)
 
     if trajectory_msg != None:
         trajectory_track_pub.publish(trajectory_msg)
