@@ -1,0 +1,11 @@
+<launch>
+  <arg name="robot_name" default="uav1" />
+  <arg name="drone_interface" default="DJIInterface" />
+
+  <group ns="$(arg robot_name)">
+    <!-- visualization -->
+    <include file="$(find core_central)/launch/common/visualization.launch" pass_all_args="true" />
+
+  </group>
+
+</launch>
