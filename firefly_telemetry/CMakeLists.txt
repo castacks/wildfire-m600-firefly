@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  behavior_tree_msgs
 )
 
 add_service_files(

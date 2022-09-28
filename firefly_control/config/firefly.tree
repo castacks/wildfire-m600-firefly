@@ -1,0 +1,31 @@
+?
+	->
+		(Disarm Commanded)
+		?
+			<!>
+				(Armed)
+			[Disarm]
+	->
+		(Request Control Commanded)
+		?
+			(Offboard Mode)
+			[Request Control]
+	->
+		(Takeoff Commanded)
+		?
+			(Takeoff Complete)
+			[Takeoff]
+	->
+		(Land Commanded)
+		?
+			(Landed)
+			[Land]
+	->
+		(Arm Commanded)
+		?
+			(Armed)
+			[Arm]
+	->	
+		(Traj Control Commanded)
+		?
+			[Traj Control]

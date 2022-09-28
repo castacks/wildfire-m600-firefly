@@ -42,7 +42,12 @@ class GCSTelemetry:
 
         rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
         rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
-        rospy.Subscriber("execute_auto_flight", Empty, self.exec_auto_callback)
+        rospy.Subscriber("request_control", Empty, self.request_control_callback)
+        rospy.Subscriber("arm", Empty, self.arm_callback)
+        rospy.Subscriber("disarm", Empty, self.disarm_callback)
+        rospy.Subscriber("takeoff", Empty, self.takeoff_callback)
+        rospy.Subscriber("land", Empty, self.land_callback)
+        rospy.Subscriber("traj_control", Empty, self.traj_control_callback)
         rospy.Subscriber("kill_switch", Empty, self.kill_switch_callback)
         rospy.Subscriber("capture_frame", Empty, self.capture_frame_callback)
         rospy.Subscriber("record_rosbag", Empty, self.record_ros_bag_callback)
@@ -57,7 +62,12 @@ class GCSTelemetry:
 
         self.clear_map_send_flag = False
         self.set_local_pos_ref_send_flag = False
-        self.exec_auto_send_flag = False
+        self.request_control_send_flag = False
+        self.arm_send_flag = False
+        self.disarm_send_flag = False
+        self.takeoff_send_flag = False
+        self.land_send_flag = False
+        self.traj_control_send_flag = False
         self.kill_switch_flag = False
         self.capture_frame_send_flag = False
         self.heartbeat_send_flag = False
@@ -98,55 +108,7 @@ class GCSTelemetry:
         if self.connectedToGCSRadio:
             try:
                 self.read_incoming()
-
-                if self.clear_map_send_flag:
-                    self.connection.mav.firefly_clear_map_send(0)
-                    rospy.loginfo("Clearing Map")
-                    self.clear_map_send_flag = False
-                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-
-                if self.set_local_pos_ref_send_flag:
-                    self.connection.mav.firefly_set_local_pos_ref_send(0)
-                    rospy.loginfo("Setting Local Position Reference")
-                    self.set_local_pos_ref_send_flag = False
-                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-
-                if self.exec_auto_send_flag:
-                    self.connection.mav.firefly_exec_auto_send(0)
-                    rospy.loginfo("Executing Autonomous Flight")
-                    self.exec_auto_send_flag = False
-                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-
-                if self.kill_switch_flag:
-                    self.connection.mav.firefly_kill_send(0)
-                    rospy.loginfo("KILLSWITCH TRIGGERED")
-                    self.kill_switch_flag = False
-                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-
-                if self.capture_frame_send_flag:
-                    self.connection.mav.firefly_get_frame_send(1)
-                    rospy.loginfo("Capturing Frame")
-                    self.capture_frame_send_flag = False
-                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-
-                if self.heartbeat_send_flag:
-                    self.connection.mav.firefly_heartbeat_send(1)
-                    rospy.logdebug("Sending Heartbeat")
-                    self.heartbeat_send_flag = False
-                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-
-                if self.record_ros_bag_send_flag:
-                    rospy.loginfo("Recording ROS Bags")
-                    self.connection.mav.firefly_record_bag_send(1)
-                    self.record_ros_bag_send_flag = False
-                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-            
-                if self.stop_record_ros_bag_send_flag:
-                    rospy.loginfo("Stopping ROS Bag recording")
-                    self.connection.mav.firefly_record_bag_send(0)
-                    self.stop_record_ros_bag_send_flag = False
-                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-
+                self.send_outgoing()
             except serial.serialutil.SerialException as e:
                 self.connectedToGCSRadio = False
                 rospy.logerr(e)
@@ -255,14 +217,108 @@ class GCSTelemetry:
                 altitude = msg['alt'] 
                 self.altitude_status_gcs.publish(altitude)
 
+    def send_outgoing(self):
+        if self.clear_map_send_flag:
+            self.connection.mav.firefly_clear_map_send(0)
+            rospy.loginfo("Clearing Map")
+            self.clear_map_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.set_local_pos_ref_send_flag:
+            self.connection.mav.firefly_set_local_pos_ref_send(0)
+            rospy.loginfo("Setting Local Position Reference")
+            self.set_local_pos_ref_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.request_control_send_flag:
+            self.connection.mav.firefly_request_control_send(0)
+            rospy.loginfo("Requesting Autonomous Control")
+            self.request_control_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.arm_send_flag:
+            self.connection.mav.firefly_arm_send(0)
+            rospy.loginfo("Arming Drone")
+            self.arm_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.disarm_send_flag:
+            self.connection.mav.firefly_disarm_send(0)
+            rospy.loginfo("Disarming Drone")
+            self.disarm_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.takeoff_send_flag:
+            self.connection.mav.firefly_takeoff_send(0)
+            rospy.loginfo("Taking Off")
+            self.takeoff_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.land_send_flag:
+            self.connection.mav.firefly_land_send(0)
+            rospy.loginfo("Landing")
+            self.land_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+            
+        if self.traj_control_send_flag:
+            self.connection.mav.firefly_traj_control_send(0)
+            rospy.loginfo("Enabling Trajectory Control")
+            self.traj_control_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.kill_switch_flag:
+            self.connection.mav.firefly_kill_send(0)
+            rospy.loginfo("KILLSWITCH TRIGGERED")
+            self.kill_switch_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.capture_frame_send_flag:
+            self.connection.mav.firefly_get_frame_send(1)
+            rospy.loginfo("Capturing Frame")
+            self.capture_frame_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.heartbeat_send_flag:
+            self.connection.mav.firefly_heartbeat_send(1)
+            rospy.logdebug("Sending Heartbeat")
+            self.heartbeat_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.record_ros_bag_send_flag:
+            rospy.loginfo("Recording ROS Bags")
+            self.connection.mav.firefly_record_bag_send(1)
+            self.record_ros_bag_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+    
+        if self.stop_record_ros_bag_send_flag:
+            rospy.loginfo("Stopping ROS Bag recording")
+            self.connection.mav.firefly_record_bag_send(0)
+            self.stop_record_ros_bag_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
     def clear_map_callback(self, empty_msg):
         self.clear_map_send_flag = True
 
     def set_local_pos_ref_callback(self, empty_msg):
         self.set_local_pos_ref_send_flag = True
 
-    def exec_auto_callback(self, empty_msg):
-        self.exec_auto_send_flag = True
+    def request_control_callback(self, empty_msg):
+        self.request_control_send_flag = True
+
+    def arm_callback(self, empty_msg):
+        self.arm_send_flag = True
+
+    def disarm_callback(self, empty_msg):
+        self.disarm_send_flag = True
+
+    def takeoff_callback(self, empty_msg):
+        self.takeoff_send_flag = True
+
+    def land_callback(self, empty_msg):
+        self.land_send_flag = True
+
+    def traj_control_callback(self, empty_msg):
+        self.traj_control_send_flag = True
 
     def kill_switch_callback(self, empty_msg):
         self.kill_switch_flag = True

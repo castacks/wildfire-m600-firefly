@@ -138,11 +138,10 @@ private:
     }
 
     void publish_map_callback(const ros::TimerEvent& e) {
-        std::cout << mapped_bins << std::endl;
-        if (new_update) {
-            map_pub.publish(outputMap);
-            new_update = false;
-        }
+      if (new_update) {
+        map_pub.publish(outputMap);
+        new_update = false;
+      }
     }
 
     void clear(const std_msgs::Empty &empty_msg) {

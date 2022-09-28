@@ -186,6 +186,7 @@ catkin_install_python(PROGRAMS
 install(FILES
   launch/gcs_bringup.launch
   launch/onboard_bringup.launch
+  launch/ca_bringup.launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
