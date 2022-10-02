@@ -11,6 +11,14 @@ def ipp_plan_callback(ipp_plan):
     trajectory_msg.header = ipp_plan.header
     trajectory_msg.header.frame_id = "/uav1/map"
 
+    wp1 = WaypointXYZVYaw()
+    wp1.position.x = 0
+    wp1.position.y = 0
+    wp1.position.z = 30
+    wp1.yaw = 0
+    wp1.velocity = 0.5
+    trajectory_msg.waypoints.append(wp1)
+
     for wp in ipp_plan.plan:
         output_wp = WaypointXYZVYaw()
         output_wp.position.x = wp.position.position.x
@@ -26,6 +34,14 @@ def ipp_plan_callback(ipp_plan):
         output_wp.velocity = 0.5
 
         trajectory_msg.waypoints.append(output_wp)
+    
+    wp1 = WaypointXYZVYaw()
+    wp1.position.x = 0
+    wp1.position.y = 0
+    wp1.position.z = 30
+    wp1.yaw = 0
+    wp1.velocity = 0.5
+    trajectory_msg.waypoints.append(wp1)
 
     trajectory_track_pub.publish(trajectory_msg)
 

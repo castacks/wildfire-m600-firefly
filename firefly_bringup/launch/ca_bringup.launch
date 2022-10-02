@@ -28,6 +28,8 @@
 
     <node pkg="firefly_control" type="ipp_plan_to_trajectory.py" name="ipp_plan_to_trajectory" output="screen"/>
 
+    <node pkg="planner_map_interfaces" type="pub_fixed_plan_request_on_demand.py" name="pub_fixed_plan_request_on_demand" output="screen"/>
+
   </group>
 
 

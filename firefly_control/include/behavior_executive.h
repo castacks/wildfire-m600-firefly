@@ -13,6 +13,7 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
+#include <std_msgs/Empty.h>
 
 #include <string>
 
@@ -62,6 +63,7 @@ class BehaviorExecutive : public BaseNode {
   // publishers
   ros::Publisher fixed_trajectory_pub;
   ros::Publisher in_air_pub;
+  ros::Publisher generate_ipp_plan_request_pub;
 
   // subscribers
   ros::Subscriber behavior_tree_command_sub;

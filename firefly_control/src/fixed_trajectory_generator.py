@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/python3
 import numpy as np
 import rospy
 from core_trajectory_msgs.msg import WaypointXYZVYaw
