@@ -34,7 +34,7 @@
   <arg name="planner" default="tigris" />
   <arg name="search" default="true" />
   <arg name="track" default="false" />
-  <arg name="rviz" default="true" />
+  <arg name="rviz" default="false" />
   <arg name="vis_while_planning" default="true" />
   <arg name="loglevel" default="debug" />
 

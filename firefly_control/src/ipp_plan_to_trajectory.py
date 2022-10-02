@@ -1,19 +1,21 @@
+#!/usr/bin/python2
+
 import rospy
 from planner_map_interfaces.msg import Plan, Waypoint
 from core_trajectory_msgs.msg import TrajectoryXYZVYaw, WaypointXYZVYaw
 from tf.transformations import euler_from_quaternion
 
 
-def ipp_plan_callback(ipp_plan: Plan):
-    trajectory_msg = TrajectoryXYZVYaw
+def ipp_plan_callback(ipp_plan):
+    trajectory_msg = TrajectoryXYZVYaw()
     trajectory_msg.header = ipp_plan.header
+    trajectory_msg.header.frame_id = "/uav1/map"
 
     for wp in ipp_plan.plan:
-        wp = Waypoint()
         output_wp = WaypointXYZVYaw()
-        output_wp.position.x = wp.position.x
-        output_wp.position.y = wp.position.y
-        output_wp.position.z = wp.position.z
+        output_wp.position.x = wp.position.position.x
+        output_wp.position.y = wp.position.position.y
+        output_wp.position.z = wp.position.position.z
 
         orientation = wp.position.orientation
         (_, _, yaw) = euler_from_quaternion(
@@ -21,7 +23,7 @@ def ipp_plan_callback(ipp_plan: Plan):
         )
         output_wp.yaw = yaw
 
-        output_wp.velocity = wp.command_speed
+        output_wp.velocity = 0.5
 
         trajectory_msg.waypoints.append(output_wp)
 
