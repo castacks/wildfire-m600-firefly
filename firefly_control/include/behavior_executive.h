@@ -30,6 +30,8 @@ class BehaviorExecutive : public BaseNode {
   bt::Condition *takeoff_commanded_condition;
   bt::Condition *land_commanded_condition;
   bt::Condition *traj_control_commanded_condition;
+  bt::Condition *coverage_planner_commanded_condition;
+  bt::Condition *ipp_planner_commanded_condition;
 
   bt::Condition *offboard_mode_condition;
   bt::Condition *armed_condition;
@@ -45,6 +47,8 @@ class BehaviorExecutive : public BaseNode {
   bt::Action *takeoff_action;
   bt::Action *land_action;
   bt::Action *traj_control_action;
+  bt::Action *coverage_planner_action;
+  bt::Action *ipp_planner_action;
 
   // services
   ros::ServiceClient takeoff_landing_client;
