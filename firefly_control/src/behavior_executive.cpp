@@ -151,8 +151,8 @@ static core_trajectory_msgs::FixedTrajectory GetLawnmowerTraj() {
   attrib5.key = "velocity";
   attrib5.value = "0.5";
   diagnostic_msgs::KeyValue attrib6;
-  attrib5.key = "stepover_dist";
-  attrib5.value = "5.0";
+  attrib6.key = "stepover_dist";
+  attrib6.value = "5.0";
   fixed_trajectory.attributes = {attrib1, attrib2, attrib3,
                                  attrib4, attrib5, attrib6};
   return fixed_trajectory;

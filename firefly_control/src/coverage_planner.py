@@ -1,5 +1,4 @@
 from __future__ import annotations
-import matplotlib.pyplot as plt
 from typing import Tuple, List
 from enum import Enum
 
@@ -325,37 +324,3 @@ def trapezoidal_decomposition(
             current_edges.append(e.next_edge)
 
     return closed_cells
-
-
-if __name__ == "__main__":
-    # ccw_vertices = [(10, 5), (0, 8), (-10, 5), (-10, -5), (10, -5)]
-    # ccw_vertices_xs, ccw_vertices_ys = get_polygon_xs_and_ys(ccw_vertices)
-    # path = get_polygon_path(ccw_vertices, stepover_dist=2)
-    # path_xs, path_ys = get_polygon_xs_and_ys(path)
-    # plt.plot(
-    #     ccw_vertices_xs + [ccw_vertices_xs[0]],
-    #     ccw_vertices_ys + [ccw_vertices_ys[0]],
-    #     linewidth=5.0,
-    # )
-    # plt.plot(path_xs, path_ys)
-
-    outer_boundary = [
-        Point2d(10, 5),
-        Point2d(0, 8),
-        Point2d(-10, 5),
-        Point2d(-12, -5),
-        Point2d(12, -5),
-    ]
-
-    hole1 = [Point2d(2.5, 3), Point2d(5, 5), Point2d(7, 3)]
-    hole2 = [
-        Point2d(-6.1, 4.2),
-        Point2d(-1.12, 0),
-        Point2d(-6.6, -2),
-        Point2d(-2.27, 0),
-    ]
-    cells = trapezoidal_decomposition(outer_boundary, [hole1, hole2])
-    for cell in cells:
-        cell.plot()
-
-    plt.show()

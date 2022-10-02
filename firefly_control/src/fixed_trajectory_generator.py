@@ -323,6 +323,28 @@ def get_circle_waypoints(attributes):#radius, velocity, frame_id):
 
     return traj
 
+def interpolate_between_points(x1, y1, x2, y2, max_spacing):
+    dist = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+    num_points = 1 + int(np.ceil(dist/max_spacing))
+    spacing = dist / (num_points - 1)
+
+    path = []
+    for i in range(num_points):
+        x = x1 + (x2-x1) * spacing * i / dist
+        y = y1 + (y2-y1) * spacing * i / dist
+        path.append((x,y))
+    
+    return path
+
+def interpolate_path(xy_path, max_spacing):
+    assert len(xy_path) > 1
+    interpolated_path = [xy_path[0]]
+    for i in range(1, len(xy_path)):
+        x1, y1 = xy_path[i-1]
+        x2, y2 = xy_path[i]
+        interpolated_path.extend(interpolate_between_points(x1, y1, x2, y2, max_spacing)[1:])
+    return interpolated_path
+
 def get_rectangle_waypoints(attributes):
     frame_id = str(attributes['frame_id'])
     length = float(attributes['length'])
@@ -330,48 +352,20 @@ def get_rectangle_waypoints(attributes):
     height = float(attributes['height'])
     velocity = float(attributes['velocity'])
 
+    path = [(0,0), (length, 0), (length, width), (0, width), (0, 0)]
+    path = interpolate_path(path, max_spacing = 2.5)
+
     traj = TrajectoryXYZVYaw()
     traj.header.frame_id = frame_id
 
-    wp1 = WaypointXYZVYaw()
-    wp1.position.x = 0.
-    wp1.position.y = 0.
-    wp1.position.z = height
-    wp1.yaw = 0
-    wp1.velocity = velocity
-    traj.waypoints.append(wp1)
-
-    wp2 = WaypointXYZVYaw()
-    wp2.position.x = length
-    wp2.position.y = 0.
-    wp2.position.z = height
-    wp2.yaw = 0
-    wp2.velocity = velocity
-    traj.waypoints.append(wp2)
-
-    wp3 = WaypointXYZVYaw()
-    wp3.position.x = length
-    wp3.position.y = width
-    wp3.position.z = height
-    wp3.yaw = 0
-    wp3.velocity = velocity
-    traj.waypoints.append(wp3)
-
-    wp4 = WaypointXYZVYaw()
-    wp4.position.x = 0.
-    wp4.position.y = width
-    wp4.position.z = height
-    wp4.yaw = 0
-    wp4.velocity = velocity
-    traj.waypoints.append(wp4)
-
-    wp5 = WaypointXYZVYaw()
-    wp5.position.x = 0.
-    wp5.position.y = 0.
-    wp5.position.z = height
-    wp5.yaw = 0
-    wp5.velocity = velocity
-    traj.waypoints.append(wp5)
+    for (x,y) in path:
+        wp1 = WaypointXYZVYaw()
+        wp1.position.x = x
+        wp1.position.y = y
+        wp1.position.z = height
+        wp1.yaw = 0
+        wp1.velocity = velocity
+        traj.waypoints.append(wp1)
 
     return traj
 
@@ -386,6 +380,8 @@ def get_horizontal_lawnmower_waypoints(attributes):
 
     ccw_vertices = [(0, 0),(width, 0),(width, length),(0, length)]
     path = get_polygon_path(ccw_vertices, stepover_dist=stepover_dist)
+    path.append((0,0))
+    path = interpolate_path(path, max_spacing=2.5)
 
     traj = TrajectoryXYZVYaw()
     traj.header.frame_id = frame_id
