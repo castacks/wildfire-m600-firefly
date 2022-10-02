@@ -48,6 +48,8 @@ class GCSTelemetry:
         rospy.Subscriber("takeoff", Empty, self.takeoff_callback)
         rospy.Subscriber("land", Empty, self.land_callback)
         rospy.Subscriber("traj_control", Empty, self.traj_control_callback)
+        rospy.Subscriber("coverage_planner", Empty, self.coverage_planner_callback)
+        rospy.Subscriber("ipp_planner", Empty, self.ipp_planner_callback)
         rospy.Subscriber("kill_switch", Empty, self.kill_switch_callback)
         rospy.Subscriber("capture_frame", Empty, self.capture_frame_callback)
         rospy.Subscriber("record_rosbag", Empty, self.record_ros_bag_callback)
@@ -68,6 +70,8 @@ class GCSTelemetry:
         self.takeoff_send_flag = False
         self.land_send_flag = False
         self.traj_control_send_flag = False
+        self.coverage_planner_send_flag = False
+        self.ipp_planner_send_flag = False
         self.kill_switch_flag = False
         self.capture_frame_send_flag = False
         self.heartbeat_send_flag = False
@@ -266,6 +270,18 @@ class GCSTelemetry:
             self.traj_control_send_flag = False
             rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
+        if self.coverage_planner_send_flag:
+            self.connection.mav.firefly_coverage_planner_send(0)
+            rospy.loginfo("Enabling Coverage Planner")
+            self.coverage_planner_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.ipp_planner_send_flag:
+            self.connection.mav.firefly_ipp_planner_send(0)
+            rospy.loginfo("Enabling IPP Planner")
+            self.ipp_planner_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
         if self.kill_switch_flag:
             self.connection.mav.firefly_kill_send(0)
             rospy.loginfo("KILLSWITCH TRIGGERED")
@@ -319,6 +335,12 @@ class GCSTelemetry:
 
     def traj_control_callback(self, empty_msg):
         self.traj_control_send_flag = True
+
+    def coverage_planner_callback(self, empty_msg):
+        self.coverage_planner_send_flag = True
+
+    def ipp_planner_callback(self, empty_msg):
+        self.ipp_planner_send_flag = True
 
     def kill_switch_callback(self, empty_msg):
         self.kill_switch_flag = True

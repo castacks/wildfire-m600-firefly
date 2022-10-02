@@ -382,6 +382,16 @@ class OnboardTelemetry:
             command.condition_name = "Traj Control Commanded"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
+        elif msg['mavpackettype'] == 'FIREFLY_COVERAGE_PLANNER':
+            command = BehaviorTreeCommand()
+            command.condition_name = "Coverage Planner Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg['mavpackettype'] == 'FIREFLY_IPP_PLANNER':
+            command = BehaviorTreeCommand()
+            command.condition_name = "IPP Planner Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
 
         if len(behavior_tree_commands.commands) > 0:
             self.behavior_tree_commands_pub.publish(behavior_tree_commands)

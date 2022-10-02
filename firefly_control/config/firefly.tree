@@ -29,3 +29,11 @@
 		(Traj Control Commanded)
 		?
 			[Traj Control]
+	->	
+		(Coverage Planner Commanded)
+		?
+			[Coverage Planner]
+	->	
+		(IPP Planner Commanded)
+		?
+			[IPP Planner]
