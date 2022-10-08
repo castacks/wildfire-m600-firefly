@@ -231,7 +231,7 @@ class OnboardTelemetry:
             return
 
         try:
-            transform = self.tfBuffer.lookup_transform('base_link', 'world', rospy.Time(0))
+            transform = self.tfBuffer.lookup_transform('/uav1/base_link', '/uav1/map', rospy.Time(0))
             x = transform.transform.translation.x
             y = transform.transform.translation.y
             z = transform.transform.translation.z

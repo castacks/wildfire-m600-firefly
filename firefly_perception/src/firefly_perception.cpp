@@ -84,9 +84,8 @@ public:
                 cv::imshow("Thresholded Image", cv_img.image);
             }
 
-
-            listener.lookupTransform("world", "thermal/camera_link",
-                                         ros::Time(0), img_transform);
+            listener.lookupTransform("/uav1/map", "/uav1/thermal/camera_link",
+                                     ros::Time(0), img_transform);
 
             img_with_tf_ready = true;
 
