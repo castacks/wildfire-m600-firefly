@@ -1,0 +1,40 @@
+<launch>
+
+  <arg name="robot_name" default="uav1" />
+  
+  <node name="pose_controller" pkg="core_pose_controller" type="pose_controller">
+    <param name="execute_target" value="50." />
+    <param name="target_frame" value="$(arg robot_name)/map" />
+
+    <!-- x -->
+    <param name="x/P" type="double" value="1.5" />
+    <param name="x/I" type="double" value="0" />
+    <param name="x/FF" type="double" value="0.0" />
+    <param name="x/min" type="double" value="-12" />
+    <param name="x/max" type="double" value="12" />
+    
+    <!-- y -->
+    <param name="y/P" type="double" value="1.5" />
+    <param name="y/I" type="double" value="0" />
+    <param name="y/FF" type="double" value="0.0" />
+    <param name="y/min" type="double" value="-12" />
+    <param name="y/max" type="double" value="12" />
+
+    <!-- z -->
+    <param name="z/P" type="double" value="1.0" />
+    <param name="z/I" type="double" value="0.0" />
+    <param name="z/D" type="double" value="0.0" />
+    <param name="z/FF" type="double" value="0.0" />
+    <param name="z/min" type="double" value="-.5" />
+    <param name="z/max" type="double" value=".5" />
+
+    <!-- yaw -->
+    <param name="yaw/P" type="double" value="1." />
+    <param name="yaw/min" type="double" value="-2" />
+    <param name="yaw/max" type="double" value="2" />
+
+    
+  </node>
+
+
+</launch>

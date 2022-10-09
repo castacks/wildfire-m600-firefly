@@ -1,0 +1,5 @@
+<library path="lib/libdji_interface">
+  <class type="DJIInterface" base_class_type="DroneInterface">
+    <description>DJI plugin.</description>
+  </class>
+</library>
