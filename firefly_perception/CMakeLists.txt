@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
 )
 find_package(
-  OpenCV 3.2 
+  OpenCV
 )
 catkin_package(
 #  INCLUDE_DIRS include
