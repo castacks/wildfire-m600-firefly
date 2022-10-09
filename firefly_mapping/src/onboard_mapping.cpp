@@ -38,7 +38,7 @@ public:
                  0.0,     1.0/fy, -cy/fy,
                  0.0,     0.0,     1.0;
 
-        outputMap.header.frame_id = "world";
+        outputMap.header.frame_id = "uav1/map";
         outputMap.info.resolution = 0.5;
         outputMap.info.width = 400; //Number of Cells
         outputMap.info.height = 400; //Number of Cells

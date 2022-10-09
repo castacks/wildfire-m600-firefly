@@ -65,9 +65,9 @@ class OnboardTelemetry:
         rospy.Subscriber("new_fire_bins", Int32MultiArray, self.new_fire_bins_callback)
         rospy.Subscriber("new_no_fire_bins", Int32MultiArray, self.new_no_fire_bins_callback)
         rospy.Subscriber("init_to_no_fire_with_pose_bins", Pose, self.init_to_no_fire_with_pose_callback)
-        rospy.Subscriber("/seek_camera/isHealthy", Bool, self.camera_health_callback)
-        rospy.Subscriber("/dji_sdk/gps_position", NavSatFix , self.get_altitude_callback)
-        rospy.Subscriber("/dji_sdk/battery_state", BatteryState, self.battery_health_callback)
+        rospy.Subscriber("seek_camera/isHealthy", Bool, self.camera_health_callback)
+        rospy.Subscriber("dji_sdk/gps_position", NavSatFix , self.get_altitude_callback)
+        rospy.Subscriber("dji_sdk/battery_state", BatteryState, self.battery_health_callback)
         rospy.Subscriber("onboard_temperature", Float32, self.onboard_temperature_callback)
 
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
@@ -232,7 +232,7 @@ class OnboardTelemetry:
             return
 
         try:
-            transform = self.tfBuffer.lookup_transform('/uav1/base_link', '/uav1/map', rospy.Time(0))
+            transform = self.tfBuffer.lookup_transform('uav1/base_link', 'uav1/map', rospy.Time(0))
             x = transform.transform.translation.x
             y = transform.transform.translation.y
             z = transform.transform.translation.z
