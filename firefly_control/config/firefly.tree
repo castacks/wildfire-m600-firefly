@@ -1,15 +1,10 @@
 ?
 	->
 		(Disarm Commanded)
-		?
-			<!>
-				(Armed)
-			[Disarm]
+		[Disarm]
 	->
 		(Request Control Commanded)
-		?
-			(Offboard Mode)
-			[Request Control]
+		[Request Control]
 	->
 		(Takeoff Commanded)
 		?
@@ -22,18 +17,13 @@
 			[Land]
 	->
 		(Arm Commanded)
-		?
-			(Armed)
-			[Arm]
+		[Arm]
 	->	
 		(Traj Control Commanded)
-		?
-			[Traj Control]
+		[Traj Control]
 	->	
 		(Coverage Planner Commanded)
-		?
-			[Coverage Planner]
+		[Coverage Planner]
 	->	
 		(IPP Planner Commanded)
-		?
-			[IPP Planner]
+		[IPP Planner]

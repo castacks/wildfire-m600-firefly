@@ -23,7 +23,7 @@ import os
 from threading import Lock
 import tf2_ros
 import struct
-from firefly_telemetry.srv import SetLocalPosRef
+# from firefly_telemetry.srv import SetLocalPosRef
 import time
 import serial
 import datetime
@@ -31,6 +31,7 @@ from geometry_msgs.msg import Pose
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg import BatteryState, NavSatFix
 from behavior_tree_msgs.msg import BehaviorTreeCommand, BehaviorTreeCommands, Status
+from dji_sdk.srv import SetLocalPosRef
 
 os.environ['MAVLINK20'] = '1'
 
@@ -64,9 +65,9 @@ class OnboardTelemetry:
         rospy.Subscriber("new_fire_bins", Int32MultiArray, self.new_fire_bins_callback)
         rospy.Subscriber("new_no_fire_bins", Int32MultiArray, self.new_no_fire_bins_callback)
         rospy.Subscriber("init_to_no_fire_with_pose_bins", Pose, self.init_to_no_fire_with_pose_callback)
-        rospy.Subscriber("/seek_camera/isHealthy", Bool, self.camera_health_callback)
-        rospy.Subscriber("/dji_sdk/gps_position", NavSatFix , self.get_altitude_callback)
-        rospy.Subscriber("/dji_sdk/battery_state", BatteryState, self.battery_health_callback)
+        rospy.Subscriber("seek_camera/isHealthy", Bool, self.camera_health_callback)
+        rospy.Subscriber("dji_sdk/gps_position", NavSatFix , self.get_altitude_callback)
+        rospy.Subscriber("dji_sdk/battery_state", BatteryState, self.battery_health_callback)
         rospy.Subscriber("onboard_temperature", Float32, self.onboard_temperature_callback)
 
         self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
@@ -231,7 +232,7 @@ class OnboardTelemetry:
             return
 
         try:
-            transform = self.tfBuffer.lookup_transform('base_link', 'world', rospy.Time(0))
+            transform = self.tfBuffer.lookup_transform('uav1/base_link', 'uav1/map', rospy.Time(0))
             x = transform.transform.translation.x
             y = transform.transform.translation.y
             z = transform.transform.translation.z
@@ -311,11 +312,12 @@ class OnboardTelemetry:
             self.clear_map_pub.publish(Empty())
         elif msg['mavpackettype'] == 'FIREFLY_SET_LOCAL_POS_REF':
             self.clear_map_pub.publish(Empty())
-            rospy.wait_for_service('set_local_pos_ref', timeout=0.1)
+            rospy.wait_for_service('dji_sdk/set_local_pos_ref', timeout=0.1)
             try:
-                set_local_pos_ref = rospy.ServiceProxy('set_local_pos_ref', SetLocalPosRef)
+                set_local_pos_ref = rospy.ServiceProxy('dji_sdk/set_local_pos_ref', SetLocalPosRef)
                 response = set_local_pos_ref()
-                self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
+                # self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
+                self.connection.mav.firefly_local_pos_ref_send(0, 0, 0)
             except rospy.ServiceException as e:
                 rospy.logerr("Service call failed: %s" % e)            
         elif msg['mavpackettype'] == 'FIREFLY_KILL':

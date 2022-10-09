@@ -93,6 +93,7 @@ bool BehaviorExecutive::initialize() {
   fixed_trajectory_pub = nh->advertise<core_trajectory_msgs::FixedTrajectory>(
       "fixed_trajectory", 10);
   in_air_pub = nh->advertise<std_msgs::Bool>("in_air", 1);
+  generate_ipp_plan_request_pub = nh->advertise<std_msgs::Empty>("generate_ipp_plan_request", 1);
 
   // init subscribers
   behavior_tree_command_sub =
@@ -127,7 +128,7 @@ static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
   attrib4.value = "30";
   diagnostic_msgs::KeyValue attrib5;
   attrib5.key = "velocity";
-  attrib5.value = "0.5";
+  attrib5.value = "3.0";
   fixed_trajectory.attributes = {attrib1, attrib2, attrib3, attrib4, attrib5};
   return fixed_trajectory;
 }
@@ -149,7 +150,7 @@ static core_trajectory_msgs::FixedTrajectory GetLawnmowerTraj() {
   attrib4.value = "30";
   diagnostic_msgs::KeyValue attrib5;
   attrib5.key = "velocity";
-  attrib5.value = "0.5";
+  attrib5.value = "3.0";
   diagnostic_msgs::KeyValue attrib6;
   attrib6.key = "stepover_dist";
   attrib6.value = "5.0";
@@ -317,7 +318,17 @@ bool BehaviorExecutive::execute() {
 
   // follow ipp planner
   if (ipp_planner_action->is_active()) {
-    ipp_planner_action->set_success();
+    ipp_planner_action->set_running();
+
+    if (ipp_planner_action->active_has_changed()) {
+      core_trajectory_controller::TrajectoryMode srv;
+      srv.request.mode =
+          core_trajectory_controller::TrajectoryMode::Request::TRACK;
+      trajectory_mode_client.call(srv);
+
+      std_msgs::Empty empty_msg;
+      generate_ipp_plan_request_pub.publish(empty_msg);
+    }
   }
 
   for (int i = 0; i < conditions.size(); i++) conditions[i]->publish();
