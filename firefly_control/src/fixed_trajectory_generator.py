@@ -352,7 +352,7 @@ def get_rectangle_waypoints(attributes):
     height = float(attributes['height'])
     velocity = float(attributes['velocity'])
 
-    path = [(0,0), (length, 0), (length, width), (0, width), (0, 0)]
+    path = [(0,0), (0, width), (length, width), (length, 0), (0, 0)]
     path = interpolate_path(path, max_spacing = 2.5)
 
     traj = TrajectoryXYZVYaw()
