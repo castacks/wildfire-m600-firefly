@@ -23,7 +23,7 @@ import os
 from threading import Lock
 import tf2_ros
 import struct
-from firefly_telemetry.srv import SetLocalPosRef
+# from firefly_telemetry.srv import SetLocalPosRef
 import time
 import serial
 import datetime
@@ -31,6 +31,7 @@ from geometry_msgs.msg import Pose
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg import BatteryState, NavSatFix
 from behavior_tree_msgs.msg import BehaviorTreeCommand, BehaviorTreeCommands, Status
+from dji_sdk.srv import SetLocalPosRef
 
 os.environ['MAVLINK20'] = '1'
 
@@ -311,11 +312,12 @@ class OnboardTelemetry:
             self.clear_map_pub.publish(Empty())
         elif msg['mavpackettype'] == 'FIREFLY_SET_LOCAL_POS_REF':
             self.clear_map_pub.publish(Empty())
-            rospy.wait_for_service('set_local_pos_ref', timeout=0.1)
+            rospy.wait_for_service('dji_sdk/set_local_pos_ref', timeout=0.1)
             try:
-                set_local_pos_ref = rospy.ServiceProxy('set_local_pos_ref', SetLocalPosRef)
+                set_local_pos_ref = rospy.ServiceProxy('dji_sdk/set_local_pos_ref', SetLocalPosRef)
                 response = set_local_pos_ref()
-                self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
+                # self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
+                self.connection.mav.firefly_local_pos_ref_send(0, 0, 0)
             except rospy.ServiceException as e:
                 rospy.logerr("Service call failed: %s" % e)            
         elif msg['mavpackettype'] == 'FIREFLY_KILL':
