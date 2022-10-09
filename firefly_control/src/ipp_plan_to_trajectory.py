@@ -16,7 +16,7 @@ def ipp_plan_callback(ipp_plan):
     wp1.position.y = 0
     wp1.position.z = 30
     wp1.yaw = 0
-    wp1.velocity = 0.5
+    wp1.velocity = 3.0
     trajectory_msg.waypoints.append(wp1)
 
     for wp in ipp_plan.plan:
@@ -31,7 +31,7 @@ def ipp_plan_callback(ipp_plan):
         )
         output_wp.yaw = yaw
 
-        output_wp.velocity = 0.5
+        output_wp.velocity = 3.0
 
         trajectory_msg.waypoints.append(output_wp)
     
@@ -40,7 +40,7 @@ def ipp_plan_callback(ipp_plan):
     wp1.position.y = 0
     wp1.position.z = 30
     wp1.yaw = 0
-    wp1.velocity = 0.5
+    wp1.velocity = 3.0
     trajectory_msg.waypoints.append(wp1)
 
     trajectory_track_pub.publish(trajectory_msg)
