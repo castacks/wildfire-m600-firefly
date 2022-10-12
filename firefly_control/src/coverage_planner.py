@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Tuple, List
 from enum import Enum
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def get_polygon_xs_and_ys(polygon):
@@ -208,13 +209,18 @@ class Trapezoidal_Cell:
 
         self.neighbors = neighbors
 
-    def get_centroid(self) -> Point2d:
+        self.id = None
+
+    def get_vertices(self) -> List[Point2d]:
         points = []
         points.append(get_vertical_intersection_with_edge(self.left_x, self.floor))
         points.append(get_vertical_intersection_with_edge(self.right_x, self.floor))
         points.append(get_vertical_intersection_with_edge(self.right_x, self.ceiling))
         points.append(get_vertical_intersection_with_edge(self.left_x, self.ceiling))
+        return points
 
+    def get_centroid(self) -> Point2d:
+        points = self.get_vertices()
         average_x = 0
         average_y = 0
         for point in points:
@@ -225,11 +231,7 @@ class Trapezoidal_Cell:
         return Point2d(average_x, average_y)
 
     def plot(self) -> None:
-        points = []
-        points.append(get_vertical_intersection_with_edge(self.left_x, self.floor))
-        points.append(get_vertical_intersection_with_edge(self.right_x, self.floor))
-        points.append(get_vertical_intersection_with_edge(self.right_x, self.ceiling))
-        points.append(get_vertical_intersection_with_edge(self.left_x, self.ceiling))
+        points = self.get_vertices()
         plt.fill([p.x for p in points], [p.y for p in points])
 
     def plot_adjancency_edges(self) -> None:
@@ -374,6 +376,72 @@ def trapezoidal_decomposition(
     return closed_cells
 
 
+def get_cell_dist(cell1: Trapezoidal_Cell, cell2: Trapezoidal_Cell) -> float:
+    centroid1 = cell1.get_centroid()
+    centroid2 = cell2.get_centroid()
+    dist = np.sqrt((centroid1.x - centroid2.x) ** 2 + (centroid1.y - centroid2.y) ** 2)
+    return dist
+
+
+def generate_cell_traversal(cells: List[Trapezoidal_Cell]) -> List[Trapezoidal_Cell]:
+    assert len(cells) > 0
+    for i, cell in enumerate(cells):
+        cell.id = i
+    unvisited_ids = set(range(len(cells)))
+    unvisited_ids.remove(0)
+    path_list = [0]
+
+    while len(unvisited_ids) > 0:
+        cell = cells[path_list[-1]]
+        all_neighbors_visited = True
+        potential_next_ids = []
+        for neighbor in cell.neighbors:
+            if neighbor.id in unvisited_ids:
+                potential_next_ids.append(neighbor.id)
+                all_neighbors_visited = False
+
+        if all_neighbors_visited:
+            potential_next_ids = list(unvisited_ids)
+
+        min_dist = None
+        closest_cell_id = None
+        for id in potential_next_ids:
+            next_cell = cells[id]
+            dist = get_cell_dist(cell, next_cell)
+            if min_dist is None or dist < min_dist:
+                min_dist = dist
+                closest_cell_id = id
+
+        unvisited_ids.remove(closest_cell_id)
+        path_list.append(closest_cell_id)
+
+    path = [cells[id] for id in path_list]
+    return path
+
+
+def plot_cell_traversal(path: List[Trapezoidal_Cell]) -> None:
+    assert len(path) > 1
+    for i in range(1, len(path)):
+        c1 = path[i - 1].get_centroid()
+        c2 = path[i].get_centroid()
+        plt.plot(
+            [c1.x, c2.x],
+            [c1.y, c2.y],
+            linewidth=2.5,
+            color="red",
+        )
+
+
+def get_full_coverage_path(
+    cell_traversal: List[Trapezoidal_Cell], stepover_dist: float
+):
+    path = []
+    for cell in cell_traversal:
+        ccw_vertices = [(p.x, p.y) for p in cell.get_vertices()]
+        path.extend(get_polygon_path(ccw_vertices, stepover_dist))
+    return path
+
+
 if __name__ == "__main__":
     # ccw_vertices = [(10, 5), (0, 8), (-10, 5), (-10, -5), (10, -5)]
     # ccw_vertices_xs = [ccw_vertices[i][0] for i in range(len(ccw_vertices))]
@@ -417,17 +485,25 @@ if __name__ == "__main__":
     ]
     holes = [hole1, hole2]
     cells = trapezoidal_decomposition(outer_boundary, holes)
+    cell_path = generate_cell_traversal(cells)
+    path = get_full_coverage_path(cell_path, 0.5)
+
     for cell in cells:
         cell.plot()
-        cell.plot_adjancency_edges()
+        # cell.plot_adjancency_edges()
+    # plot_cell_traversal(cell_path)
 
     xs = [outer_boundary[i].x for i in range(len(outer_boundary))]
     ys = [outer_boundary[i].y for i in range(len(outer_boundary))]
-    plt.plot(xs + [xs[0]], ys + [ys[0]], linewidth=2.5, color="black")
+    plt.plot(xs + [xs[0]], ys + [ys[0]], linewidth=2.5, color="red")
 
     for hole in holes:
         xs = [hole[i].x for i in range(len(hole))]
         ys = [hole[i].y for i in range(len(hole))]
-        plt.plot(xs + [xs[0]], ys + [ys[0]], linewidth=2.5, color="black")
+        plt.plot(xs + [xs[0]], ys + [ys[0]], linewidth=2.5, color="red")
+
+    path_xs = [path[i][0] for i in range(len(path))]
+    path_ys = [path[i][1] for i in range(len(path))]
+    plt.plot(path_xs, path_ys, linewidth=2.5, color="black")
 
     plt.show()
