@@ -14,6 +14,7 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/opencv.hpp>
@@ -23,6 +24,11 @@
 #include <firefly_mapping/ImageWithPose.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
+
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_types.h>
+#include <pcl/PCLPointCloud2.h>
+#include <pcl_ros/transforms.h>
 
 class ThermalImageReader
 {
@@ -167,10 +173,59 @@ public:
     }
 };
 
+
+class LidarReader 
+{
+    ros::NodeHandle nh_;
+    ros::NodeHandle private_nh_;
+    
+    sensor_msgs::PointCloud2 input_pointcloud_;
+
+    ros::Publisher lidar_mapping_pub_;
+    ros::Publisher lidar_obstacle_pub_;
+
+    ros::Subscriber lidar_subscriber;
+
+public:
+    LidarReader() : private_nh_("~")
+    {
+        lidar_subscriber = nh_.subscribe("/velodyne_points", 1,
+                                   &LidarReader::point_cloud_extractor, this);
+
+    }
+
+    ~LidarReader()
+    {
+        std::cout<<"GET GOT. BYE LIDAR \n";
+    }
+
+    void point_cloud_extractor(const sensor_msgs::PointCloud2::ConstPtr& msg)
+    {
+        // if (msg->is_dense)
+        //     std::cout  << "\t Height : " << msg->height << "\t Width : " << msg->width << std::endl;
+        // std::cout << msg->data->size() << " \t  " << msg->row_step << std::endl;
+
+        pcl::PCLPointCloud2 pcl_pc2;
+
+        pcl_conversions::toPCL(*msg, pcl_pc2);
+        pcl::PointCloud<pcl::PointXYZ> temp_cloud;
+        pcl::fromPCLPointCloud2(pcl_pc2, temp_cloud);
+
+//         pcl::PCLPointCloud2 pcl_pc2;
+// pcl_conversions::toPCL(*cloud_msg,pcl_pc2);
+// pcl::PointCloud<pcl::PointXYZ>::Ptr pt_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+// pcl::fromPCLPointCloud2(pcl_pc2,*pt_cloud);
+    }
+};
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "ThermalCameraSave");
-    ThermalImageReader ic;
+    ros::init(argc, argv, "LidarNode");
+
+    // ThermalImageReader ic;
+    LidarReader ic; 
+
     ros::spin();
     return 0;
 }
