@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Tuple, List
 from enum import Enum
+import matplotlib.pyplot as plt
 
 
 def get_polygon_xs_and_ys(polygon):
@@ -194,7 +195,7 @@ def get_events_from_polygon(polygon: List[Point2d]) -> List[Event]:
 
 class Trapezoidal_Cell:
     def __init__(
-        self, floor: Edge, ceiling: Edge, left_x: float, right_x: float
+        self, floor: Edge, ceiling: Edge, left_x: float, right_x: float, neighbors=[]
     ) -> None:
         assert floor is not None
         assert ceiling is not None
@@ -205,6 +206,24 @@ class Trapezoidal_Cell:
         self.left_x = left_x
         self.right_x = right_x
 
+        self.neighbors = neighbors
+
+    def get_centroid(self) -> Point2d:
+        points = []
+        points.append(get_vertical_intersection_with_edge(self.left_x, self.floor))
+        points.append(get_vertical_intersection_with_edge(self.right_x, self.floor))
+        points.append(get_vertical_intersection_with_edge(self.right_x, self.ceiling))
+        points.append(get_vertical_intersection_with_edge(self.left_x, self.ceiling))
+
+        average_x = 0
+        average_y = 0
+        for point in points:
+            average_x += point.x
+            average_y += point.y
+        average_x /= len(points)
+        average_y /= len(points)
+        return Point2d(average_x, average_y)
+
     def plot(self) -> None:
         points = []
         points.append(get_vertical_intersection_with_edge(self.left_x, self.floor))
@@ -212,6 +231,17 @@ class Trapezoidal_Cell:
         points.append(get_vertical_intersection_with_edge(self.right_x, self.ceiling))
         points.append(get_vertical_intersection_with_edge(self.left_x, self.ceiling))
         plt.fill([p.x for p in points], [p.y for p in points])
+
+    def plot_adjancency_edges(self) -> None:
+        centroid = self.get_centroid()
+        for neighbor in self.neighbors:
+            neighbor_centroid = neighbor.get_centroid()
+            plt.plot(
+                [centroid.x, neighbor_centroid.x],
+                [centroid.y, neighbor_centroid.y],
+                linewidth=2.5,
+                color="white",
+            )
 
 
 def get_floor_and_ceiling_edge(event: Event, edges: List[Edge]) -> Tuple[Edge, Edge]:
@@ -245,7 +275,7 @@ def get_floor_and_ceiling_edge(event: Event, edges: List[Edge]) -> Tuple[Edge, E
 def trapezoidal_decomposition(
     outer_boundary: List[Point2d], holes: List[List[Point2d]]
 ) -> List[Trapezoidal_Cell]:
-    # Assert that outer is ccw and holes are cw
+    # TODO: Assert that outer is ccw and holes are cw
     events = []
     events += get_events_from_polygon(outer_boundary)
     for hole in holes:
@@ -261,9 +291,18 @@ def trapezoidal_decomposition(
         if e.type == EventType.IN:
             for i, cell in enumerate(open_cells):
                 if floor == cell.floor and ceiling == cell.ceiling:
-                    open_cells.append(Trapezoidal_Cell(floor, e.prev_edge, e.x, None))
-                    open_cells.append(Trapezoidal_Cell(e.next_edge, ceiling, e.x, None))
+                    new_bottom_cell = Trapezoidal_Cell(
+                        floor, e.prev_edge, e.x, None, [cell]
+                    )
+                    new_top_cell = Trapezoidal_Cell(
+                        e.next_edge, ceiling, e.x, None, [cell]
+                    )
+                    open_cells.extend([new_bottom_cell, new_top_cell])
                     cell.right_x = e.x
+                    cell.neighbors = [
+                        new_bottom_cell,
+                        new_top_cell,
+                    ] + cell.neighbors
                     closed_cells.append(cell)
                     open_cells.pop(i)
                     break
@@ -280,13 +319,18 @@ def trapezoidal_decomposition(
             assert upper_cell_idx is not None
             assert lower_cell_idx is not None
             assert upper_cell_idx != lower_cell_idx
+            new_cell = Trapezoidal_Cell(
+                floor, ceiling, e.x, None, [upper_cell, lower_cell]
+            )
             open_cells.pop(max(upper_cell_idx, lower_cell_idx))
             open_cells.pop(min(upper_cell_idx, lower_cell_idx))
             upper_cell.right_x = e.x
             lower_cell.right_x = e.x
+            upper_cell.neighbors.append(new_cell)
+            lower_cell.neighbors.append(new_cell)
             closed_cells.append(upper_cell)
             closed_cells.append(lower_cell)
-            open_cells.append(Trapezoidal_Cell(floor, ceiling, e.x, None))
+            open_cells.append(new_cell)
         elif e.type == EventType.OPEN:
             open_cells.append(Trapezoidal_Cell(e.next_edge, e.prev_edge, e.x, None))
         elif e.type == EventType.CLOSE:
@@ -299,19 +343,23 @@ def trapezoidal_decomposition(
         elif e.type == EventType.FLOOR:
             for i, cell in enumerate(open_cells):
                 if e.prev_edge == cell.floor and ceiling == cell.ceiling:
+                    new_cell = Trapezoidal_Cell(e.next_edge, ceiling, e.x, None, [cell])
                     cell.right_x = e.x
+                    cell.neighbors.append(new_cell)
                     closed_cells.append(cell)
                     open_cells.pop(i)
+                    open_cells.append(new_cell)
                     break
-            open_cells.append(Trapezoidal_Cell(e.next_edge, ceiling, e.x, None))
         elif e.type == EventType.CEILING:
             for i, cell in enumerate(open_cells):
                 if floor == cell.floor and e.next_edge == cell.ceiling:
+                    new_cell = Trapezoidal_Cell(floor, e.prev_edge, e.x, None, [cell])
                     cell.right_x = e.x
+                    cell.neighbors.append(new_cell)
                     closed_cells.append(cell)
                     open_cells.pop(i)
+                    open_cells.append(new_cell)
                     break
-            open_cells.append(Trapezoidal_Cell(floor, e.prev_edge, e.x, None))
 
         if e.prev_vertex.x < e.x:
             current_edges.remove(e.prev_edge)
@@ -324,3 +372,62 @@ def trapezoidal_decomposition(
             current_edges.append(e.next_edge)
 
     return closed_cells
+
+
+if __name__ == "__main__":
+    # ccw_vertices = [(10, 5), (0, 8), (-10, 5), (-10, -5), (10, -5)]
+    # ccw_vertices_xs = [ccw_vertices[i][0] for i in range(len(ccw_vertices))]
+    # ccw_vertices_ys = [ccw_vertices[i][1] for i in range(len(ccw_vertices))]
+
+    # path = get_polygon_path(ccw_vertices, stepover_dist=2)
+    # path_xs = [path[i][0] for i in range(len(path))]
+    # path_ys = [path[i][1] for i in range(len(path))]
+
+    # plt.plot(
+    #     ccw_vertices_xs + [ccw_vertices_xs[0]],
+    #     ccw_vertices_ys + [ccw_vertices_ys[0]],
+    #     linewidth=5.0,
+    # )
+    # plt.plot(path_xs, path_ys)
+    # ccw_vertices = [(10, 5), (0, 8), (-10, 5), (-10, -5), (10, -5)]
+    # ccw_vertices_xs, ccw_vertices_ys = get_polygon_xs_and_ys(ccw_vertices)
+    # path = get_polygon_path(ccw_vertices, stepover_dist=2)
+    # path_xs, path_ys = get_polygon_xs_and_ys(path)
+    # plt.plot(
+    #     ccw_vertices_xs + [ccw_vertices_xs[0]],
+    #     ccw_vertices_ys + [ccw_vertices_ys[0]],
+    #     linewidth=5.0,
+    # )
+    # plt.plot(path_xs, path_ys)
+
+    outer_boundary = [
+        Point2d(10, 5),
+        Point2d(0, 8),
+        Point2d(-10, 5),
+        Point2d(-12, -5),
+        Point2d(12, -5),
+    ]
+
+    hole1 = [Point2d(2.5, 3), Point2d(5, 5), Point2d(7, 3)]
+    hole2 = [
+        Point2d(-6.1, 4.2),
+        Point2d(-1.12, 0),
+        Point2d(-6.6, -2),
+        Point2d(-2.27, 0),
+    ]
+    holes = [hole1, hole2]
+    cells = trapezoidal_decomposition(outer_boundary, holes)
+    for cell in cells:
+        cell.plot()
+        cell.plot_adjancency_edges()
+
+    xs = [outer_boundary[i].x for i in range(len(outer_boundary))]
+    ys = [outer_boundary[i].y for i in range(len(outer_boundary))]
+    plt.plot(xs + [xs[0]], ys + [ys[0]], linewidth=2.5, color="black")
+
+    for hole in holes:
+        xs = [hole[i].x for i in range(len(hole))]
+        ys = [hole[i].y for i in range(len(hole))]
+        plt.plot(xs + [xs[0]], ys + [ys[0]], linewidth=2.5, color="black")
+
+    plt.show()
