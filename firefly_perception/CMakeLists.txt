@@ -7,6 +7,8 @@ project(firefly_perception)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+set(PCL_DIR /usr/lib/x86_64-linux-gnu/cmake/pcl/)
+
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   firefly_mapping
@@ -16,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
+  PCL
 )
 find_package(
   OpenCV 3.2 

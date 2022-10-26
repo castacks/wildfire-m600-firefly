@@ -28,7 +28,9 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_types.h>
 #include <pcl/PCLPointCloud2.h>
+#include <pcl/filters/crop_box.h>
 #include <pcl_ros/transforms.h>
+#include "pcl_ros/point_cloud.h"
 
 class ThermalImageReader
 {
@@ -191,6 +193,9 @@ public:
     {
         lidar_subscriber = nh_.subscribe("/velodyne_points", 1,
                                    &LidarReader::point_cloud_extractor, this);
+        
+        lidar_mapping_pub_ = nh_.advertise< pcl::PointCloud<pcl::PointXYZ>>("lidar_cropped", 1);
+
 
     }
 
@@ -201,20 +206,48 @@ public:
 
     void point_cloud_extractor(const sensor_msgs::PointCloud2::ConstPtr& msg)
     {
-        // if (msg->is_dense)
-        //     std::cout  << "\t Height : " << msg->height << "\t Width : " << msg->width << std::endl;
-        // std::cout << msg->data->size() << " \t  " << msg->row_step << std::endl;
-
         pcl::PCLPointCloud2 pcl_pc2;
 
         pcl_conversions::toPCL(*msg, pcl_pc2);
-        pcl::PointCloud<pcl::PointXYZ> temp_cloud;
-        pcl::fromPCLPointCloud2(pcl_pc2, temp_cloud);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::fromPCLPointCloud2(pcl_pc2, *temp_cloud);
 
-//         pcl::PCLPointCloud2 pcl_pc2;
-// pcl_conversions::toPCL(*cloud_msg,pcl_pc2);
-// pcl::PointCloud<pcl::PointXYZ>::Ptr pt_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-// pcl::fromPCLPointCloud2(pcl_pc2,*pt_cloud);
+        /*
+            given min and max of 0 to 130, assume c-cw/cw??
+            priority should be mapping. FOV angle range : TBD #TODO based on camera fov and mounting of camera
+            camera fov : 105* horizontal 75* vertical
+
+            dimension of 2d point cloud is 16 (rings vertically) x 1824 (in a ring covering 360*)
+            assuming that the lidar's 0* is in line with the horizon
+                1. crop out 0 - 40* for obstacle avoidance  (points[:, :203])
+                2. crop out 40 - 130* for mapping node  (points[:, 204 : 658])
+        */
+
+        std::vector<std::vector<uint8_t>> mapping_point_cloud;
+        std::vector<std::vector<uint8_t>> obstacle_point_cloud;
+        
+        // for(int x=0;x<16;x++){
+        //     auto start_y=temp_cloud->data.begin() + x * temp_cloud->height;  
+        //     auto mid_y=temp_cloud->data.begin() + int(temp_cloud->height * (40/lidar_max)) + x * temp_cloud->height;
+        //     auto end_y=temp_cloud->data.begin() + int(temp_cloud->height * (130/lidar_max)) + x * temp_cloud->height;
+
+        // }    
+        // Test the PointCloud<PointT> method
+        pcl::CropBox<pcl::PointXYZ> cropBoxFilter (true);
+        cropBoxFilter.setInputCloud (temp_cloud);
+        Eigen::Vector4f min_pt (-10.0f, -10.0f, 0.0f, 1.0f);
+        // (x, y, z)
+        Eigen::Vector4f max_pt (0.0f, 1.0f, 100.0f, 1.0f);
+
+        // Cropbox slighlty bigger then bounding box of points
+        cropBoxFilter.setMin (min_pt);
+        cropBoxFilter.setMax (max_pt);
+
+        // Cloud
+        pcl::PointCloud<pcl::PointXYZ> cloud_out;
+        cropBoxFilter.filter (cloud_out);
+
+        lidar_mapping_pub_.publish(cloud_out);
     }
 };
 
