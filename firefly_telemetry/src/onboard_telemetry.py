@@ -3,7 +3,7 @@
 #########################################################
 #########################################################
 Project FireFly : 2022 MRSD - Team D
-Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen and Akshay Venkatesh
+Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen, Manuj Trehan and Akshay Venkatesh
 
 OnboardTelemetry : UAV Onboard Telemetry Module
 
