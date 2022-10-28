@@ -67,7 +67,6 @@ class OnboardTelemetry:
         self.ipp_transmit_buf = []
         self.ipp_nt = 0
         self.ipp_na = 0
-        self.ipp_wt = 0
         self.send_ipp_plan_flag = False
         self.ipp_transmit_complete_flag = False
 
@@ -361,7 +360,7 @@ class OnboardTelemetry:
                 # send acknowledgement of complete ipp preview transmission
                 if self.ipp_transmit_complete_flag:
                     self.ipp_transmit_complete_flag = False
-                    self.connection.mav.firefly_ipp_transmit_complete_send(self.onboard_temperature)
+                    self.connection.mav.firefly_ipp_transmit_complete_send(1)
                     rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
             except serial.serialutil.SerialException as e:
