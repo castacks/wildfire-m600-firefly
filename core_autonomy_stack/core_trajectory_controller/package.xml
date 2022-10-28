@@ -60,6 +60,7 @@
   <build_depend>core_trajectory_library</build_depend>
   <build_depend>tflib</build_depend>
   <build_depend>core_trajectory_msgs</build_depend>
+  <build_depend>base</build_depend>
   
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>nav_msgs</build_export_depend>
@@ -71,6 +72,7 @@
   <build_export_depend>core_trajectory_library</build_export_depend>
   <build_export_depend>tflib</build_export_depend>
   <build_export_depend>core_trajectory_msgs</build_export_depend>
+  <build_export_depend>base</build_export_depend>
   
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
@@ -83,6 +85,7 @@
   <exec_depend>core_trajectory_library</exec_depend>
   <exec_depend>tflib</exec_depend>
   <exec_depend>core_trajectory_msgs</exec_depend>
+  <exec_depend>base</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

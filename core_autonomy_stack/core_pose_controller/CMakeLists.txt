@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(core_pose_controller)
 
 
@@ -29,5 +29,5 @@ include_directories(${catkin_INCLUDE_DIRS} include ${base_INCLUDE_DIRS})
 add_executable(pose_controller
   src/pose_controller.cpp
 )
-add_dependencies(pose_controller ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg ${base_EXPORTED_TARGETS})
+add_dependencies(pose_controller ${catkin_EXPORTED_TARGETS} ${base_EXPORTED_TARGETS})
 target_link_libraries(pose_controller ${catkin_LIBRARIES} ${base_LIBRARIES})

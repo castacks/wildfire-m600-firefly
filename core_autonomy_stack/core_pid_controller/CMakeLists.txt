@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(core_pid_controller)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -43,7 +43,7 @@ include_directories(${catkin_INCLUDE_DIRS} include ${base_INCLUDE_DIRS})
 add_library(pid_controller
   src/pid_controller.cpp
 )
-add_dependencies(pid_controller ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg ${base_EXPORTED_TARGETS})
+add_dependencies(pid_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg ${base_EXPORTED_TARGETS})
 target_link_libraries(pid_controller ${catkin_LIBRARIES} ${base_LIBRARIES})
 
 
