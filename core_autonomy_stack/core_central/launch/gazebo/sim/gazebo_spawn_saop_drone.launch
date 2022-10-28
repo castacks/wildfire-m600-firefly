@@ -1,0 +1,19 @@
+<launch>
+  
+  <arg name="robot_name" default="M100" />
+
+  <arg name="x" default="250" />
+  <arg name="y" default="250" />
+  <arg name="z" default="200" />
+  
+  <param name="/$(arg robot_name)/robot_description" command="$(find xacro)/xacro '$(find core_gazebo_sim)/urdf/saop_uav.xacro' robot_name:=$(arg robot_name)" />
+  
+  <!-- spawn simulated drone -->
+  <node name="spawn_drone" pkg="supersaop" type="spawn_drone.py">
+    <param name="robot_name" value="$(arg robot_name)"/>
+  </node>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <param name="tf_prefix" value="/$(arg robot_name)"/>
+  </node>
+
+</launch>

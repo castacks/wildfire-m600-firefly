@@ -128,7 +128,7 @@ static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
   attrib4.value = "30";
   diagnostic_msgs::KeyValue attrib5;
   attrib5.key = "velocity";
-  attrib5.value = "3.0";
+  attrib5.value = "2.0";
   fixed_trajectory.attributes = {attrib1, attrib2, attrib3, attrib4, attrib5};
   return fixed_trajectory;
 }
@@ -141,19 +141,19 @@ static core_trajectory_msgs::FixedTrajectory GetLawnmowerTraj() {
   attrib1.value = "world";
   diagnostic_msgs::KeyValue attrib2;
   attrib2.key = "length";
-  attrib2.value = "25";
+  attrib2.value = "100";
   diagnostic_msgs::KeyValue attrib3;
   attrib3.key = "width";
-  attrib3.value = "25";
+  attrib3.value = "100";
   diagnostic_msgs::KeyValue attrib4;
   attrib4.key = "height";
   attrib4.value = "30";
   diagnostic_msgs::KeyValue attrib5;
   attrib5.key = "velocity";
-  attrib5.value = "3.0";
+  attrib5.value = "2.0";
   diagnostic_msgs::KeyValue attrib6;
   attrib6.key = "stepover_dist";
-  attrib6.value = "5.0";
+  attrib6.value = "20.0";
   fixed_trajectory.attributes = {attrib1, attrib2, attrib3,
                                  attrib4, attrib5, attrib6};
   return fixed_trajectory;

@@ -1,0 +1,8 @@
+<launch>
+  
+  <!-- control -->
+  <remap from="roll_pitch_yawrate_thrust_setpoint" to="roll_pitch_yawrate_thrust_command" />
+  <include file="$(find core_pose_controller)/launch/pose_controller.launch" pass_all_args="true" />
+  <include file="$(find core_velocity_controller)/launch/velocity_controller_px4.launch" pass_all_args="true" />
+  
+</launch>
