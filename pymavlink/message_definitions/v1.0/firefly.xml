@@ -5586,5 +5586,25 @@
       <description>Command to enable ipp planner</description>
       <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
     </message>
+    <message id="13024" name="FIREFLY_IPP_PLAN_PREVIEW">
+      <description>Message type to send a preview of the IPP plan</description>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
+      <field type="float" name="x" units="m">X Position</field>
+      <field type="float" name="y" units="m">Y Position</field>
+      <field type="float" name="z" units="m">Z Position</field>
+      <field type="float[4]" name="q">Quaternion components, x, y, z, w (0 0 0 1 is the null-rotation)</field>
+    </message>
+    <message id="13025" name="FIREFLY_EXECUTE_IPP_PLAN">
+      <description>Command to execute ipp plan</description>
+      <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
+    </message>
+    <message id="13026" name="FIREFLY_IPP_PLAN_PREVIEW_ACK">
+      <description>Acknowledge receipt of ipp plan preview message</description>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
+    </message>
+    <message id="13026" name="FIREFLY_IPP_TRANSMIT_COMPLETE">
+      <description>Complete plan transmitted, reset IPP plan variables</description>
+      <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
+    </message>
   </messages>
 </mavlink>
