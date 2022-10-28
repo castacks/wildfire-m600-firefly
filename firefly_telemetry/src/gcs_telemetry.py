@@ -86,6 +86,7 @@ class GCSTelemetry:
         self.record_ros_bag_send_flag = False
         self.stop_record_ros_bag_send_flag = False
         self.execute_ipp_plan_flag = False
+        self.reset_ipp_plan_flag = False
 
         self.bytes_per_sec_send_rate = 1000.0
         self.mavlink_packet_overhead_bytes = 12
@@ -265,7 +266,14 @@ class GCSTelemetry:
                 altitude = msg['alt'] 
                 self.altitude_status_gcs.publish(altitude)
             elif msg['mavpackettype'] == 'FIREFLY_IPP_PLAN_PREVIEW':
+                if(self.reset_ipp_plan_flag):
+                    self.ipp_plan = Path()
+                    self.ipp_plan_received_buf.clear()
+                    self.reset_ipp_plan_flag = False
                 self.process_new_ipp_packet(msg)
+            elif msg['mavpackettype'] == 'FIREFLY_IPP_TRANSMIT_COMPLETE':
+                self.nr_ipp = 0
+                self.reset_ipp_plan_flag = True
 
     def send_outgoing(self):
         if self.clear_map_send_flag:
