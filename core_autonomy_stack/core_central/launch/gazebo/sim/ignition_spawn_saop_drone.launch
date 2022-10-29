@@ -1,0 +1,31 @@
+<launch>
+  
+  <arg name="robot_name" default="X3" />
+  <param name="X3_robot_description" textfile="$(find supersaop)/gazebo/models/x3/description/model.urdf"/>
+
+  <!-- spawn simulated drone -->
+  <node name="spawn_drone" pkg="supersaop" type="ignition_spawn_drone.py">
+    <param name="robot_name" value="$(arg robot_name)"/>
+  </node>
+
+  <!-- publish robot states -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <!-- <param name="tf_prefix" value="/$(arg robot_name)"/> -->
+    <remap from="robot_description" to="X3_robot_description"/>
+    <remap from="joint_states" to="/world/default/model/$(arg robot_name)/joint_state"/>
+  </node>
+
+  <!-- bridge between ignition and ros -->
+  <node name="joint_state_ign_bridge" pkg="ros_ign_bridge" type="parameter_bridge" args="/world/default/model/$(arg robot_name)/joint_state@sensor_msgs/JointState@ignition.msgs.Model"/>
+  <node name="cmd_vel_ign_bridge" pkg="ros_ign_bridge" type="parameter_bridge" args="/$(arg robot_name)/cmd_vel@geometry_msgs/Twist@ignition.msgs.Twist"/>
+  <node name="state_estimate_ign_bridge" pkg="ros_ign_bridge" type="parameter_bridge" args="/$(arg robot_name)/state_estimate@nav_msgs/Odometry@ignition.msgs.Odometry"/>
+  <node name="rgb_camera_ign_bridge" pkg="ros_ign_bridge" type="parameter_bridge" args="/$(arg robot_name)/rgb_camera/image@sensor_msgs/Image@ignition.msgs.Image"/>
+  <node name="rgb_camera_info_ign_bridge" pkg="ros_ign_bridge" type="parameter_bridge" args="/$(arg robot_name)/rgb_camera/camera_info@sensor_msgs/CameraInfo@ignition.msgs.CameraInfo"/>
+  <node name="thermal_camera_ign_bridge" pkg="ros_ign_bridge" type="parameter_bridge" args="/$(arg robot_name)/thermal_camera_8bit/image@sensor_msgs/Image@ignition.msgs.Image"/>
+  <node name="thermal_camera_info_ign_bridge" pkg="ros_ign_bridge" type="parameter_bridge" args="/$(arg robot_name)/thermal_camera_8bit/camera_info@sensor_msgs/CameraInfo@ignition.msgs.CameraInfo"/>
+  
+  <!-- View images -->
+  <node name="image_view_rgb" pkg="image_view" type="image_view" args="image:=/$(arg robot_name)/rgb_camera/image" respawn="true"/>
+  <node name="image_view_thermal" pkg="image_view" type="image_view" args="image:=/$(arg robot_name)/thermal_camera_8bit/image" respawn="true"/>
+  <node name="projected_image" pkg="image_view" type="image_view" args="image:=/$(arg robot_name)/projected_image" respawn="true"/>
+</launch>

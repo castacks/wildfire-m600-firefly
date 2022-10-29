@@ -1,0 +1,5 @@
+<library path="lib/libpointcloud_map_representation">
+  <class type="PointCloudMapRepresentation" base_class_type="MapRepresentation">
+    <description>Pointcloud map representation plugin.</description>
+  </class>
+</library>
