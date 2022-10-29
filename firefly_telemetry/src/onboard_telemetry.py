@@ -83,7 +83,7 @@ class OnboardTelemetry:
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
         self.behavior_tree_commands_pub = rospy.Publisher("behavior_tree_commands", BehaviorTreeCommands, queue_size=100)
         self.kill_switch = rospy.Publisher("kill_switch", Empty, queue_size=10)
-        self.execute_ipp_pub = rospy.Publisher("/execute_ipp_plan", Empty, queue_size=1)
+        self.execute_ipp_pub = rospy.Publisher("execute_ipp_plan", Empty, queue_size=1)
 
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)

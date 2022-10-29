@@ -7,13 +7,14 @@ from tf.transformations import euler_from_quaternion
 from std_msgs.msg import Empty
 
 
-class ippPlanToTrajectory:
-
+class IppPlanToTrajectory:
     def __init__(self):
-        self.trajectory_track_pub = rospy.Publisher("trajectory_track", TrajectoryXYZVYaw, queue_size=1)
+        self.trajectory_track_pub = rospy.Publisher(
+            "trajectory_track", TrajectoryXYZVYaw, queue_size=1
+        )
 
         rospy.Subscriber("/global_path", Plan, self.ipp_plan_callback)
-        rospy.Subscriber("/execute_ipp_plan", Empty, self.execute_plan_callback)
+        rospy.Subscriber("execute_ipp_plan", Empty, self.execute_plan_callback)
 
         self.trajectory_msg = TrajectoryXYZVYaw()
 
@@ -56,10 +57,8 @@ class ippPlanToTrajectory:
         wp1.velocity = 3.0
         self.trajectory_msg.waypoints.append(wp1)
 
+
 if __name__ == "__main__":
-
     rospy.init_node("ipp_plan_to_traj_xyzv_yaw", anonymous=True)
-
-    ipp_plan = ippPlanToTrajectory()
-
+    ipp_plan = IppPlanToTrajectory()
     rospy.spin()

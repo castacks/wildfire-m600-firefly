@@ -206,16 +206,15 @@ class GCSTelemetry:
 
             if msg['seq_num'] == self.nr_ipp:
                 self.ipp_plan.poses.append(poseStamped) # Correct seq num received as per order. Add to path array and publish
-                self.ipp_plan_pub.publish(self.ipp_plan)
                 self.nr_ipp = (self.nr_ipp + 1) % 128
                 while True: # Check if further seq nums already received and stored in buf. If yes, add to path array in order and publish
                     if self.nr_ipp in self.ipp_plan_received_buf:
                         poseStamped = self.ipp_plan_received_buf.pop(self.nr_ipp)
                         self.ipp_plan.poses.append(poseStamped)
-                        self.ipp_plan_pub.publish(self.ipp_plan)
                         self.nr_ipp = (self.nr_ipp + 1) % 128
                     else:
                         break
+                self.ipp_plan_pub.publish(self.ipp_plan)
             else: # Future seq num received. Store in buf for future use
                 self.ipp_plan_received_buf[msg['seq_num']] = poseStamped
 
