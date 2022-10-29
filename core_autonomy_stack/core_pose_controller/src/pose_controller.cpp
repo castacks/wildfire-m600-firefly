@@ -177,9 +177,9 @@ bool PoseControlNode::publish_control_callback(std_srvs::SetBool::Request& reque
     y_controller->reset_integral();
     z_controller->reset_integral();
     yaw_controller->reset_integral();
-    ROS_INFO("Pose controller publish control activated.")
+    ROS_INFO("Pose controller publish control activated.");
   } else if (should_publish && !request.data) {
-    ROS_INFO("Pose controller publish control deactivated.")
+    ROS_INFO("Pose controller publish control deactivated.");
   }
 
   should_publish = request.data;
