@@ -1,6 +1,6 @@
 # Project FireFly
 
-# Installation
+# Installation%$
 To build in release mode, run the following command:
 
     catkin build -DCMAKE_BUILD_TYPE=Release
@@ -15,8 +15,12 @@ Install the udev rules by running the following command.
 
     sudo cp firefly_bringup/99-firefly.rules /etc/udev/rules.d
 
-Install the pymavlink library by running the following commands. Note that MDEF must be an absolute path to the message_definitions folder. You should rerun this command if you make any changes to message_definitions/v1.0/firefly.xml.
-
+Install the pymavlink library on the ground control station by running the following command:
 
     cd pymavlink
-    sudo MDEF=$(pwd)/message_definitions python3 -m pip install . -v --upgrade
+    ./install_gcs.sh
+
+Install the pymavlink library on the onboard computer by running the following command:
+
+    cd pymavlink
+    ./install_onboard.sh
