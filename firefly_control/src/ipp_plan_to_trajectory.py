@@ -18,7 +18,7 @@ class ippPlanToTrajectory:
         self.trajectory_msg = TrajectoryXYZVYaw()
 
     def execute_plan_callback(self, empty_msg):
-        self.trajectory_track_pub.pubilsh(self.trajectory_msg)
+        self.trajectory_track_pub.publish(self.trajectory_msg)
 
     def ipp_plan_callback(self, ipp_plan):
         self.trajectory_msg.header = ipp_plan.header
