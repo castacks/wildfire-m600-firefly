@@ -5602,7 +5602,7 @@
       <description>Acknowledge receipt of ipp plan preview message</description>
       <field type="uint8_t" name="seq_num">Sequence Number</field>
     </message>
-    <message id="13026" name="FIREFLY_IPP_TRANSMIT_COMPLETE">
+    <message id="13027" name="FIREFLY_IPP_TRANSMIT_COMPLETE">
       <description>Complete plan transmitted, reset IPP plan variables</description>
       <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
     </message>
