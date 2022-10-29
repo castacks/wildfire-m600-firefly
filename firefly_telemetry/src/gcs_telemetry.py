@@ -67,6 +67,7 @@ class GCSTelemetry:
         self.nr_ipp = 0
 
         self.ipp_plan = Path()
+        self.ipp_plan.header.frame_id = "world"
 
         self.br = tf.TransformBroadcaster()
 
@@ -193,7 +194,7 @@ class GCSTelemetry:
         else:
             poseStamped = PoseStamped()
 
-            poseStamped.header.frame_id = '/uav1/map' # TODO: check frame?
+            poseStamped.header.frame_id = 'world' # TODO: check frame?
             poseStamped.pose.position.x = msg['x']
             poseStamped.pose.position.y = msg['y']
             poseStamped.pose.position.z = msg['z']
@@ -268,6 +269,7 @@ class GCSTelemetry:
             elif msg['mavpackettype'] == 'FIREFLY_IPP_PLAN_PREVIEW':
                 if(self.reset_ipp_plan_flag):
                     self.ipp_plan = Path()
+                    self.ipp_plan.header.frame_id = "world"
                     self.ipp_plan_received_buf.clear()
                     self.reset_ipp_plan_flag = False
                 self.process_new_ipp_packet(msg)
