@@ -161,10 +161,13 @@ class OnboardTelemetry:
         self.ipp_plan = []
         for idx, wp in enumerate(ipp_plan.plan):
             plan_msg = {
-                "x": wp.position.x,
-                "y": wp.position.y,
-                "z": wp.position.z,
-                "q": wp.position.quaternion,
+                "x": wp.position.position.x,
+                "y": wp.position.position.y,
+                "z": wp.position.position.z,
+                "q": [wp.position.orientation.x,
+                     wp.position.orientation.y,
+                     wp.position.orientation.z,
+                     wp.position.orientation.w],
                 "seq_num": idx
             }
             self.ipp_plan.append(plan_msg)
@@ -277,7 +280,7 @@ class OnboardTelemetry:
 
     def send_ipp_plan(self):
         if (len(self.ipp_transmit_buf) != 0) and (
-                time.time() - self.ipp_transmit_buf[0]["time"] > self.retransmit_timeout):
+                time.time() - self.ipp_transmit_buf[0]["timestamp"] > self.retransmit_timeout):
             # Resend packet if timeout
 
             ipp_packet = self.ipp_transmit_buf.pop(0)
