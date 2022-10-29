@@ -1,6 +1,7 @@
 #include "behavior_executive.h"
 
 #include <base/BaseNode.h>
+#include <std_srvs/SetBool.h>
 
 #include <string>
 
@@ -88,6 +89,8 @@ bool BehaviorExecutive::initialize() {
       "velocity_controller/vz/reset_integrator");
   yawrate_reset_integrator_client = nh->serviceClient<std_srvs::Empty>(
       "velocity_controller/yawrate/reset_integrator");
+  publish_control_client =
+      nh->serviceClient<std_srvs::SetBool>("pose_controller/publish_control");
 
   // init publishers
   fixed_trajectory_pub = nh->advertise<core_trajectory_msgs::FixedTrajectory>(
@@ -196,6 +199,11 @@ bool BehaviorExecutive::execute() {
       takeoff_complete_condition->set(false);
       landed_condition->set(false);
 
+      // Turn off pose controller output before arming
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = false;
+      publish_control_client.call(publish_control_srv);
+
       // arm
       core_drone_interface::DroneCommand drone_command_srv;
       drone_command_srv.request.command =
@@ -212,7 +220,7 @@ bool BehaviorExecutive::execute() {
 
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
-          core_trajectory_controller::TrajectoryMode::Request::PAUSE;
+          core_trajectory_controller::TrajectoryMode::Request::ROBOT_POSE;
       trajectory_mode_client.call(srv);
     }
   }
@@ -241,6 +249,11 @@ bool BehaviorExecutive::execute() {
         vz_reset_integrator_client.call(reset_srv);
         yawrate_reset_integrator_client.call(reset_srv);
 
+        // Turn off pose controller output after disarming
+        std_srvs::SetBool publish_control_srv;
+        publish_control_srv.request.data = false;
+        publish_control_client.call(publish_control_srv);
+
         // set the tracking point to be at the robot's position
         core_trajectory_controller::TrajectoryMode srv;
         srv.request.mode =
@@ -259,6 +272,11 @@ bool BehaviorExecutive::execute() {
     in_air_condition->set(true);
 
     if (takeoff_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
       core_takeoff_landing_planner::TakeoffLandingCommand takeoff_srv;
       takeoff_srv.request.command =
           core_takeoff_landing_planner::TakeoffLandingCommand::Request::TAKEOFF;
@@ -276,6 +294,11 @@ bool BehaviorExecutive::execute() {
     land_action->set_running();
 
     if (land_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
       core_takeoff_landing_planner::TakeoffLandingCommand land_srv;
       land_srv.request.command =
           core_takeoff_landing_planner::TakeoffLandingCommand::Request::LAND;
@@ -293,6 +316,11 @@ bool BehaviorExecutive::execute() {
     traj_control_action->set_running();
 
     if (traj_control_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
           core_trajectory_controller::TrajectoryMode::Request::TRACK;
@@ -307,6 +335,11 @@ bool BehaviorExecutive::execute() {
     coverage_planner_action->set_running();
 
     if (coverage_planner_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
           core_trajectory_controller::TrajectoryMode::Request::TRACK;
@@ -321,6 +354,11 @@ bool BehaviorExecutive::execute() {
     ipp_planner_action->set_running();
 
     if (ipp_planner_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
           core_trajectory_controller::TrajectoryMode::Request::TRACK;

@@ -58,7 +58,7 @@ bool PoseControlNode::initialize(){
   
   got_tracking_point = false;
   got_odom = false;
-  should_publish = true;
+  should_publish = false;
 
   // init controllers
   x_controller = new PIDController("~/x");
@@ -177,8 +177,11 @@ bool PoseControlNode::publish_control_callback(std_srvs::SetBool::Request& reque
     y_controller->reset_integral();
     z_controller->reset_integral();
     yaw_controller->reset_integral();
+    ROS_INFO("Pose controller publish control activated.");
+  } else if (should_publish && !request.data) {
+    ROS_INFO("Pose controller publish control deactivated.");
   }
-  
+
   should_publish = request.data;
   
   response.success = true;

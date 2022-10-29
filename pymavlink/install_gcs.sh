@@ -1,0 +1,1 @@
+sudo MDEF=$(pwd)/message_definitions python3 -m pip install . -v --upgrade

@@ -59,6 +59,7 @@ class BehaviorExecutive : public BaseNode {
       z_reset_integrator_client, yaw_reset_integrator_client;
   ros::ServiceClient vx_reset_integrator_client, vy_reset_integrator_client,
       vz_reset_integrator_client, yawrate_reset_integrator_client;
+  ros::ServiceClient publish_control_client;
 
   // publishers
   ros::Publisher fixed_trajectory_pub;

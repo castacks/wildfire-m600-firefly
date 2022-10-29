@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(core_velocity_controller)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -153,7 +153,7 @@ add_executable(velocity_controller src/velocity_controller.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(velocity_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${base_INCLUDE_DIRS})
+add_dependencies(velocity_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${base_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(velocity_controller
