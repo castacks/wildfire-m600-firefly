@@ -158,6 +158,7 @@ class OnboardTelemetry:
         '''
         if self.send_ipp_plan_flag:
             return
+        self.send_ipp_plan_flag = True
         self.ipp_plan = []
         for idx, wp in enumerate(ipp_plan.plan):
             plan_msg = {
@@ -171,7 +172,6 @@ class OnboardTelemetry:
                 "seq_num": idx
             }
             self.ipp_plan.append(plan_msg)
-        self.send_ipp_plan_flag = True
 
     def send_map_update(self):
         if (len(self.map_transmitted_buf) != 0) and (
@@ -469,10 +469,11 @@ class OnboardTelemetry:
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
         elif msg['mavpackettype'] == 'FIREFLY_IPP_PLANNER':
-            command = BehaviorTreeCommand()
-            command.condition_name = "IPP Planner Commanded"
-            command.status = Status.SUCCESS
-            behavior_tree_commands.commands.append(command)
+            if not self.send_ipp_plan_flag:
+                command = BehaviorTreeCommand()
+                command.condition_name = "IPP Planner Commanded"
+                command.status = Status.SUCCESS
+                behavior_tree_commands.commands.append(command)
         elif msg['mavpackettype'] == 'FIREFLY_EXECUTE_IPP_PLAN':
             self.execute_ipp_pub.publish(Empty())
         elif msg['mavpackettype'] == 'FIREFLY_IPP_PLAN_PREVIEW_ACK':
