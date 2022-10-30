@@ -5,7 +5,7 @@ from core_trajectory_msgs.msg import WaypointXYZVYaw
 from core_trajectory_msgs.msg import TrajectoryXYZVYaw
 from core_trajectory_msgs.msg import FixedTrajectory
 import copy
-from coverage_planner import get_polygon_path
+from coverage_planner import get_polygon_path, Point2d, trapezoidal_decomposition, generate_cell_traversal, get_full_coverage_path
 
 def get_velocities(traj, velocity, max_acc):
     v_prev = 0.
@@ -345,6 +345,16 @@ def interpolate_path(xy_path, max_spacing):
         interpolated_path.extend(interpolate_between_points(x1, y1, x2, y2, max_spacing)[1:])
     return interpolated_path
 
+def rotate_path(xy_path, angle_deg):
+    # TODO: Vectorize using np array and mat multiplication
+    angle_rad = np.deg2rad(angle_deg)
+    rotated_xy_path = []
+    for (x,y) in xy_path:
+        new_x = x * np.cos(angle_rad) - y * np.sin(angle_rad)
+        new_y = x * np.sin(angle_rad) + y * np.cos(angle_rad)
+        rotated_xy_path.append((new_x, new_y))
+    return rotated_xy_path
+
 def get_rectangle_waypoints(attributes):
     frame_id = str(attributes['frame_id'])
     length = float(attributes['length'])
@@ -397,6 +407,41 @@ def get_horizontal_lawnmower_waypoints(attributes):
 
     return traj
 
+def get_coverage_waypoints(attributes):
+    frame_id = str(attributes['frame_id'])
+    height = float(attributes['height'])
+    velocity = float(attributes['velocity'])
+
+    outer_boundary = [
+        Point2d(90, 0),
+        Point2d(70, 50),
+        Point2d(20, 50),
+        Point2d(0, 0),
+    ]
+
+    hole1 = [Point2d(30, 20), Point2d(45, 40), Point2d(60, 20)]
+
+    holes = [hole1]
+    cells = trapezoidal_decomposition(outer_boundary, holes)
+    cell_path = generate_cell_traversal(cells)
+    path = get_full_coverage_path(cell_path, 10)
+    path.append((0,0))
+    path = interpolate_path(path, max_spacing=2.5)
+
+    traj = TrajectoryXYZVYaw()
+    traj.header.frame_id = frame_id
+
+    for (x,y) in path:
+        wp1 = WaypointXYZVYaw()
+        wp1.position.x = x
+        wp1.position.y = y
+        wp1.position.z = height
+        wp1.yaw = 0
+        wp1.velocity = velocity
+        traj.waypoints.append(wp1)
+
+    return traj    
+
 
 def fixed_trajectory_callback(msg):
     attributes = {}
@@ -419,7 +464,8 @@ def fixed_trajectory_callback(msg):
     elif msg.type == 'Rectangle':
         trajectory_msg = get_rectangle_waypoints(attributes)
     elif msg.type == 'Horizontal_Lawnmower':
-        trajectory_msg = get_horizontal_lawnmower_waypoints(attributes)
+        # trajectory_msg = get_horizontal_lawnmower_waypoints(attributes)
+        trajectory_msg = get_coverage_waypoints(attributes)
 
     if trajectory_msg != None:
         trajectory_track_pub.publish(trajectory_msg)
