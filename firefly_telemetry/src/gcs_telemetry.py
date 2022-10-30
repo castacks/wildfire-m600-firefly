@@ -3,7 +3,7 @@
 #########################################################
 #########################################################
 Project FireFly : 2022 MRSD - Team D
-Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen and Akshay Venkatesh
+Authors: Arjun Chauhan, Kevin Gmelin, Sabrina Shen, Manuj Trehan and Akshay Venkatesh
 
 GCSTelemetry : Ground Control Station Telemetry Module
 
@@ -24,7 +24,8 @@ from std_msgs.msg import Empty, Bool, Float32
 import time
 from sensor_msgs.msg import NavSatFix
 import serial
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, PoseStamped
+from nav_msgs.msg import Path
 
 os.environ['MAVLINK20'] = '1'
 
@@ -39,6 +40,7 @@ class GCSTelemetry:
         self.battery_status_gcs = rospy.Publisher("battery_status_telem", Float32, queue_size=10)
         self.altitude_status_gcs = rospy.Publisher("altitude_telem", Float32, queue_size=10)
         self.temperature_status_gcs = rospy.Publisher("temperature_status_telem", Float32, queue_size=10)
+        self.ipp_plan_pub = rospy.Publisher("ipp_plan_preview", Path, queue_size=10)
 
         rospy.Subscriber("clear_map", Empty, self.clear_map_callback)
         rospy.Subscriber("set_local_pos_ref", Empty, self.set_local_pos_ref_callback)
@@ -54,11 +56,18 @@ class GCSTelemetry:
         rospy.Subscriber("capture_frame", Empty, self.capture_frame_callback)
         rospy.Subscriber("record_rosbag", Empty, self.record_ros_bag_callback)
         rospy.Subscriber("stop_record_rosbag", Empty, self.stop_record_ros_bag_callback)
+        rospy.Subscriber("execute_ipp_plan", Empty, self.execute_ipp_plan_callback)
 
         # See https://en.wikipedia.org/wiki/Sliding_window_protocol
         self.map_received_buf = {}
         self.nr = 0
         self.wr = 20
+
+        self.ipp_plan_received_buf = {}
+        self.nr_ipp = 0
+
+        self.ipp_plan = Path()
+        self.ipp_plan.header.frame_id = "world"
 
         self.br = tf.TransformBroadcaster()
 
@@ -77,6 +86,8 @@ class GCSTelemetry:
         self.heartbeat_send_flag = False
         self.record_ros_bag_send_flag = False
         self.stop_record_ros_bag_send_flag = False
+        self.execute_ipp_plan_flag = False
+        self.reset_ipp_plan_flag = False
 
         self.bytes_per_sec_send_rate = 1000.0
         self.mavlink_packet_overhead_bytes = 12
@@ -176,6 +187,40 @@ class GCSTelemetry:
         rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
 
+    def process_new_ipp_packet(self, msg):
+        if (msg['seq_num'] - self.nr_ipp) % 128 > self.wr:
+            # Reject packet, outside window size
+            pass
+        else:
+            poseStamped = PoseStamped()
+
+            poseStamped.header.frame_id = 'world' # TODO: check frame?
+            poseStamped.pose.position.x = msg['x']
+            poseStamped.pose.position.y = msg['y']
+            poseStamped.pose.position.z = msg['z']
+
+            poseStamped.pose.orientation.x = msg['q'][0]
+            poseStamped.pose.orientation.y = msg['q'][1]
+            poseStamped.pose.orientation.z = msg['q'][2]
+            poseStamped.pose.orientation.w = msg['q'][3]
+
+            if msg['seq_num'] == self.nr_ipp:
+                self.ipp_plan.poses.append(poseStamped) # Correct seq num received as per order. Add to path array and publish
+                self.nr_ipp = (self.nr_ipp + 1) % 128
+                while True: # Check if further seq nums already received and stored in buf. If yes, add to path array in order and publish
+                    if self.nr_ipp in self.ipp_plan_received_buf:
+                        poseStamped = self.ipp_plan_received_buf.pop(self.nr_ipp)
+                        self.ipp_plan.poses.append(poseStamped)
+                        self.nr_ipp = (self.nr_ipp + 1) % 128
+                    else:
+                        break
+                self.ipp_plan_pub.publish(self.ipp_plan)
+            else: # Future seq num received. Store in buf for future use
+                self.ipp_plan_received_buf[msg['seq_num']] = poseStamped
+
+        self.connection.mav.firefly_ipp_plan_preview_ack_send(msg['seq_num']) # send an ack of the seq num received
+        rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
     def read_incoming(self):
         msg = self.connection.recv_match()
         if msg is not None:
@@ -220,6 +265,16 @@ class GCSTelemetry:
                 #mobile app is relative altitude : https://developer.dji.com/onboard-sdk/documentation/guides/component-guide-altitude.html
                 altitude = msg['alt'] 
                 self.altitude_status_gcs.publish(altitude)
+            elif msg['mavpackettype'] == 'FIREFLY_IPP_PLAN_PREVIEW':
+                if(self.reset_ipp_plan_flag):
+                    self.ipp_plan = Path()
+                    self.ipp_plan.header.frame_id = "world"
+                    self.ipp_plan_received_buf.clear()
+                    self.reset_ipp_plan_flag = False
+                self.process_new_ipp_packet(msg)
+            elif msg['mavpackettype'] == 'FIREFLY_IPP_TRANSMIT_COMPLETE':
+                self.nr_ipp = 0
+                self.reset_ipp_plan_flag = True
 
     def send_outgoing(self):
         if self.clear_map_send_flag:
@@ -312,6 +367,12 @@ class GCSTelemetry:
             self.stop_record_ros_bag_send_flag = False
             rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
+        if self.execute_ipp_plan_flag:
+            rospy.loginfo("Executing IPP Plan")
+            self.connection.mav.firefly_execute_ipp_plan_send(1)
+            self.execute_ipp_plan_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
     def clear_map_callback(self, empty_msg):
         self.clear_map_send_flag = True
 
@@ -357,6 +418,8 @@ class GCSTelemetry:
     def stop_record_ros_bag_callback(self, empty_msg):
         self.stop_record_ros_bag_send_flag = True
 
+    def execute_ipp_plan_callback(self, empty_msg):
+        self.execute_ipp_plan_flag = True
 
 if __name__ == "__main__":
     rospy.init_node("gcs_telemetry", anonymous=True)
