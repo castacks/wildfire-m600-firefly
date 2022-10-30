@@ -19,6 +19,8 @@ generate_messages(
   std_msgs  # Or other packages containing msgs
 )
 
+ADD_CUSTOM_TARGET(do_always ALL COMMAND ${CMAKE_SOURCE_DIR}/mavlink_dialect/install_pymavlink.sh)
+
 catkin_package(CATKIN_DEPENDS message_runtime)
 
 include_directories(
