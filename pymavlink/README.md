@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/ArduPilot/pymavlink.svg?branch=master)](https://travis-ci.org/ArduPilot/pymavlink)
+# FireFly Pymavlink
+Note that the content below comes from the original pymavlink readme. A custom MAVLink dialect has been created for the FireFly system, located in message_definitions/v1.0/firefly.xml. Pymavlink must be rebuilt every time firefly.xml is modified. To build and install pymavlink on the onboard computer or gcs_computer, use install_pymavlink.sh found in firefly_telemetry/mavlink_dialect. This script gets called whenever you run catkin build firefly_telemetry.
 # Pymavlink
 This is a Python implementation of the MAVLink protocol.
 It includes a source code generator (generator/mavgen.py) to create MAVLink protocol implementations for other programming languages as well.

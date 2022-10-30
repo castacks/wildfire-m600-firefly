@@ -14,9 +14,3 @@ Note that the sdk.launch file in the dji_sdk package expects the DJI_SDK_APP_ID 
 Install the udev rules by running the following command.
 
     sudo cp firefly_bringup/99-firefly.rules /etc/udev/rules.d
-
-Install the pymavlink library by running the following commands. Note that MDEF must be an absolute path to the message_definitions folder. You should rerun this command if you make any changes to message_definitions/v1.0/firefly.xml.
-
-
-    cd pymavlink
-    sudo MDEF=$(pwd)/message_definitions python3 -m pip install . -v --upgrade
