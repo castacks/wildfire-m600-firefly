@@ -7,9 +7,9 @@ fi
 
 if [ "$ROS_DISTRO" = "noetic" ]
 then
-(cd ../../pymavlink && exec sudo MDEF=$(pwd)/message_definitions python3 -m pip install . -v --upgrade)
+(cd ../../pymavlink && exec env MDEF=$(pwd)/message_definitions python3 -m pip install . -v --upgrade)
 else
-(cd ../../pymavlink && exec sudo MDEF=$(pwd)/message_definitions python2 -m pip install . -v --upgrade)
+(cd ../../pymavlink && exec env MDEF=$(pwd)/message_definitions python2 -m pip install . -v --upgrade)
 fi
 
 if [ "$?" = 0 ]

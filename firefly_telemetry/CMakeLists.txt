@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.2)
 project(firefly_telemetry)
 
 find_package(catkin REQUIRED COMPONENTS
