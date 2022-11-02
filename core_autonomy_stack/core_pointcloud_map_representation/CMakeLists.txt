@@ -35,6 +35,8 @@ add_library(pointcloud_map_representation
 
 target_link_libraries(pointcloud_map_representation ${catkin_LIBRARIES} ${base_LIBRARIES} ${PCL_LIBRARIES})
 
+add_executable(fake_cloud src/fake_cloud.cpp)
+target_link_libraries(fake_cloud ${catkin_LIBRARIES} ${base_LIBRARIES} ${PCL_LIBRARIES})
 
 install(TARGETS pointcloud_map_representation
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

@@ -14,3 +14,7 @@ Note that the sdk.launch file in the dji_sdk package expects the DJI_SDK_APP_ID 
 Install the udev rules by running the following command.
 
     sudo cp firefly_bringup/99-firefly.rules /etc/udev/rules.d
+
+Installing Elevation Mapping Library
+
+    a

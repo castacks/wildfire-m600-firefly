@@ -5,11 +5,13 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /TF1
         - /TF1/Frames1
         - /Odometry1/Shape1
         - /Tracking Point1/Shape1
+        - /Path1
       Splitter Ratio: 0.5947136282920837
-    Tree Height: 1134
+    Tree Height: 767
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -25,12 +27,13 @@ Panels:
     Name: Views
     Splitter Ratio: 0.5
   - Class: rviz/Time
-    Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Velodyne Points
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
+Toolbars:
+  toolButtonStyle: 2
 Visualization Manager:
   Class: ""
   Displays:
@@ -53,19 +56,52 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/TF
-      Enabled: false
-      Frame Timeout: 15
+      Enabled: true
+      Frame Timeout: 60
       Frames:
-        All Enabled: true
-      Marker Scale: 1
+        All Enabled: false
+        uav1/base_link:
+          Value: true
+        uav1/base_link_stabilized:
+          Value: false
+        uav1/look_ahead_point:
+          Value: false
+        uav1/look_ahead_point_stabilized:
+          Value: false
+        uav1/map:
+          Value: false
+        uav1/thermal/camera_link:
+          Value: false
+        uav1/tracking_point:
+          Value: true
+        uav1/tracking_point_stabilized:
+          Value: false
+        world:
+          Value: false
+      Marker Alpha: 1
+      Marker Scale: 5
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          uav1/map:
+            uav1/base_link:
+              uav1/thermal/camera_link:
+                {}
+            uav1/base_link_stabilized:
+              {}
+            uav1/look_ahead_point:
+              {}
+            uav1/look_ahead_point_stabilized:
+              {}
+            uav1/tracking_point:
+              {}
+            uav1/tracking_point_stabilized:
+              {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Angle Tolerance: 0
       Class: rviz/Odometry
       Covariance:
@@ -87,6 +123,7 @@ Visualization Manager:
       Keep: 1
       Name: Odometry
       Position Tolerance: 0
+      Queue Size: 10
       Shape:
         Alpha: 1
         Axes Length: 1
@@ -115,9 +152,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0
       Min Color: 0; 0; 0
-      Min Intensity: 0
       Name: Velodyne Points
       Position Transformer: XYZ
       Queue Size: 10
@@ -145,9 +180,7 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4096
       Min Color: 0; 0; 0
-      Min Intensity: 0
       Name: RealSense Points
       Position Transformer: XYZ
       Queue Size: 10
@@ -185,10 +218,11 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: true
+      Enabled: false
       Keep: 1
       Name: Tracking Point
       Position Tolerance: 0
+      Queue Size: 10
       Shape:
         Alpha: 1
         Axes Length: 1
@@ -201,7 +235,7 @@ Visualization Manager:
         Value: Arrow
       Topic: tracking_point
       Unreliable: false
-      Value: true
+      Value: false
     - Angle Tolerance: 0
       Class: rviz/Odometry
       Covariance:
@@ -219,10 +253,11 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: true
+      Enabled: false
       Keep: 1
       Name: Look Ahead Point
       Position Tolerance: 0
+      Queue Size: 10
       Shape:
         Alpha: 1
         Axes Length: 1
@@ -235,23 +270,23 @@ Visualization Manager:
         Value: Arrow
       Topic: look_ahead
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: local_planner_global_plan_vis
       Name: Local Planner Global Segment
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: trajectory_library_vis
       Name: Trajectory Library
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -264,12 +299,10 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4096
       Min Color: 0; 0; 0
-      Min Intensity: 0
       Name: PointCloud Map Debug
       Position Transformer: XYZ
       Queue Size: 10
@@ -281,7 +314,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -294,12 +327,10 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4096
       Min Color: 0; 0; 0
-      Min Intensity: 0
       Name: Front Disparity Cloud
       Position Transformer: XYZ
       Queue Size: 10
@@ -311,7 +342,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -324,12 +355,10 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: -999999
       Min Color: 0; 0; 0
-      Min Intensity: 999999
       Name: Disparity Expansion Cloud
       Position Transformer: XYZ
       Queue Size: 10
@@ -341,7 +370,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: disparity_map_debug
@@ -363,28 +392,52 @@ Visualization Manager:
       Unreliable: false
       Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: drone/model_viz
       Name: Drone Model
       Namespaces:
-        model: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: realsense/model_viz
       Name: RealSense Model
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: velodyne/model_viz
       Name: Velodyne Model
       Namespaces:
         {}
       Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /trajectory
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -401,7 +454,10 @@ Visualization Manager:
     - Class: rviz/FocusCamera
     - Class: rviz/Measure
     - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
       Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
     - Class: rviz/PublishPoint
@@ -411,35 +467,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 11.784283638000488
+      Distance: 80.61870574951172
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
+      Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.0013498204061761498
-        Y: -0.0013112734304741025
-        Z: -0.20000000298023224
+        X: 21.82395362854004
+        Y: 29.572256088256836
+        Z: -3.5592262744903564
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3003985285758972
+      Pitch: 0.8597965240478516
       Target Frame: X3/base_link
-      Value: Orbit (rviz)
-      Yaw: 3.3653969764709473
+      Yaw: 4.093588829040527
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: true
-  Height: 1383
-  Hide Left Dock: true
+    collapsed: false
+  Height: 1016
+  Hide Left Dock: false
   Hide Right Dock: true
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001c8000004f5fc020000000efb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730000000016000004f5000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006500000003fb000001120000001600fffffffb0000000a0049006d0061006700650000000312000001f90000000000000000fb0000000a0049006d00610067006500000003f30000011a0000000000000000fb0000000c00430061006d0065007200610000000387000000930000000000000000fb0000000a0049006d00610067006500000003cf0000013c0000000000000000fb0000000a0049006d0061006700650100000433000000d80000000000000000000000010000010f000004f5fc0200000003fb0000000a005600690065007700730000000016000004f5000000a400fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000d2d000002d3fc0100000002fb0000000c00430061006d006500720061010000000000000d2d0000000000000000fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000069700000039fc0100000002fb0000000800540069006d0065010000000000000697000002eb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000697000004f500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001c800000386fc020000000efb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000001600000386000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006500000003fb000001120000001600fffffffb0000000a0049006d0061006700650000000312000001f90000000000000000fb0000000a0049006d00610067006500000003f30000011a0000000000000000fb0000000c00430061006d0065007200610000000387000000930000000000000000fb0000000a0049006d00610067006500000003cf0000013c0000000000000000fb0000000a0049006d0061006700650100000433000000d80000000000000000000000010000010f000004f5fc0200000003fb0000000a005600690065007700730000000016000004f5000000a400fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000d2d000002d3fc0100000002fb0000000c00430061006d006500720061010000000000000d2d0000000000000000fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073800000039fc0100000002fb0000000800540069006d0065010000000000000738000003bc00fffffffb0000000800540069006d006501000000000000045000000000000000000000056a0000038600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -448,6 +504,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 1687
-  X: 67
+  Width: 1848
+  X: 72
   Y: 27
