@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Tuple, List
 from enum import Enum
+import numpy as np
 
 
 def get_polygon_xs_and_ys(polygon):
@@ -194,7 +195,7 @@ def get_events_from_polygon(polygon: List[Point2d]) -> List[Event]:
 
 class Trapezoidal_Cell:
     def __init__(
-        self, floor: Edge, ceiling: Edge, left_x: float, right_x: float
+        self, floor: Edge, ceiling: Edge, left_x: float, right_x: float, neighbors=[]
     ) -> None:
         assert floor is not None
         assert ceiling is not None
@@ -205,13 +206,28 @@ class Trapezoidal_Cell:
         self.left_x = left_x
         self.right_x = right_x
 
-    def plot(self) -> None:
+        self.neighbors = neighbors
+
+        self.id = None
+
+    def get_vertices(self) -> List[Point2d]:
         points = []
         points.append(get_vertical_intersection_with_edge(self.left_x, self.floor))
         points.append(get_vertical_intersection_with_edge(self.right_x, self.floor))
         points.append(get_vertical_intersection_with_edge(self.right_x, self.ceiling))
         points.append(get_vertical_intersection_with_edge(self.left_x, self.ceiling))
-        plt.fill([p.x for p in points], [p.y for p in points])
+        return points
+
+    def get_centroid(self) -> Point2d:
+        points = self.get_vertices()
+        average_x = 0
+        average_y = 0
+        for point in points:
+            average_x += point.x
+            average_y += point.y
+        average_x /= len(points)
+        average_y /= len(points)
+        return Point2d(average_x, average_y)
 
 
 def get_floor_and_ceiling_edge(event: Event, edges: List[Edge]) -> Tuple[Edge, Edge]:
@@ -245,7 +261,7 @@ def get_floor_and_ceiling_edge(event: Event, edges: List[Edge]) -> Tuple[Edge, E
 def trapezoidal_decomposition(
     outer_boundary: List[Point2d], holes: List[List[Point2d]]
 ) -> List[Trapezoidal_Cell]:
-    # Assert that outer is ccw and holes are cw
+    # TODO: Assert that outer is ccw and holes are cw
     events = []
     events += get_events_from_polygon(outer_boundary)
     for hole in holes:
@@ -261,9 +277,18 @@ def trapezoidal_decomposition(
         if e.type == EventType.IN:
             for i, cell in enumerate(open_cells):
                 if floor == cell.floor and ceiling == cell.ceiling:
-                    open_cells.append(Trapezoidal_Cell(floor, e.prev_edge, e.x, None))
-                    open_cells.append(Trapezoidal_Cell(e.next_edge, ceiling, e.x, None))
+                    new_bottom_cell = Trapezoidal_Cell(
+                        floor, e.prev_edge, e.x, None, [cell]
+                    )
+                    new_top_cell = Trapezoidal_Cell(
+                        e.next_edge, ceiling, e.x, None, [cell]
+                    )
+                    open_cells.extend([new_bottom_cell, new_top_cell])
                     cell.right_x = e.x
+                    cell.neighbors = [
+                        new_bottom_cell,
+                        new_top_cell,
+                    ] + cell.neighbors
                     closed_cells.append(cell)
                     open_cells.pop(i)
                     break
@@ -280,13 +305,18 @@ def trapezoidal_decomposition(
             assert upper_cell_idx is not None
             assert lower_cell_idx is not None
             assert upper_cell_idx != lower_cell_idx
+            new_cell = Trapezoidal_Cell(
+                floor, ceiling, e.x, None, [upper_cell, lower_cell]
+            )
             open_cells.pop(max(upper_cell_idx, lower_cell_idx))
             open_cells.pop(min(upper_cell_idx, lower_cell_idx))
             upper_cell.right_x = e.x
             lower_cell.right_x = e.x
+            upper_cell.neighbors.append(new_cell)
+            lower_cell.neighbors.append(new_cell)
             closed_cells.append(upper_cell)
             closed_cells.append(lower_cell)
-            open_cells.append(Trapezoidal_Cell(floor, ceiling, e.x, None))
+            open_cells.append(new_cell)
         elif e.type == EventType.OPEN:
             open_cells.append(Trapezoidal_Cell(e.next_edge, e.prev_edge, e.x, None))
         elif e.type == EventType.CLOSE:
@@ -299,19 +329,23 @@ def trapezoidal_decomposition(
         elif e.type == EventType.FLOOR:
             for i, cell in enumerate(open_cells):
                 if e.prev_edge == cell.floor and ceiling == cell.ceiling:
+                    new_cell = Trapezoidal_Cell(e.next_edge, ceiling, e.x, None, [cell])
                     cell.right_x = e.x
+                    cell.neighbors.append(new_cell)
                     closed_cells.append(cell)
                     open_cells.pop(i)
+                    open_cells.append(new_cell)
                     break
-            open_cells.append(Trapezoidal_Cell(e.next_edge, ceiling, e.x, None))
         elif e.type == EventType.CEILING:
             for i, cell in enumerate(open_cells):
                 if floor == cell.floor and e.next_edge == cell.ceiling:
+                    new_cell = Trapezoidal_Cell(floor, e.prev_edge, e.x, None, [cell])
                     cell.right_x = e.x
+                    cell.neighbors.append(new_cell)
                     closed_cells.append(cell)
                     open_cells.pop(i)
+                    open_cells.append(new_cell)
                     break
-            open_cells.append(Trapezoidal_Cell(floor, e.prev_edge, e.x, None))
 
         if e.prev_vertex.x < e.x:
             current_edges.remove(e.prev_edge)
@@ -324,3 +358,56 @@ def trapezoidal_decomposition(
             current_edges.append(e.next_edge)
 
     return closed_cells
+
+
+def get_cell_dist(cell1: Trapezoidal_Cell, cell2: Trapezoidal_Cell) -> float:
+    centroid1 = cell1.get_centroid()
+    centroid2 = cell2.get_centroid()
+    dist = np.sqrt((centroid1.x - centroid2.x) ** 2 + (centroid1.y - centroid2.y) ** 2)
+    return dist
+
+
+def generate_cell_traversal(cells: List[Trapezoidal_Cell]) -> List[Trapezoidal_Cell]:
+    assert len(cells) > 0
+    for i, cell in enumerate(cells):
+        cell.id = i
+    unvisited_ids = set(range(len(cells)))
+    unvisited_ids.remove(0)
+    path_list = [0]
+
+    while len(unvisited_ids) > 0:
+        cell = cells[path_list[-1]]
+        all_neighbors_visited = True
+        potential_next_ids = []
+        for neighbor in cell.neighbors:
+            if neighbor.id in unvisited_ids:
+                potential_next_ids.append(neighbor.id)
+                all_neighbors_visited = False
+
+        if all_neighbors_visited:
+            potential_next_ids = list(unvisited_ids)
+
+        min_dist = None
+        closest_cell_id = None
+        for id in potential_next_ids:
+            next_cell = cells[id]
+            dist = get_cell_dist(cell, next_cell)
+            if min_dist is None or dist < min_dist:
+                min_dist = dist
+                closest_cell_id = id
+
+        unvisited_ids.remove(closest_cell_id)
+        path_list.append(closest_cell_id)
+
+    path = [cells[id] for id in path_list]
+    return path
+
+
+def get_full_coverage_path(
+    cell_traversal: List[Trapezoidal_Cell], stepover_dist: float
+):
+    path = []
+    for cell in cell_traversal:
+        ccw_vertices = [(p.x, p.y) for p in cell.get_vertices()]
+        path.extend(get_polygon_path(ccw_vertices, stepover_dist))
+    return path
