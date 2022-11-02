@@ -179,6 +179,17 @@ bool PoseControlNode::publish_control_callback(std_srvs::SetBool::Request& reque
     yaw_controller->reset_integral();
     ROS_INFO("Pose controller publish control activated.");
   } else if (should_publish && !request.data) {
+    if (got_tracking_point) {
+      geometry_msgs::TwistStamped cmd_vel;
+      cmd_vel.header.stamp = tracking_point.header.stamp;
+      cmd_vel.header.frame_id = target_frame;
+      cmd_vel.twist.linear.x = 0;
+      cmd_vel.twist.linear.y = 0;
+      cmd_vel.twist.linear.z = 0;
+      cmd_vel.twist.angular.z = 0;
+      cmd_vel_pub.publish(cmd_vel);
+    }
+
     ROS_INFO("Pose controller publish control deactivated.");
   }
 
