@@ -229,17 +229,6 @@ class Trapezoidal_Cell:
         average_y /= len(points)
         return Point2d(average_x, average_y)
 
-    def plot_adjancency_edges(self) -> None:
-        centroid = self.get_centroid()
-        for neighbor in self.neighbors:
-            neighbor_centroid = neighbor.get_centroid()
-            plt.plot(
-                [centroid.x, neighbor_centroid.x],
-                [centroid.y, neighbor_centroid.y],
-                linewidth=2.5,
-                color="white",
-            )
-
 
 def get_floor_and_ceiling_edge(event: Event, edges: List[Edge]) -> Tuple[Edge, Edge]:
     floor = None
