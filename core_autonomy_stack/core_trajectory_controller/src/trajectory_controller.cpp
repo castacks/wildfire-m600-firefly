@@ -40,6 +40,8 @@ private:
   ros::Time start_time;
   double prev_time;
   nav_msgs::Odometry tracking_point, look_ahead_point;
+  bool got_tracking_point = false;
+
   double tracking_point_distance_limit;
   double velocity_look_ahead_time;
   
@@ -145,6 +147,7 @@ bool TrajectoryControlNode::execute(){
     // get tracking point and look ahead point. If they aren't valid use the drone's current pose
     //monitor.tic("get_odom");
     bool valid = trajectory->get_odom(current_time, &tracking_point);
+    got_tracking_point = valid;
     // set the velocity of the tracking point based on the velocity from a different time
     if(valid && velocity_look_ahead_time != 0){
       nav_msgs::Odometry velocity_look_ahead_point;
@@ -166,6 +169,7 @@ bool TrajectoryControlNode::execute(){
       tracking_point.twist.twist.angular.y = 0;
       tracking_point.twist.twist.angular.z = 0;
       look_ahead_point = tracking_point;
+      got_tracking_point = true;
     }
     if(valid){
       trajectory->get_odom(current_time + 1.0, &look_ahead_point);
@@ -180,6 +184,10 @@ bool TrajectoryControlNode::execute(){
         segment_msg.header.stamp = tracking_point.header.stamp;
         segment_pub.publish(segment_msg);
       }
+    }
+
+    if (!got_tracking_point) {
+      return true;
     }
     
     tracking_point.header.stamp = now;
@@ -252,15 +260,18 @@ bool TrajectoryControlNode::set_trajectory_mode(core_trajectory_controller::Traj
     
   }
   if(trajectory_mode == core_trajectory_controller::TrajectoryMode::Request::ROBOT_POSE){
+    got_tracking_point = false;
     trajectory->clear();
   }
   else if(trajectory_mode == core_trajectory_controller::TrajectoryMode::Request::TRACK){
+    got_tracking_point = false;
     trajectory->clear();
   }
   else if(trajectory_mode == core_trajectory_controller::TrajectoryMode::Request::SEGMENT){
     if(prev_trajectory_mode != core_trajectory_controller::TrajectoryMode::Request::PAUSE &&
        prev_trajectory_mode != core_trajectory_controller::TrajectoryMode::Request::REWIND &&
        prev_trajectory_mode != core_trajectory_controller::TrajectoryMode::Request::SEGMENT){
+      got_tracking_point = false;
       trajectory->clear();
       start_time = ros::Time::now();
     }
@@ -269,6 +280,7 @@ bool TrajectoryControlNode::set_trajectory_mode(core_trajectory_controller::Traj
     
   }
   else if (trajectory_mode == core_trajectory_controller::TrajectoryMode::Request::MONITOR) {
+    got_tracking_point = false;
     trajectory -> clear();
   }
   
@@ -289,6 +301,7 @@ void TrajectoryControlNode::traj_callback(core_trajectory_msgs::TrajectoryXYZVYa
 
 void TrajectoryControlNode::traj_track_callback(core_trajectory_msgs::TrajectoryXYZVYaw traj){
   start_time = ros::Time::now();
+  got_tracking_point = false;
   trajectory->clear();
   trajectory->merge(Trajectory(traj));
 }
