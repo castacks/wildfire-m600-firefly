@@ -23,7 +23,7 @@
 class GCSMapping {
 
 public:
-    GCSMapping() {
+    GCSMapping(): pnh("~") {
         new_fire_sub = nh.subscribe("new_fire_bins", 1000, &GCSMapping::new_fire_bins_callback, this);
         new_no_fire_sub = nh.subscribe("new_no_fire_bins", 1000, &GCSMapping::new_no_fire_bins_callback, this);
         init_to_no_fire_with_pose_sub = nh.subscribe("init_to_no_fire_with_pose_bins", 1000, &GCSMapping::init_to_no_fire_with_pose_bins_callback, this);
@@ -31,13 +31,22 @@ public:
         map_pub_timer = nh.createTimer(ros::Duration(1.0), &GCSMapping::publish_map_callback, this);
         clear_sub = nh.subscribe("clear_map", 1000, &GCSMapping::clear, this);
 
+        pnh.param<float>("resolution", resolution, 0.5);  
+        pnh.param<float>("min_x", minX, -100.0);  
+        pnh.param<float>("max_x", maxX, 100.0);  
+        pnh.param<float>("min_y", minY, -100.0);  
+        pnh.param<float>("max_y", maxY, 100.0);  
+
+        mapWidth = int((maxX - minX) / resolution);
+        mapHeight = int((maxY - minY) / resolution);
+
         outputMap.header.frame_id = "world";
         outputMap.info.resolution = 0.5;
-        outputMap.info.width = 400; //Number of Cells
-        outputMap.info.height = 400; //Number of Cells
-        outputMap.info.origin.position.x = -100; //In meters
-        outputMap.info.origin.position.y = -100; //In meters
-        outputMap.data = std::vector<std::int8_t> (400*400, 50); // Initialize map to 50 percent certainty
+        outputMap.info.width = mapWidth; //Number of Cells
+        outputMap.info.height = mapHeight; //Number of Cells
+        outputMap.info.origin.position.x = minX; //In meters
+        outputMap.info.origin.position.y = minY; //In meters
+        outputMap.data = std::vector<std::int8_t> (mapWidth * mapHeight, 50); // Initialize map to 50 percent certainty
 
         K_inv << 1.0/fx,  0.0,    -cx/fx,
                 0.0,     1.0/fy, -cy/fy,
@@ -46,6 +55,7 @@ public:
 
 private:
     ros::NodeHandle nh;
+    ros::NodeHandle pnh;
     ros::Subscriber new_fire_sub, new_no_fire_sub, init_to_no_fire_with_pose_sub;
     ros::Publisher map_pub;
     ros::Timer map_pub_timer;
@@ -63,11 +73,13 @@ private:
     float cx = 160.829;
     float cy = 112.614;
 
-    float resolution = 0.5;
-    float minX = -100;
-    float maxX = 100;
-    float minY = -100;
-    float maxY = 100;
+    float resolution;
+    float minX;
+    float maxX;
+    float minY;
+    float maxY;
+    int mapWidth; // Number of cells
+    int mapHeight; // Number of cells
 
     long mapped_bins = 0;
 
@@ -146,7 +158,7 @@ private:
 
     void clear(const std_msgs::Empty &empty_msg) {
         ROS_INFO("Clearing Map");
-        outputMap.data = std::vector<std::int8_t> (400*400, 50); // Set map to 50 percent certainty
+        outputMap.data = std::vector<std::int8_t> (mapWidth * mapHeight, 50); // Set map to 50 percent certainty
         map_pub.publish(outputMap);
         mapped_bins = 0;
     }

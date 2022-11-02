@@ -26,7 +26,7 @@
 class OnboardMapping {
 
 public:
-    OnboardMapping() {
+    OnboardMapping(): pnh("~") {
         image_sub = nh.subscribe("image_to_project", 1000, &OnboardMapping::project_image, this);
         map_pub = nh.advertise<nav_msgs::OccupancyGrid>("observed_firemap", 10);
         new_fire_pub = nh.advertise<std_msgs::Int32MultiArray>("new_fire_bins", 10);
@@ -37,20 +37,30 @@ public:
         K_inv << 1.0/fx,  0.0,    -cx/fx,
                  0.0,     1.0/fy, -cy/fy,
                  0.0,     0.0,     1.0;
+        
+        pnh.param<float>("resolution", resolution, 0.5);  
+        pnh.param<float>("min_x", minX, -100.0);  
+        pnh.param<float>("max_x", maxX, 100.0);  
+        pnh.param<float>("min_y", minY, -100.0);  
+        pnh.param<float>("max_y", maxY, 100.0);  
+
+        mapWidth = int((maxX - minX) / resolution);
+        mapHeight = int((maxY - minY) / resolution);
 
         outputMap.header.frame_id = "uav1/map";
-        outputMap.info.resolution = 0.5;
-        outputMap.info.width = 400; //Number of Cells
-        outputMap.info.height = 400; //Number of Cells
-        outputMap.info.origin.position.x = -100; //In meters
-        outputMap.info.origin.position.y = -100; //In meters
-        outputMap.data = std::vector<std::int8_t> (400*400, 50); // Initialize map to 50 percent certainty
-        map = std::vector<float> (400*400, -1); // Initialize map to 50 percent certainty
+        outputMap.info.resolution = resolution;
+        outputMap.info.width = mapWidth; //Number of Cells
+        outputMap.info.height = mapHeight; //Number of Cells
+        outputMap.info.origin.position.x = minX; //In meters
+        outputMap.info.origin.position.y = minY; //In meters
+        outputMap.data = std::vector<std::int8_t> (mapWidth * mapHeight, 50); // Initialize map to 50 percent certainty
+        map = std::vector<float> (mapWidth * mapHeight, -1); // Initialize map to 50 percent certainty
         map_pub.publish(outputMap);
     }
 
 private:
     ros::NodeHandle nh;
+    ros::NodeHandle pnh;
     ros::Subscriber image_sub;
     ros::Publisher map_pub, new_fire_pub, new_no_fire_pub, init_to_no_fire_with_pose_pub;
     ros::Subscriber clear_sub;
@@ -66,11 +76,13 @@ private:
     float cx = 160.829;
     float cy = 112.614;
 
-    float resolution = 0.5;
-    float minX = -100;
-    float maxX = 100;
-    float minY = -100;
-    float maxY = 100;
+    float resolution;
+    float minX;
+    float maxX;
+    float minY;
+    float maxY;
+    int mapWidth; // Number of cells
+    int mapHeight; // Number of cells
 
     float fpr = 0.0; // False positives divided by all negative cases
     float fnr = 0.05; // False negatives divided by all positive cases
@@ -186,8 +198,8 @@ private:
 
     void clear(const std_msgs::Empty &empty_msg) {
         std::cout << "Clearing Map" << std::endl;
-        outputMap.data = std::vector<std::int8_t> (400*400, 50); // Set map to 50 percent certainty
-        map = std::vector<float> (400*400, -1); // Set map to 50 percent certainty
+        outputMap.data = std::vector<std::int8_t> (mapWidth * mapHeight, 50); // Set map to 50 percent certainty
+        map = std::vector<float> (mapWidth * mapHeight, -1); // Set map to 50 percent certainty
         map_pub.publish(outputMap);
     }
 };

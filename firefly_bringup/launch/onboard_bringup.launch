@@ -1,17 +1,28 @@
 <launch>
-  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find firefly_bringup)/config/rosconsole.config"/>
-  <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find firefly_bringup)/config/python_logging.conf"/>
-  
-  <arg name="replay_mode" default="false"/>
-  <arg name="open_flir" default="false"/>
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find firefly_bringup)/config/rosconsole.config" />
+  <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find firefly_bringup)/config/python_logging.conf" />
+
+  <arg name="replay_mode" default="false" />
+  <arg name="open_flir" default="false" />
   <arg name="continuous" default="true" />
-  <arg name="threshold" default="50"/>
+  <arg name="threshold" default="50" />
   <arg name="robot_name" default="uav1" />
   <arg name="drone_interface" default="DJIInterface" />
   <arg name="run_ca_stack" default="true" />
+  <arg name="map_resolution" default="0.5" />
+  <arg name="map_min_x" default="-500" />
+  <arg name="map_max_x" default="500" />
+  <arg name="map_min_y" default="-500" />
+  <arg name="map_max_y" default="500" />
 
   <group ns="$(arg robot_name)">
-    <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen" />
+    <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen">
+      <param name="resolution" value="$(arg map_resolution)" />
+      <param name="min_x" value="$(arg map_min_x)" />
+      <param name="max_x" value="$(arg map_max_x)" />
+      <param name="min_y" value="$(arg map_min_y)" />
+      <param name="max_y" value="$(arg map_max_y)" />
+    </node>
     <node pkg="firefly_telemetry" type="onboard_telemetry.py" name="onboard_telemetry" output="screen" />
     <node pkg="firefly_perception" type="firefly_perception" name="firefly_perception" output="screen">
       <param name="threshold" value="$(arg threshold)" />
@@ -30,7 +41,7 @@
         <include file="$(find core_central)/launch/dji/sim/dji_sim_control.launch" pass_all_args="true" />
         <include file="$(find firefly_control)/launch/autonomy.launch" pass_all_args="true" />
         <node pkg="firefly_control" type="ipp_plan_to_trajectory.py" name="ipp_plan_to_trajectory" output="screen" />
-        <node pkg="planner_map_interfaces" type="pub_fixed_plan_request_on_demand.py" name="pub_fixed_plan_request_on_demand" output="screen"/>
+        <node pkg="planner_map_interfaces" type="pub_fixed_plan_request_on_demand.py" name="pub_fixed_plan_request_on_demand" output="screen" />
       </group>
     </group>
   </group>
