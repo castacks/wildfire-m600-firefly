@@ -44,4 +44,11 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>message_runtime</exec_depend>
+
+  <depend>grid_map_core</depend>
+  <depend>grid_map_msgs</depend>
+  <depend>grid_map_ros</depend>
+  <depend>grid_map_rviz_plugin</depend>
+  <depend>grid_map_sdf</depend>
+  <depend>grid_map_visualization</depend>
 </package>

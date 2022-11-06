@@ -12,6 +12,12 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   tf
   eigen_conversions
+  grid_map_core
+  grid_map_msgs
+  grid_map_ros
+  grid_map_rviz_plugin
+  grid_map_sdf
+  grid_map_visualization
 )
 add_message_files(
         FILES
