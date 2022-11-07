@@ -26,12 +26,14 @@ class GCSMapping {
 
 public:
     GCSMapping(): pnh("~"), gridMap({"firemap", "elevation"}) {
+        
         new_fire_sub = nh.subscribe("new_fire_bins", 1000, &GCSMapping::new_fire_bins_callback, this);
         new_no_fire_sub = nh.subscribe("new_no_fire_bins", 1000, &GCSMapping::new_no_fire_bins_callback, this);
         init_to_no_fire_with_pose_sub = nh.subscribe("init_to_no_fire_with_pose_bins", 1000, &GCSMapping::init_to_no_fire_with_pose_bins_callback, this);
         map_pub = nh.advertise<nav_msgs::OccupancyGrid>("observed_firemap", 10);
         map_pub_timer = nh.createTimer(ros::Duration(1.0), &GCSMapping::publish_map_callback, this);
         clear_sub = nh.subscribe("clear_map", 1000, &GCSMapping::clear, this);
+        elevation_map_sub = nh.subscribe("elevation_map", 1000, &GCSMapping::elevation_map_callback, this);
         grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 10, true);
 
         pnh.param<float>("resolution", resolution, 0.5);  
@@ -71,6 +73,7 @@ private:
     ros::Publisher map_pub;
     ros::Timer map_pub_timer;
     ros::Subscriber clear_sub;
+    ros::Subscriber elevation_map_sub;
     ros::Publisher grid_map_pub;
 
     nav_msgs::OccupancyGrid outputMap;
@@ -81,6 +84,7 @@ private:
     grid_map_msgs::GridMap gridMapMessage;
 
     bool new_update = true;
+    bool new_grid_map_update = true;
 
     Eigen::Vector3d ground_normal{0, 0, 1}; //Should point up from ground - if pointing into ground, will cause errors
     float ground_offset = 0;
@@ -121,6 +125,7 @@ private:
             gridMap.at("firemap", index) = 100;
         }
         new_update = true;
+        new_grid_map_update = true;
     }
 
     void new_no_fire_bins_callback(const std_msgs::Int32MultiArray& msg) {
@@ -141,6 +146,7 @@ private:
             gridMap.at("firemap", index) = 0;
         }
         new_update = true;
+        new_grid_map_update = true;
     }
 
     void init_to_no_fire_with_pose_bins_callback(const geometry_msgs::Pose& msg) {
@@ -192,6 +198,7 @@ private:
             }
         }
         new_update = true;
+        new_grid_map_update = true;
     }
 
     void publish_map_callback(const ros::TimerEvent& e) {
@@ -199,9 +206,12 @@ private:
         map_pub.publish(outputMap);
         new_update = false;
 
+      }
+      if(new_grid_map_update) {
         // publish grid map
         grid_map::GridMapRosConverter::toMessage(gridMap, gridMapMessage);
         grid_map_pub.publish(gridMapMessage);
+        new_grid_map_update = false;
       }
     }
 
@@ -212,9 +222,36 @@ private:
         mapped_bins = 0;
 
         gridMap.add("firemap", grid_map::Matrix::Constant(mapHeight, mapWidth, 50)); // Set grid map to 50 percent certainty
+        gridMap.add("elevation", grid_map::Matrix()); // Clear elevation map
         grid_map::GridMapRosConverter::toMessage(gridMap, gridMapMessage);
         grid_map_pub.publish(gridMapMessage);
         grid_map_bins = 0;
+    }
+
+    void elevation_map_callback(const std_msgs::Int32MultiArray& msg) {
+        /*
+        2D array flattened row wise (2 x N) --> (1 x 2*N)
+        1st row - bin ids
+        2nd row - corresponding height values in mm
+        */
+        int col = msg.layout.dim[1].size;
+        int bin, height_in_mm, gridRow, gridCol;
+        float height_in_m;
+        grid_map::Index index;
+
+        for(int i = 0; i < col; ++i) {
+            bin = msg.data[i];
+            height_in_mm = msg.data[col + i];
+            height_in_m = (float) height_in_mm / 1000.0f;
+
+            // gridRow, gridCol corresponding to elevation map index in grid map
+            gridRow = bin / mapWidth;
+            gridCol = bin % mapWidth;
+            index(0) = gridRow;
+            index(1) = gridCol;
+            gridMap.at("elevation", index) = height_in_m;
+        }
+        new_grid_map_update = true;
     }
 
 };
