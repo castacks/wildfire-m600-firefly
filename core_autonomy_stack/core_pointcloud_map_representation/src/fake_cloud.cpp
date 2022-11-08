@@ -9,20 +9,55 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "fake_cloud");
   ros::NodeHandle n;
   ros::Publisher debug_pub =
-      n.advertise<sensor_msgs::PointCloud2>("uav1/points", 10);
+      n.advertise<sensor_msgs::PointCloud2>("uav1/velodyne_points", 10);
   ros::Rate loop_rate(10);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr debug_cloud{
       new pcl::PointCloud<pcl::PointXYZRGB>()};
 
-  pcl::PointXYZRGB debug_point;
-  debug_point.x = 0;
-  debug_point.y = 30;
-  debug_point.z = 30;
-  debug_point.r = 0;
-  debug_point.g = 0;
-  debug_point.b = 255;
+  pcl::PointXYZRGB debug_point1;
+  debug_point1.x = 0;
+  debug_point1.y = 10;
+  debug_point1.z = 30;
+  debug_point1.r = 0;
+  debug_point1.g = 0;
+  debug_point1.b = 255;
+  debug_cloud->points.push_back(debug_point1);
 
-  debug_cloud->points.push_back(debug_point);
+    pcl::PointXYZRGB debug_point2;
+  debug_point2.x = 0;
+  debug_point2.y = 10;
+  debug_point2.z = 29;
+  debug_point2.r = 0;
+  debug_point2.g = 0;
+  debug_point2.b = 255;
+  debug_cloud->points.push_back(debug_point2);
+
+    pcl::PointXYZRGB debug_point3;
+  debug_point3.x = 0;
+  debug_point3.y = 10;
+  debug_point3.z = 31;
+  debug_point3.r = 0;
+  debug_point3.g = 0;
+  debug_point3.b = 255;
+  debug_cloud->points.push_back(debug_point3);
+
+    pcl::PointXYZRGB debug_point4;
+  debug_point4.x = -1;
+  debug_point4.y = 10;
+  debug_point4.z = 30;
+  debug_point4.r = 0;
+  debug_point4.g = 0;
+  debug_point4.b = 255;
+  debug_cloud->points.push_back(debug_point4);
+
+    pcl::PointXYZRGB debug_point5;
+  debug_point5.x = 1;
+  debug_point5.y = 10;
+  debug_point5.z = 30;
+  debug_point5.r = 0;
+  debug_point5.g = 0;
+  debug_point5.b = 255;
+  debug_cloud->points.push_back(debug_point5);
 
   while (ros::ok()) {
     sensor_msgs::PointCloud2 debug_cloud2;

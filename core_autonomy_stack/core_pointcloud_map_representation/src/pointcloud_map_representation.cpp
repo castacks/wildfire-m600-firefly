@@ -54,7 +54,7 @@ std::vector< std::vector<double> > PointCloudMapRepresentation::get_values(std::
   for(int i = 0; i < trajectories.size(); i++)
     //for(int j = 0; j < trajectories[i].waypoints.size(); j++)
     for(int j = 0; j < trajectories[i].size(); j++)
-      values[i].push_back(0);
+      values[i].push_back(100);
 
   for(int i = 0; i < trajectories.size(); i++){
     //core_trajectory_msgs::TrajectoryXYZVYaw trajectory = trajectories[i];
@@ -86,8 +86,8 @@ std::vector< std::vector<double> > PointCloudMapRepresentation::get_values(std::
 	double angle = position_cloud_frame.angle(tf::Vector3(position_cloud_frame.x(), position_cloud_frame.y(), 0));//atan2(position_cloud_frame.z(), position_cloud_frame.x());
 	double distance = position_cloud_frame.length();
 	//ROS_INFO_STREAM("angle: " << 180./M_PI*angle << " lidar v fov: " << 180./M_PI*lidar_vertical_fov/2. << " distance: " << distance);
-	if(distance <= robot_radius || fabs(angle) <= lidar_vertical_fov/2.)
-	  seen = true;
+	// if(distance <= robot_radius || fabs(angle) <= lidar_vertical_fov/2.)
+  seen = true;
       
 	pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr kdtree = nodes[k].kdtree;
       
@@ -329,8 +329,8 @@ void PointCloudMapRepresentation::cloud_callback(sensor_msgs::PointCloud2 cloud)
   try{
     sensor_msgs::PointCloud2 cloud_target_frame;
     tf::StampedTransform lidar_to_target_frame_transform;
-    listener->waitForTransform(target_frame, lidar_frame, cloud.header.stamp, ros::Duration(0.1));
-    listener->lookupTransform(target_frame, lidar_frame, cloud.header.stamp, lidar_to_target_frame_transform);
+    listener->waitForTransform(target_frame, "uav1/map", cloud.header.stamp, ros::Duration(0.1));
+    listener->lookupTransform(target_frame, "uav1/map", cloud.header.stamp, lidar_to_target_frame_transform);
     //ROS_INFO_STREAM("transformPointCloud: target_frame " << target_frame << " cloud frame " << cloud.header.frame_id);
     pcl_ros::transformPointCloud(target_frame, cloud, cloud_target_frame, *listener);
     pcl::PointCloud<pcl::PointXYZ>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZ>());

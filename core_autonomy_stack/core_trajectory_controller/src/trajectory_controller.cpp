@@ -185,10 +185,6 @@ bool TrajectoryControlNode::execute(){
         segment_pub.publish(segment_msg);
       }
     }
-
-    if (!got_tracking_point) {
-      return true;
-    }
     
     tracking_point.header.stamp = now;
     look_ahead_point.header.stamp = now;
@@ -218,7 +214,9 @@ bool TrajectoryControlNode::execute(){
 			     tracking_point.twist.twist.linear.y*tracking_point.twist.twist.linear.y +
 			     tracking_point.twist.twist.linear.z*tracking_point.twist.twist.linear.z);
     velocity_pub.publish(velocity_msg);
-    tracking_point_pub.publish(tracking_point);
+    if (got_tracking_point) {
+      tracking_point_pub.publish(tracking_point);
+    }
     look_ahead_pub.publish(look_ahead_point);
     
     // create a tf for the tracking point odom

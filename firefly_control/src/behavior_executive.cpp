@@ -323,7 +323,7 @@ bool BehaviorExecutive::execute() {
 
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
-          core_trajectory_controller::TrajectoryMode::Request::TRACK;
+          core_trajectory_controller::TrajectoryMode::Request::SEGMENT;
       trajectory_mode_client.call(srv);
       const auto fixed_trajectory = GetSquareFixedTraj();
       fixed_trajectory_pub.publish(fixed_trajectory);
@@ -342,7 +342,7 @@ bool BehaviorExecutive::execute() {
 
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
-          core_trajectory_controller::TrajectoryMode::Request::TRACK;
+          core_trajectory_controller::TrajectoryMode::Request::SEGMENT;
       trajectory_mode_client.call(srv);
       const auto fixed_trajectory = GetLawnmowerTraj();
       fixed_trajectory_pub.publish(fixed_trajectory);
@@ -361,7 +361,7 @@ bool BehaviorExecutive::execute() {
 
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
-          core_trajectory_controller::TrajectoryMode::Request::TRACK;
+          core_trajectory_controller::TrajectoryMode::Request::SEGMENT;
       trajectory_mode_client.call(srv);
 
       std_msgs::Empty empty_msg;
