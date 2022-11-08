@@ -42,7 +42,8 @@ class ThermalImageReader
     int threshold;
     bool continuous;
     bool continuousMappingEnabled = false;
-    bool show_video;
+    bool show_thresh_video;
+    bool show_gray_video;
 
 
 public:
@@ -60,7 +61,8 @@ public:
 
         private_nh_.param<int>("threshold", threshold, 50);  
         private_nh_.param<bool>("continuous", continuous, false);  
-        private_nh_.param<bool>("show_video", show_video, false);  
+        private_nh_.param<bool>("show_thresh_video", show_thresh_video, false);  
+        private_nh_.param<bool>("show_gray_video", show_gray_video, true);  
 
     }
 
@@ -80,7 +82,7 @@ public:
             cv::threshold(img, thresh, threshold, 255, CV_THRESH_BINARY);
             thresh.convertTo(cv_img.image, CV_8U);
 
-            if (show_video) {
+            if (show_thresh_video) {
                 cv::imshow("Thresholded Image", cv_img.image);
             }
 
@@ -123,8 +125,12 @@ public:
         try
         {
             cv::Mat img = cv_bridge::toCvShare(msg,sensor_msgs::image_encodings::BGR8)->image;
-            if (show_video) {
-                cv::imshow("Gray Image", img);
+            if (show_gray_video) {
+               cv::Mat resized;
+               cv::resize(img, resized, cv::Size(640,480));
+               cv::namedWindow("Thermal grayscale image", 1);
+               cv::moveWindow("Thermal grayscale image", 1300, 0);
+               cv::imshow("Thermal grayscale image", resized);
             }
             cv::waitKey(3);
         }
