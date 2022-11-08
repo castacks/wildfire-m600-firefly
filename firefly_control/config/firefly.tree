@@ -17,6 +17,9 @@
 			->
 				(Request Control Commanded)
 				[Request Control]
+			->	
+				(Get Initial IPP Plan Commanded)
+				[Idle and Get Initial IPP Plan]
 			->
 				(Have Control)
 				?
@@ -39,9 +42,6 @@
 					->	
 						(Autonomy Mode Is Coverage Planner)
 						[Autonomy Coverage Planner]
-					->	
-						(Get Initial IPP Plan Commanded)
-						[Idle and Get Initial IPP Plan]
 					->
 						(Autonomy Mode Is IPP Planner)
 						(Got Initial IPP Plan)

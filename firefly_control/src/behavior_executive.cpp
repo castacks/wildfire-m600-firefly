@@ -63,6 +63,7 @@ bool BehaviorExecutive::initialize() {
   conditions.push_back(landed_condition);
   conditions.push_back(in_air_condition);
   conditions.push_back(got_initial_ipp_plan_condition);
+  conditions.push_back(get_initial_ipp_plan_commanded);
 
   autonomy_mode_conditions.push_back(autonomy_idle_condition);
   autonomy_mode_conditions.push_back(autonomy_takeoff_condition);
@@ -228,11 +229,21 @@ bool BehaviorExecutive::execute() {
     if (set_local_pos_ref_action->active_has_changed()) {
       disable_pose_controller_output();
 
+      if (!local_pos_ref_set_condition->get()) {
+        // Only reset these conditions if this is the first time setting the local pos ref
+        takeoff_complete_condition->set(false);
+        landed_condition->set(false);
+        request_control_commanded_condition->set(false);
+        get_initial_ipp_plan_commanded->set(false);
+        have_control_condition->set(false);
+      }
+
       dji_sdk::SetLocalPosRef set_local_pos_ref_srv;
       set_local_pos_ref_client.call(set_local_pos_ref_srv);
 
       set_local_pos_ref_action->set_success();
       set_local_pos_ref_commanded_condition->set(false);
+      local_pos_ref_set_condition->set(true);
     }
   }
 
@@ -424,6 +435,7 @@ bool BehaviorExecutive::execute() {
         autonomy_mode_conditions[i]->set(false);
       }
       autonomy_idle_condition->set(true);
+      get_initial_ipp_plan_commanded->set(false);
     }
   }
 
@@ -511,6 +523,10 @@ void BehaviorExecutive::disable_pose_controller_output() {
   srv.request.mode =
       core_trajectory_controller::TrajectoryMode::Request::ROBOT_POSE;
   trajectory_mode_client.call(srv);
+
+  for (int i = 0; i < autonomy_mode_conditions.size(); i++) {
+    autonomy_mode_conditions[i]->set(false);
+  }
 }
 
 BehaviorExecutive::~BehaviorExecutive() {}
