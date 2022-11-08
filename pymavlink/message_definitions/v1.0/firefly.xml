@@ -5604,7 +5604,7 @@
     </message>
     <message id="13027" name="FIREFLY_IPP_TRANSMIT_COMPLETE">
       <description>Complete plan transmitted, reset IPP plan variables</description>
-      <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
     </message>
     <message id="13028" name="FIREFLY_RESET_BEHAVIOR_TREE">
       <description>Command to reset behavior tree</description>
@@ -5613,6 +5613,10 @@
     <message id="13029" name="FIREFLY_IDLE">
       <description>Command to enter an idle autonomy state</description>
       <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
+    </message>
+    <message id="13030" name="FIREFLY_IPP_TRANSMIT_START">
+      <description>Start of IPP Plan Transmission</description>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
     </message>
   </messages>
 </mavlink>

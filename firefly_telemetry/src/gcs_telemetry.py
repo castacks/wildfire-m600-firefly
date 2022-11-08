@@ -107,7 +107,6 @@ class GCSTelemetry:
         self.record_ros_bag_send_flag = False
         self.stop_record_ros_bag_send_flag = False
         self.execute_ipp_plan_flag = False
-        self.reset_ipp_plan_flag = False
         self.idle_send_flag = False
         self.reset_behavior_tree_send_flag = False
 
@@ -224,40 +223,65 @@ class GCSTelemetry:
             (self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate
         )
 
-    def process_new_ipp_packet(self, msg):
+    @staticmethod
+    def extract_pose_from_ipp_waypoint(msg):
+        poseStamped = PoseStamped()
+        poseStamped.header.frame_id = "world"  # TODO: check frame?
+        poseStamped.pose.position.x = msg["x"]
+        poseStamped.pose.position.y = msg["y"]
+        poseStamped.pose.position.z = msg["z"]
+
+        poseStamped.pose.orientation.x = msg["q"][0]
+        poseStamped.pose.orientation.y = msg["q"][1]
+        poseStamped.pose.orientation.z = msg["q"][2]
+        poseStamped.pose.orientation.w = msg["q"][3]
+        return poseStamped
+
+    def process_new_ipp_packet(self, msg, ipp_packet_type):
+        assert ipp_packet_type in ["start", "end", "waypoint"]
+
         if (msg["seq_num"] - self.nr_ipp) % 128 > self.wr:
             # Reject packet, outside window size
             pass
         else:
-            poseStamped = PoseStamped()
+            if ipp_packet_type == "waypoint":
+                poseStamped = self.extract_pose_from_ipp_waypoint(msg)
+            else:
+                poseStamped = None
 
-            poseStamped.header.frame_id = "world"  # TODO: check frame?
-            poseStamped.pose.position.x = msg["x"]
-            poseStamped.pose.position.y = msg["y"]
-            poseStamped.pose.position.z = msg["z"]
+            if (
+                msg["seq_num"] == self.nr_ipp
+            ):  # Correct seq num received as per order. Add to path array and publish
+                if ipp_packet_type == "start":
+                    self.ipp_plan = Path()
+                    self.ipp_plan.header.frame_id = "world"
+                elif ipp_packet_type == "end":
+                    pass
+                else:
+                    self.ipp_plan.poses.append(poseStamped)
 
-            poseStamped.pose.orientation.x = msg["q"][0]
-            poseStamped.pose.orientation.y = msg["q"][1]
-            poseStamped.pose.orientation.z = msg["q"][2]
-            poseStamped.pose.orientation.w = msg["q"][3]
-
-            if msg["seq_num"] == self.nr_ipp:
-                self.ipp_plan.poses.append(
-                    poseStamped
-                )  # Correct seq num received as per order. Add to path array and publish
                 self.nr_ipp = (self.nr_ipp + 1) % 128
                 while (
                     True
                 ):  # Check if further seq nums already received and stored in buf. If yes, add to path array in order and publish
                     if self.nr_ipp in self.ipp_plan_received_buf:
-                        poseStamped = self.ipp_plan_received_buf.pop(self.nr_ipp)
-                        self.ipp_plan.poses.append(poseStamped)
+                        packet = self.ipp_plan_received_buf.pop(self.nr_ipp)
+                        if packet["ipp_packet_type"] == "start":
+                            self.ipp_plan = Path()
+                            self.ipp_plan.header.frame_id = "world"
+                        elif packet["ipp_packet_type"] == "end":
+                            pass
+                        elif packet["ipp_packet_type"] == "waypoint":
+                            self.ipp_plan.poses.append(packet["poseStamped"])
                         self.nr_ipp = (self.nr_ipp + 1) % 128
                     else:
                         break
                 self.ipp_plan_pub.publish(self.ipp_plan)
             else:  # Future seq num received. Store in buf for future use
-                self.ipp_plan_received_buf[msg["seq_num"]] = poseStamped
+                self.ipp_plan_received_buf[msg["seq_num"]] = {
+                    "ipp_packet_type": ipp_packet_type,
+                    "poseStamped": poseStamped,
+                }
 
         self.connection.mav.firefly_ipp_plan_preview_ack_send(
             msg["seq_num"]
@@ -316,15 +340,11 @@ class GCSTelemetry:
                 altitude = msg["alt"]
                 self.altitude_status_gcs.publish(altitude)
             elif msg["mavpackettype"] == "FIREFLY_IPP_PLAN_PREVIEW":
-                if self.reset_ipp_plan_flag:
-                    self.ipp_plan = Path()
-                    self.ipp_plan.header.frame_id = "world"
-                    self.ipp_plan_received_buf.clear()
-                    self.reset_ipp_plan_flag = False
-                self.process_new_ipp_packet(msg)
+                self.process_new_ipp_packet(msg, "waypoint")
             elif msg["mavpackettype"] == "FIREFLY_IPP_TRANSMIT_COMPLETE":
-                self.nr_ipp = 0
-                self.reset_ipp_plan_flag = True
+                self.process_new_ipp_packet(msg, "end")
+            elif msg["mavpackettype"] == "FIREFLY_IPP_TRANSMIT_START":
+                self.process_new_ipp_packet(msg, "start")
 
     def send_outgoing(self):
         if self.clear_map_send_flag:

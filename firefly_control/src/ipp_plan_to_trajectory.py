@@ -17,6 +17,9 @@ class IppPlanToTrajectory:
             "got_initial_ipp_plan", Bool, queue_size=1
         )
         self.replan_pub = rospy.Publisher("/planner/replan", String, queue_size=1)
+        self.initial_ipp_plan_to_transmit_pub = rospy.Publisher(
+            "initial_ipp_plan_to_transmit", Plan, queue_size=1
+        )
 
         rospy.Subscriber("/global_path", Plan, self.ipp_plan_callback)
         rospy.Subscriber("execute_ipp_plan", Bool, self.execute_plan_callback)
@@ -105,6 +108,7 @@ class IppPlanToTrajectory:
             self.trajectory_track_pub.publish(trajectory_msg)
         elif self.waiting_for_initial_ipp_plan and self.initial_plan is None:
             self.initial_plan = trajectory_msg
+            self.initial_ipp_plan_to_transmit_pub.publish(ipp_plan)
 
 
 if __name__ == "__main__":
