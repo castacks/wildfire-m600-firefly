@@ -22,7 +22,7 @@
   <include file="$(find dji_sdk)/launch/sdk.launch" unless="$(arg replay_mode)"/>
   <include file="$(find flir_ros_sync)/launch/example/flir_ros.launch" if="$(arg open_flir)"/>
   <include file="$(find seek_driver)/launch/seek_driver.launch" unless="$(arg replay_mode)"/>
-  <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch"/>
+  <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" unless="$(arg replay_mode)/>
 
   <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.0543145 0.041098 -0.27658746 -1.5707963 0 3.14159 base_link thermal/camera_link 100"/>
 
