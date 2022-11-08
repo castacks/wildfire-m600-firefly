@@ -31,7 +31,6 @@ from geometry_msgs.msg import Pose
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg import BatteryState, NavSatFix
 from behavior_tree_msgs.msg import BehaviorTreeCommand, BehaviorTreeCommands, Status
-from dji_sdk.srv import SetLocalPosRef
 from planner_map_interfaces.msg import Plan
 
 os.environ['MAVLINK20'] = '1'
@@ -79,11 +78,9 @@ class OnboardTelemetry:
         rospy.Subscriber("onboard_temperature", Float32, self.onboard_temperature_callback)
         rospy.Subscriber("/global_path", Plan, self.ipp_publish_callback)
 
-        self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
         self.behavior_tree_commands_pub = rospy.Publisher("behavior_tree_commands", BehaviorTreeCommands, queue_size=100)
         self.kill_switch = rospy.Publisher("kill_switch", Empty, queue_size=10)
-        self.execute_ipp_pub = rospy.Publisher("execute_ipp_plan", Empty, queue_size=1)
 
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
@@ -388,17 +385,7 @@ class OnboardTelemetry:
         behavior_tree_commands = BehaviorTreeCommands()
 
         if msg['mavpackettype'] == 'FIREFLY_CLEAR_MAP':
-            self.clear_map_pub.publish(Empty())
-        elif msg['mavpackettype'] == 'FIREFLY_SET_LOCAL_POS_REF':
-            self.clear_map_pub.publish(Empty())
-            rospy.wait_for_service('dji_sdk/set_local_pos_ref', timeout=0.1)
-            try:
-                set_local_pos_ref = rospy.ServiceProxy('dji_sdk/set_local_pos_ref', SetLocalPosRef)
-                response = set_local_pos_ref()
-                # self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
-                self.connection.mav.firefly_local_pos_ref_send(0, 0, 0)
-            except rospy.ServiceException as e:
-                rospy.logerr("Service call failed: %s" % e)            
+            self.clear_map_pub.publish(Empty())     
         elif msg['mavpackettype'] == 'FIREFLY_KILL':
             self.kill_switch.publish(Empty())
         elif msg['mavpackettype'] == 'FIREFLY_GET_FRAME':
@@ -433,6 +420,19 @@ class OnboardTelemetry:
                 for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
                     if self.map_transmitted_buf[i][2] < self.na:
                         self.na = self.map_transmitted_buf[i][2]
+        elif msg['mavpackettype'] == 'FIREFLY_RESET_BEHAVIOR_TREE':
+            command = BehaviorTreeCommand()
+            command.condition_name = "Reset Behavior Tree Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)        
+        elif msg['mavpackettype'] == 'FIREFLY_SET_LOCAL_POS_REF':
+            self.clear_map_pub.publish(Empty())
+            command = BehaviorTreeCommand()
+            command.condition_name = "Set Local Position Reference Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+            # self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
+            self.connection.mav.firefly_local_pos_ref_send(0, 0, 0)    
         elif msg['mavpackettype'] == 'FIREFLY_REQUEST_CONTROL':
             command = BehaviorTreeCommand()
             command.condition_name = "Request Control Commanded"
@@ -448,34 +448,42 @@ class OnboardTelemetry:
             command.condition_name = "Disarm Commanded"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
+        elif msg['mavpackettype'] == 'FIREFLY_IDLE':
+            command = BehaviorTreeCommand()
+            command.condition_name = "Autonomy Mode Is Idle"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
         elif msg['mavpackettype'] == 'FIREFLY_TAKEOFF':
             command = BehaviorTreeCommand()
-            command.condition_name = "Takeoff Commanded"
+            command.condition_name = "Autonomy Mode Is Takeoff"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
         elif msg['mavpackettype'] == 'FIREFLY_LAND':
             command = BehaviorTreeCommand()
-            command.condition_name = "Land Commanded"
+            command.condition_name = "Autonomy Mode Is Land)"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
         elif msg['mavpackettype'] == 'FIREFLY_TRAJ_CONTROL':
             command = BehaviorTreeCommand()
-            command.condition_name = "Traj Control Commanded"
+            command.condition_name = "Autonomy Mode Is Traj Control"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
         elif msg['mavpackettype'] == 'FIREFLY_COVERAGE_PLANNER':
             command = BehaviorTreeCommand()
-            command.condition_name = "Coverage Planner Commanded"
+            command.condition_name = "Autonomy Mode Is Coverage Planner"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
         elif msg['mavpackettype'] == 'FIREFLY_IPP_PLANNER':
             if not self.send_ipp_plan_flag:
                 command = BehaviorTreeCommand()
-                command.condition_name = "IPP Planner Commanded"
+                command.condition_name = "Get Initial IPP Plan Commanded"
                 command.status = Status.SUCCESS
                 behavior_tree_commands.commands.append(command)
         elif msg['mavpackettype'] == 'FIREFLY_EXECUTE_IPP_PLAN':
-            self.execute_ipp_pub.publish(Empty())
+            command = BehaviorTreeCommand()
+            command.condition_name = "Autonomy Mode Is IPP Planner"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
         elif msg['mavpackettype'] == 'FIREFLY_IPP_PLAN_PREVIEW_ACK':
             for i in range(len(self.ipp_transmit_buf) - 1, -1, -1):
                 if self.ipp_transmit_buf[i]["seq_num"] == msg['seq_num']:

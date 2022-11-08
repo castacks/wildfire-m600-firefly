@@ -57,6 +57,8 @@ class GCSTelemetry:
         rospy.Subscriber("record_rosbag", Empty, self.record_ros_bag_callback)
         rospy.Subscriber("stop_record_rosbag", Empty, self.stop_record_ros_bag_callback)
         rospy.Subscriber("execute_ipp_plan", Empty, self.execute_ipp_plan_callback)
+        rospy.Subscriber("idle", Empty, self.idle_callback)
+        rospy.Subscriber("reset_behavior_tree", Empty, self.reset_behavior_tree_callback)
 
         # See https://en.wikipedia.org/wiki/Sliding_window_protocol
         self.map_received_buf = {}
@@ -88,6 +90,8 @@ class GCSTelemetry:
         self.stop_record_ros_bag_send_flag = False
         self.execute_ipp_plan_flag = False
         self.reset_ipp_plan_flag = False
+        self.idle_send_flag = False
+        self.reset_behavior_tree_send_flag = False
 
         self.bytes_per_sec_send_rate = 1000.0
         self.mavlink_packet_overhead_bytes = 12
@@ -373,6 +377,18 @@ class GCSTelemetry:
             self.execute_ipp_plan_flag = False
             rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
+        if self.idle_send_flag:
+            rospy.loginfo("Entering Idle Mode")
+            self.connection.mav.firefly_idle_send(1)
+            self.idle_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if self.reset_behavior_tree_send_flag:
+            rospy.loginfo("Resetting behavior tree")
+            self.connection.mav.firefly_reset_behavior_tree_send(1)
+            self.reset_behavior_tree_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
     def clear_map_callback(self, empty_msg):
         self.clear_map_send_flag = True
 
@@ -420,6 +436,12 @@ class GCSTelemetry:
 
     def execute_ipp_plan_callback(self, empty_msg):
         self.execute_ipp_plan_flag = True
+
+    def idle_callback(self, empty_msg):
+        self.idle_send_flag = True
+
+    def reset_behavior_tree_callback(self, empty_msg):
+        self.reset_behavior_tree_callback = True
 
 if __name__ == "__main__":
     rospy.init_node("gcs_telemetry", anonymous=True)
