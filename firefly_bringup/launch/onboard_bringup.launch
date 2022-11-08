@@ -35,6 +35,7 @@
       <include file="$(find flir_ros_sync)/launch/example/flir_ros.launch" if="$(arg open_flir)" />
       <include file="$(find seek_driver)/launch/seek_driver.launch" />
       <include file="$(find core_central)/launch/dji/sim/dji_sim_state_estimation.launch" pass_all_args="true" />
+      <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
       <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.0543145 0.041098 -0.27658746 -1.5707963 0 3.14159 $(arg robot_name)/base_link $(arg robot_name)/thermal/camera_link 100" />
 
       <group if="$(arg run_ca_stack)">
