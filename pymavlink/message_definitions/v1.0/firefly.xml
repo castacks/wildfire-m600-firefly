@@ -5606,5 +5606,9 @@
       <description>Complete plan transmitted, reset IPP plan variables</description>
       <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
     </message>
+    <message id="13028" name="FIREFLY_COVERAGE_AREA">
+      <description>Send vertices of area to be covered</description>
+      <field type="float[8]" name="points">Vertices of the area to be covered - rectangle</field>
+    </message>
   </messages>
 </mavlink>

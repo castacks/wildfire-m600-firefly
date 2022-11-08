@@ -24,7 +24,7 @@ from std_msgs.msg import Empty, Bool, Float32
 import time
 from sensor_msgs.msg import NavSatFix
 import serial
-from geometry_msgs.msg import Pose, PoseStamped, PointStamped
+from geometry_msgs.msg import Pose, PoseStamped, PointStamped, Point
 from nav_msgs.msg import Path
 
 os.environ['MAVLINK20'] = '1'
@@ -89,6 +89,7 @@ class GCSTelemetry:
         self.stop_record_ros_bag_send_flag = False
         self.execute_ipp_plan_flag = False
         self.reset_ipp_plan_flag = False
+        self.coverage_area_send_flag = False
 
         self.bytes_per_sec_send_rate = 1000.0
         self.mavlink_packet_overhead_bytes = 12
@@ -100,6 +101,7 @@ class GCSTelemetry:
         self.watchdog_timeout = 2.0
 
         self.coverage_rect_pts = []
+        self.coverage_rect_pts_corrected = []
 
         try:
             self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
@@ -376,6 +378,15 @@ class GCSTelemetry:
             self.execute_ipp_plan_flag = False
             rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
+        if self.coverage_area_send_flag:
+            rospy.loginfo("Sending Coverage Area")
+            pts_to_send = []
+            for pt in self.coverage_rect_pts_corrected:
+                pts_to_send.extend([pt.x, pt.y])
+            self.connection.mav.firefly_coverage_area_send(pts_to_send)
+            self.coverage_area_send_flag = False
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 32) / self.bytes_per_sec_send_rate)
+
     def clear_map_callback(self, empty_msg):
         self.clear_map_send_flag = True
 
@@ -427,17 +438,33 @@ class GCSTelemetry:
     def coverage_points_callback(self, point_stamped):
         self.coverage_rect_pts.append(point_stamped.point)
         if(len(self.coverage_rect_pts == 3)):
+            p4 = Point()
             # create rectangle points and send
             p1, p2, p3 = self.coverage_rect_pts
+
             # slope of line joining p1 and p2 - l1
             try:
                 m1 = (p2.y - p1.y)/(p2.x - p1.x)
             except:
                 p3.y = p2.y
+                p4.x = p3.x
+                p4.y = p1.y
+                self.coverage_rect_pts_corrected = [p1, p2, p3, p4]
+                self.coverage_area_send_flag = True
+                self.coverage_rect_pts.clear()
+                return
+
             try:
                 m2 = -1/m1 # perpendicular line - l2
             except:
                 p3.x = p2.x
+                p4.x = p1.x
+                p4.y = p3.y
+                self.coverage_rect_pts_corrected = [p1, p2, p3, p4]
+                self.coverage_area_send_flag = True
+                self.coverage_rect_pts.clear()
+                return
+
             # vector joining p2 and p3 - v23
             v23_x = p3.x - p2.x
             v23_y = p3.y - p2.y
@@ -446,6 +473,11 @@ class GCSTelemetry:
             # correction for p3 to lie on the rectangle
             p3.x = p2.x - m2*t
             p3.y = p2.y + t
+            p4.x = p1.x - m2*t
+            p4.y = p1.y + t
+            self.coverage_rect_pts_corrected = [p1, p2, p3, p4]
+            self.coverage_area_send_flag = True
+            self.coverage_rect_pts.clear()
 
 if __name__ == "__main__":
     rospy.init_node("gcs_telemetry", anonymous=True)
