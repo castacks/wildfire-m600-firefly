@@ -194,7 +194,8 @@ public:
         lidar_subscriber = nh_.subscribe("/velodyne_points", 1,
                                    &LidarReader::point_cloud_extractor, this);
         
-        lidar_mapping_pub_ = nh_.advertise< pcl::PointCloud<pcl::PointXYZ>>("lidar_cropped", 1);
+        lidar_mapping_pub_ = nh_.advertise< pcl::PointCloud<pcl::PointXYZ>>("lidar_cropped_mapping", 1);
+        lidar_obstacle_pub_ = nh_.advertise< pcl::PointCloud<pcl::PointXYZ>>("lidar_cropped_obstacle", 1);
 
 
     }
@@ -235,19 +236,36 @@ public:
         // Test the PointCloud<PointT> method
         pcl::CropBox<pcl::PointXYZ> cropBoxFilter (true);
         cropBoxFilter.setInputCloud (temp_cloud);
-        Eigen::Vector4f min_pt (-10.0f, -10.0f, 0.0f, 1.0f);
+
         // (x, y, z)
-        Eigen::Vector4f max_pt (0.0f, 1.0f, 100.0f, 1.0f);
+        // x is depth
+        // y is breadth of scan (i think its in radians) -ve value is towards right
+        // z is vertical axis (i.e. number of lines of scan)
+        for (int i = 0; i < 20 ; i++)
+        {
+            // std::cout << i << std::endl;
+            Eigen::Vector4f min_pt_mapping (00.0f, -10.0f, -10.0f, 1.0f);
+            Eigen::Vector4f max_pt_mapping (i*5.0f, i*1.0f, i*1.0f, 1.0f);
 
-        // Cropbox slighlty bigger then bounding box of points
-        cropBoxFilter.setMin (min_pt);
-        cropBoxFilter.setMax (max_pt);
+            // Cropbox slighlty bigger then bounding box of points
+            cropBoxFilter.setMin (min_pt_mapping);
+            cropBoxFilter.setMax (max_pt_mapping);
 
-        // Cloud
-        pcl::PointCloud<pcl::PointXYZ> cloud_out;
-        cropBoxFilter.filter (cloud_out);
+            // Cloud
+            pcl::PointCloud<pcl::PointXYZ> cloud_out_mapping;
+            cropBoxFilter.filter (cloud_out_mapping);
+            lidar_mapping_pub_.publish(cloud_out_mapping);
+        }
+        
 
-        lidar_mapping_pub_.publish(cloud_out);
+
+        pcl::CropBox<pcl::PointXYZ> cropBoxFilterObstacle (true);
+        cropBoxFilterObstacle.setInputCloud (temp_cloud);
+        Eigen::Vector4f min_pt_obstacle (0.0f, -2.0f, -10.0f, 1.0f);
+        Eigen::Vector4f max_pt_obstacle (100.0f, 1.0f, 10.0f, 1.0f);
+        pcl::PointCloud<pcl::PointXYZ> cloud_out_obstacle;
+        cropBoxFilterObstacle.filter (cloud_out_obstacle);
+        lidar_obstacle_pub_.publish(cloud_out_obstacle);
     }
 };
 
