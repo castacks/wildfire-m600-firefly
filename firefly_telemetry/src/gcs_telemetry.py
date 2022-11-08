@@ -24,7 +24,7 @@ from std_msgs.msg import Empty, Bool, Float32
 import time
 from sensor_msgs.msg import NavSatFix
 import serial
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import Pose, PoseStamped, PointStamped
 from nav_msgs.msg import Path
 
 os.environ['MAVLINK20'] = '1'
@@ -57,6 +57,7 @@ class GCSTelemetry:
         rospy.Subscriber("record_rosbag", Empty, self.record_ros_bag_callback)
         rospy.Subscriber("stop_record_rosbag", Empty, self.stop_record_ros_bag_callback)
         rospy.Subscriber("execute_ipp_plan", Empty, self.execute_ipp_plan_callback)
+        rospy.Subscriber("/clicked_point", PointStamped, self.coverage_points_callback)
 
         # See https://en.wikipedia.org/wiki/Sliding_window_protocol
         self.map_received_buf = {}
@@ -97,6 +98,8 @@ class GCSTelemetry:
         self.last_heartbeat_time = None
         self.connectedToOnboard = False
         self.watchdog_timeout = 2.0
+
+        self.coverage_rect_pts = []
 
         try:
             self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
@@ -420,6 +423,29 @@ class GCSTelemetry:
 
     def execute_ipp_plan_callback(self, empty_msg):
         self.execute_ipp_plan_flag = True
+
+    def coverage_points_callback(self, point_stamped):
+        self.coverage_rect_pts.append(point_stamped.point)
+        if(len(self.coverage_rect_pts == 3)):
+            # create rectangle points and send
+            p1, p2, p3 = self.coverage_rect_pts
+            # slope of line joining p1 and p2 - l1
+            try:
+                m1 = (p2.y - p1.y)/(p2.x - p1.x)
+            except:
+                p3.y = p2.y
+            try:
+                m2 = -1/m1 # perpendicular line - l2
+            except:
+                p3.x = p2.x
+            # vector joining p2 and p3 - v23
+            v23_x = p3.x - p2.x
+            v23_y = p3.y - p2.y
+            # dot of v23 and perpendiular line - l2
+            t = -m2*v23_x + v23_y
+            # correction for p3 to lie on the rectangle
+            p3.x = p2.x - m2*t
+            p3.y = p2.y + t
 
 if __name__ == "__main__":
     rospy.init_node("gcs_telemetry", anonymous=True)

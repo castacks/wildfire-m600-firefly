@@ -54,6 +54,8 @@ namespace rviz {
 
         void stop_record_ros_bag();
 
+        void select_coverage_area();
+
     protected:
 
 
@@ -64,6 +66,7 @@ namespace rviz {
         QPushButton *capture_frame_button_;
         QPushButton *ros_record_button_;
         QPushButton *ros_stop_record_button_;
+        QPushButton *select_coverage_area_button_;
 
 
         ros::Publisher start_mission_pub_;

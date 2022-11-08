@@ -41,6 +41,7 @@ namespace rviz {
         capture_frame_button_ = new QPushButton("Capture");
         ros_record_button_ = new QPushButton("ROS Bag Record");
         ros_stop_record_button_ = new QPushButton("Stop ROS Bag Recording");
+        select_coverage_area_button_ = new QPushButton("Select Coverage Area");
 
         //define color for killswitch
         QPalette pal_killswitch = kill_switch_button_->palette();
@@ -86,7 +87,8 @@ namespace rviz {
         layout->addWidget(set_local_pos_ref_button_,1 ,1);
         layout->addWidget(capture_frame_button_,1 , 2);
         layout->addWidget(ros_record_button_,2 ,0);
-        layout->addWidget(ros_stop_record_button_,2 ,1);
+        layout->addWidget(ros_stop_record_button_, 2, 1);
+        layout->addWidget(select_coverage_area_button_, 2, 2);
 
         //Update layout
         layout->addWidget(battery_status_text, 3, 0);
@@ -115,6 +117,7 @@ namespace rviz {
         connect(capture_frame_button_, SIGNAL(clicked()), this, SLOT(capture_frame()));
         connect(ros_record_button_, SIGNAL(clicked()), this, SLOT(record_ros_bag()));
         connect(ros_stop_record_button_, SIGNAL(clicked()), this, SLOT(stop_record_ros_bag()));
+        connect(select_coverage_area_button_, SIGNAL(clicked()), this, SLOT(select_coverage_area()));
 
         //Publishers from GUI for Telemetry to read from
         start_mission_pub_ = nh_.advertise<std_msgs::Empty>("execute_auto_flight", 10);
@@ -194,6 +197,11 @@ namespace rviz {
         ros_record_button_->setText("ROS Bag Record");
 
         ros_record_button_->setEnabled(true);
+    }
+
+    void select_coverage_area() {
+        // TODO: toggle point tool activation
+        rviz::PointTool::activate();
     }
 
 // Save all configuration data from this panel to the given
