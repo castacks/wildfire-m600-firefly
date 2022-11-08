@@ -178,7 +178,6 @@ class OnboardTelemetry:
                     wp.position.orientation.z,
                     wp.position.orientation.w,
                 ],
-                "seq_num": idx,
                 "type": "waypoint",
             }
             self.ipp_plan.append(plan_msg)
@@ -386,7 +385,7 @@ class OnboardTelemetry:
                     / self.bytes_per_sec_send_rate
                 )
             elif ipp_packet["type"] == "start":
-                self.connection.mav.firefly_ipp_transmit_start.send(
+                self.connection.mav.firefly_ipp_transmit_start_send(
                     ipp_packet["seq_num"]
                 )
                 rospy.sleep(
@@ -394,7 +393,7 @@ class OnboardTelemetry:
                     / self.bytes_per_sec_send_rate
                 )
             elif ipp_packet["type"] == "end":
-                self.connection.mav.firefly_ipp_transmit_complete.send(
+                self.connection.mav.firefly_ipp_transmit_complete_send(
                     ipp_packet["seq_num"]
                 )
                 rospy.sleep(
@@ -410,32 +409,33 @@ class OnboardTelemetry:
         elif len(self.ipp_plan) != 0:
             next_wp = self.ipp_plan.pop(0)
             next_wp["timestamp"] = time.time()
+            next_wp["seq_num"] = self.ipp_nt
             self.ipp_transmit_buf.append(next_wp)
             self.ipp_nt = (self.ipp_nt + 1) % 128
 
-            if ipp_packet["type"] == "waypoint":
+            if next_wp["type"] == "waypoint":
                 self.connection.mav.firefly_ipp_plan_preview_send(
-                    ipp_packet["seq_num"],
-                    ipp_packet["x"],
-                    ipp_packet["y"],
-                    ipp_packet["z"],
-                    ipp_packet["q"],
+                    next_wp["seq_num"],
+                    next_wp["x"],
+                    next_wp["y"],
+                    next_wp["z"],
+                    next_wp["q"],
                 )
                 rospy.sleep(
                     (self.mavlink_packet_overhead_bytes + 29)
                     / self.bytes_per_sec_send_rate
                 )
-            elif ipp_packet["type"] == "start":
-                self.connection.mav.firefly_ipp_transmit_start.send(
-                    ipp_packet["seq_num"]
+            elif next_wp["type"] == "start":
+                self.connection.mav.firefly_ipp_transmit_start_send(
+                    next_wp["seq_num"]
                 )
                 rospy.sleep(
                     (self.mavlink_packet_overhead_bytes + 1)
                     / self.bytes_per_sec_send_rate
                 )
-            elif ipp_packet["type"] == "end":
-                self.connection.mav.firefly_ipp_transmit_complete.send(
-                    ipp_packet["seq_num"]
+            elif next_wp["type"] == "end":
+                self.connection.mav.firefly_ipp_transmit_complete_send(
+                    next_wp["seq_num"]
                 )
                 rospy.sleep(
                     (self.mavlink_packet_overhead_bytes + 1)
@@ -460,6 +460,7 @@ class OnboardTelemetry:
                 if self.connectedToGCS:
                     self.send_map_update()
                     self.send_pose_update()
+                    self.send_ipp_plan()
 
                 if self.heartbeat_send_flag:
                     if self.camera_health:
@@ -497,17 +498,6 @@ class OnboardTelemetry:
                     self.temperature_status_send_flag = False
                     rospy.sleep(
                         (self.mavlink_packet_overhead_bytes + 4)
-                        / self.bytes_per_sec_send_rate
-                    )
-                # send ipp preview
-                if self.send_ipp_plan_flag:
-                    self.send_ipp_plan()
-                # send acknowledgement of complete ipp preview transmission
-                if self.ipp_transmit_complete_flag:
-                    self.ipp_transmit_complete_flag = False
-                    self.connection.mav.firefly_ipp_transmit_complete_send(1)
-                    rospy.sleep(
-                        (self.mavlink_packet_overhead_bytes + 1)
                         / self.bytes_per_sec_send_rate
                     )
 

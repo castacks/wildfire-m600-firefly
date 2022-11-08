@@ -436,7 +436,7 @@ def get_coverage_waypoints(attributes):
         wp1.position.x = x
         wp1.position.y = y
         wp1.position.z = height
-        wp1.yaw = 0
+        wp1.yaw = np.pi/2
         wp1.velocity = velocity
         traj.waypoints.append(wp1)
 
