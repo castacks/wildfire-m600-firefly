@@ -1,14 +1,16 @@
 #include <base/BaseNode.h>
-#include <core_trajectory_controller/Trajectory.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <std_msgs/ColorRGBA.h>
-#include <string>
 #include <core_local_planner/local_planner.h>
+#include <core_trajectory_controller/Trajectory.h>
+#include <std_msgs/ColorRGBA.h>
+#include <visualization_msgs/MarkerArray.h>
+
+#include <string>
 //#include <pointcloud_map_representation/pointcloud_map_representation.h>
 #include <tflib/tflib.h>
 
 //===================================================================================
-//--------------------------------- Local Planner -----------------------------------
+//--------------------------------- Local Planner
+//-----------------------------------
 //===================================================================================
 
 LocalPlanner::LocalPlanner(std::string node_name)
@@ -52,7 +54,8 @@ bool LocalPlanner::initialize()
   // obstacle_check_radius = pnh->param("obstacle_check_radius", 3.);
   // obstacle_check_points = pnh->param("obstacle_check_points", 3);
   obstacle_penalty_weight = pnh->param("obstacle_penalty_weight", 1.);
-  forward_progress_penalty_weight = pnh->param("forward_progress_penalty_weight", 0.5);
+  forward_progress_penalty_weight =
+      pnh->param("forward_progress_penalty_weight", 0.5);
   robot_radius = pnh->param("robot_radius", 0.75);
   look_past_distance = pnh->param("look_past_distance", 0);
   // use_fixed_height = pnh->param("use_fixed_height", false);
@@ -60,7 +63,8 @@ bool LocalPlanner::initialize()
   height_above_ground = pnh->param("height_above_ground", 1.);
   fixed_height = pnh->param("fixed_height", 1.);
   yaw_mode = pnh->param("yaw_mode", 0);
-  map_representation = pnh->param("map_representation", std::string("PointCloudMapRepresentation"));
+  map_representation = pnh->param("map_representation",
+                                  std::string("PointCloudMapRepresentation"));
 
   waypoint_buffer_duration = pnh->param("waypoint_buffer_duration", 30.);
   waypoint_spacing_threshold = pnh->param("waypoint_spacing_threshold", 0.5);
@@ -190,17 +194,20 @@ bool LocalPlanner::execute()
   else
     ROS_INFO("invalid");
 
-  // publish the segment of the global plan currently being used, for visualization
+  // publish the segment of the global plan currently being used, for
+  // visualization
   visualization_msgs::MarkerArray global_markers = gp.get_markers(0, 0, 1);
   global_plan_vis_pub.publish(global_markers);
 
   // get the dynamic trajectories
-  std::vector<Trajectory> dynamic_trajectories = traj_lib->get_dynamic_trajectories(look_ahead_odom);
+  std::vector<Trajectory> dynamic_trajectories =
+      traj_lib->get_dynamic_trajectories(look_ahead_odom);
 
   // pick the best trajectory
   monitor.tic("get_best_trajectory");
   Trajectory best_traj;
-  bool all_in_collision = get_best_trajectory(dynamic_trajectories, gp, &best_traj);
+  bool all_in_collision =
+      get_best_trajectory(dynamic_trajectories, gp, &best_traj);
   monitor.toc("get_best_trajectory");
 
   // publish the trajectory
@@ -281,6 +288,7 @@ bool LocalPlanner::get_best_trajectory(std::vector<Trajectory> trajectories,
   double min_cost = std::numeric_limits<double>::max();
   int best_traj_index = 0;
   bool all_in_collision = true;
+  double best_average_dist = 100000;
 
   ros::Time now = ros::Time::now();
 
@@ -414,6 +422,7 @@ bool LocalPlanner::get_best_trajectory(std::vector<Trajectory> trajectories,
       min_cost = cost;
       best_traj_index = i;
       *best_traj = traj;
+      best_average
     }
   }
 
@@ -554,7 +563,8 @@ void LocalPlanner::waypoint_callback(geometry_msgs::PointStamped wp)
       tf::Vector3 direction = (wp_position - tp_position).normalized() * 3;
       tf::Vector3 wp2_position = wp_position + direction;
 
-      // TODO: Are waypoints in the tracking point frame while the previous ones are in wp frame?
+      // TODO: Are waypoints in the tracking point frame while the previous ones
+      // are in wp frame?
       core_trajectory_msgs::WaypointXYZVYaw wp1, wp2;
       wp1.position.x = wp_position.x();
       wp1.position.y = wp_position.y();
@@ -617,7 +627,8 @@ void LocalPlanner::waypoint_callback(geometry_msgs::PointStamped wp)
       this->global_plan = global_plan;
     }
     catch(tf::TransformException& ex){
-      ROS_ERROR_STREAM("Transform exception in waypoint_callback: " << ex.what());
+      ROS_ERROR_STREAM("Transform exception in waypoint_callback: " <<
+  ex.what());
     }
   }
   */
