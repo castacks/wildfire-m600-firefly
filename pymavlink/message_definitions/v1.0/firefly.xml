@@ -5609,5 +5609,6 @@
     <message id="13028" name="FIREFLY_MAP_SINGLE_ACK">
       <description>Acknowledge receipt of new fire bins or new no fire bins message</description>
       <field type="uint8_t" name="seq_num">Sequence Number</field>
+    </message>
   </messages>
 </mavlink>
