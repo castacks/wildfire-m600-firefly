@@ -1,0 +1,19 @@
+<launch>
+  
+  <node pkg="disparity_expansion" type="disparity_expansion_gpu"
+        name="disparity_expansion_gpu" output="screen">
+    <remap from="/ceye/left/expanded_disparity_fg" to="/ceye/left/expanded_disparity_fg_gpu" />
+    <remap from="/ceye/left/expanded_disparity_bg" to="/ceye/left/expanded_disparity_bg_gpu" />
+    <remap from="/nerian_sp1/right/camera_info" to="/narrow_stereo/right/camera_info"/>
+    <remap from="/nerian_sp1/disparity_map_32F" to="/narrow_stereo/disparity"/>
+    <param name="lut_max_disparity" type="int" value="190" />
+    <param name="robot_radius" type="double" value="0.25" />
+    <param name="bg_multiplier" type="double" value="2.0" />
+    <param name="sensor_pixel_error" type="double" value="0.2" />
+    <param name="downsample_scale" type="double" value="2.0" />
+    <param name="padding" type="double" value="-1.0" />
+    <param name="sip_disparity" type="string" value="/narrow_stereo/disparity" />
+    <param name="camera_info" type="string" value="/narrow_stereo/right/camera_info" />
+  </node>
+  
+</launch>

@@ -1,6 +1,7 @@
 #include "behavior_executive.h"
 
 #include <base/BaseNode.h>
+#include <std_srvs/SetBool.h>
 
 #include <string>
 
@@ -20,6 +21,9 @@ bool BehaviorExecutive::initialize() {
   disarm_commanded_condition = new bt::Condition("Disarm Commanded");
   traj_control_commanded_condition =
       new bt::Condition("Traj Control Commanded");
+  coverage_planner_commanded_condition =
+      new bt::Condition("Coverage Planner Commanded");
+  ipp_planner_commanded_condition = new bt::Condition("IPP Planner Commanded");
 
   offboard_mode_condition = new bt::Condition("Offboard Mode");
   armed_condition = new bt::Condition("Armed");
@@ -33,6 +37,8 @@ bool BehaviorExecutive::initialize() {
   conditions.push_back(arm_commanded_condition);
   conditions.push_back(disarm_commanded_condition);
   conditions.push_back(traj_control_commanded_condition);
+  conditions.push_back(coverage_planner_commanded_condition);
+  conditions.push_back(ipp_planner_commanded_condition);
   conditions.push_back(offboard_mode_condition);
   conditions.push_back(armed_condition);
   conditions.push_back(takeoff_complete_condition);
@@ -46,6 +52,8 @@ bool BehaviorExecutive::initialize() {
   arm_action = new bt::Action("Arm");
   disarm_action = new bt::Action("Disarm");
   traj_control_action = new bt::Action("Traj Control");
+  coverage_planner_action = new bt::Action("Coverage Planner");
+  ipp_planner_action = new bt::Action("IPP Planner");
 
   actions.push_back(takeoff_action);
   actions.push_back(land_action);
@@ -53,6 +61,8 @@ bool BehaviorExecutive::initialize() {
   actions.push_back(arm_action);
   actions.push_back(disarm_action);
   actions.push_back(traj_control_action);
+  actions.push_back(coverage_planner_action);
+  actions.push_back(ipp_planner_action);
 
   // init services
   takeoff_landing_client =
@@ -79,11 +89,14 @@ bool BehaviorExecutive::initialize() {
       "velocity_controller/vz/reset_integrator");
   yawrate_reset_integrator_client = nh->serviceClient<std_srvs::Empty>(
       "velocity_controller/yawrate/reset_integrator");
+  publish_control_client =
+      nh->serviceClient<std_srvs::SetBool>("pose_controller/publish_control");
 
   // init publishers
   fixed_trajectory_pub = nh->advertise<core_trajectory_msgs::FixedTrajectory>(
       "fixed_trajectory", 10);
   in_air_pub = nh->advertise<std_msgs::Bool>("in_air", 1);
+  generate_ipp_plan_request_pub = nh->advertise<std_msgs::Empty>("generate_ipp_plan_request", 1);
 
   // init subscribers
   behavior_tree_command_sub =
@@ -118,8 +131,34 @@ static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
   attrib4.value = "30";
   diagnostic_msgs::KeyValue attrib5;
   attrib5.key = "velocity";
-  attrib5.value = "0.5";
+  attrib5.value = "2.0";
   fixed_trajectory.attributes = {attrib1, attrib2, attrib3, attrib4, attrib5};
+  return fixed_trajectory;
+}
+
+static core_trajectory_msgs::FixedTrajectory GetLawnmowerTraj() {
+  core_trajectory_msgs::FixedTrajectory fixed_trajectory;
+  fixed_trajectory.type = "Horizontal_Lawnmower";
+  diagnostic_msgs::KeyValue attrib1;
+  attrib1.key = "frame_id";
+  attrib1.value = "world";
+  diagnostic_msgs::KeyValue attrib2;
+  attrib2.key = "length";
+  attrib2.value = "100";
+  diagnostic_msgs::KeyValue attrib3;
+  attrib3.key = "width";
+  attrib3.value = "100";
+  diagnostic_msgs::KeyValue attrib4;
+  attrib4.key = "height";
+  attrib4.value = "30";
+  diagnostic_msgs::KeyValue attrib5;
+  attrib5.key = "velocity";
+  attrib5.value = "2.0";
+  diagnostic_msgs::KeyValue attrib6;
+  attrib6.key = "stepover_dist";
+  attrib6.value = "20.0";
+  fixed_trajectory.attributes = {attrib1, attrib2, attrib3,
+                                 attrib4, attrib5, attrib6};
   return fixed_trajectory;
 }
 
@@ -160,6 +199,11 @@ bool BehaviorExecutive::execute() {
       takeoff_complete_condition->set(false);
       landed_condition->set(false);
 
+      // Turn off pose controller output before arming
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = false;
+      publish_control_client.call(publish_control_srv);
+
       // arm
       core_drone_interface::DroneCommand drone_command_srv;
       drone_command_srv.request.command =
@@ -176,7 +220,7 @@ bool BehaviorExecutive::execute() {
 
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
-          core_trajectory_controller::TrajectoryMode::Request::PAUSE;
+          core_trajectory_controller::TrajectoryMode::Request::ROBOT_POSE;
       trajectory_mode_client.call(srv);
     }
   }
@@ -205,6 +249,11 @@ bool BehaviorExecutive::execute() {
         vz_reset_integrator_client.call(reset_srv);
         yawrate_reset_integrator_client.call(reset_srv);
 
+        // Turn off pose controller output after disarming
+        std_srvs::SetBool publish_control_srv;
+        publish_control_srv.request.data = false;
+        publish_control_client.call(publish_control_srv);
+
         // set the tracking point to be at the robot's position
         core_trajectory_controller::TrajectoryMode srv;
         srv.request.mode =
@@ -223,6 +272,11 @@ bool BehaviorExecutive::execute() {
     in_air_condition->set(true);
 
     if (takeoff_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
       core_takeoff_landing_planner::TakeoffLandingCommand takeoff_srv;
       takeoff_srv.request.command =
           core_takeoff_landing_planner::TakeoffLandingCommand::Request::TAKEOFF;
@@ -240,6 +294,11 @@ bool BehaviorExecutive::execute() {
     land_action->set_running();
 
     if (land_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
       core_takeoff_landing_planner::TakeoffLandingCommand land_srv;
       land_srv.request.command =
           core_takeoff_landing_planner::TakeoffLandingCommand::Request::LAND;
@@ -257,12 +316,56 @@ bool BehaviorExecutive::execute() {
     traj_control_action->set_running();
 
     if (traj_control_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
           core_trajectory_controller::TrajectoryMode::Request::TRACK;
       trajectory_mode_client.call(srv);
       const auto fixed_trajectory = GetSquareFixedTraj();
       fixed_trajectory_pub.publish(fixed_trajectory);
+    }
+  }
+
+  // follow coverage planner
+  if (coverage_planner_action->is_active()) {
+    coverage_planner_action->set_running();
+
+    if (coverage_planner_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
+      core_trajectory_controller::TrajectoryMode srv;
+      srv.request.mode =
+          core_trajectory_controller::TrajectoryMode::Request::TRACK;
+      trajectory_mode_client.call(srv);
+      const auto fixed_trajectory = GetLawnmowerTraj();
+      fixed_trajectory_pub.publish(fixed_trajectory);
+    }
+  }
+
+  // follow ipp planner
+  if (ipp_planner_action->is_active()) {
+    ipp_planner_action->set_running();
+
+    if (ipp_planner_action->active_has_changed()) {
+      // Turn on pose controller output
+      std_srvs::SetBool publish_control_srv;
+      publish_control_srv.request.data = true;
+      publish_control_client.call(publish_control_srv);
+
+      core_trajectory_controller::TrajectoryMode srv;
+      srv.request.mode =
+          core_trajectory_controller::TrajectoryMode::Request::TRACK;
+      trajectory_mode_client.call(srv);
+
+      std_msgs::Empty empty_msg;
+      generate_ipp_plan_request_pub.publish(empty_msg);
     }
   }
 
@@ -285,6 +388,8 @@ void BehaviorExecutive::behavior_tree_command_callback(
   takeoff_commanded_condition->set(false);
   land_commanded_condition->set(false);
   traj_control_commanded_condition->set(false);
+  coverage_planner_commanded_condition->set(false);
+  ipp_planner_commanded_condition->set(false);
 
   for (int i = 0; i < msg.commands.size(); i++) {
     std::string condition_name = msg.commands[i].condition_name;

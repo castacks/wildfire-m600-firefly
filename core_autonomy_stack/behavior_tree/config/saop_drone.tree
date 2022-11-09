@@ -1,0 +1,25 @@
+->
+	(Autonomy Commanded)
+	?
+		(Receive Plan Complete)
+		[Receive Plan]
+	(Execute Mission Commanded)
+	?
+		(Armed)
+		[Arm]
+	?
+		(Takeoff Complete)
+		[Takeoff]
+	?
+		(Monitor Complete)
+		[Monitor]
+	?
+		(Land Complete)
+		[Land]
+	?
+		<!>
+			(Armed)
+		[Disarm]
+	?
+		(Clear Plan Complete)
+		[Clear Plan]

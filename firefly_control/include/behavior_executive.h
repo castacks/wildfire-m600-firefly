@@ -13,6 +13,7 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
+#include <std_msgs/Empty.h>
 
 #include <string>
 
@@ -30,6 +31,8 @@ class BehaviorExecutive : public BaseNode {
   bt::Condition *takeoff_commanded_condition;
   bt::Condition *land_commanded_condition;
   bt::Condition *traj_control_commanded_condition;
+  bt::Condition *coverage_planner_commanded_condition;
+  bt::Condition *ipp_planner_commanded_condition;
 
   bt::Condition *offboard_mode_condition;
   bt::Condition *armed_condition;
@@ -45,6 +48,8 @@ class BehaviorExecutive : public BaseNode {
   bt::Action *takeoff_action;
   bt::Action *land_action;
   bt::Action *traj_control_action;
+  bt::Action *coverage_planner_action;
+  bt::Action *ipp_planner_action;
 
   // services
   ros::ServiceClient takeoff_landing_client;
@@ -54,10 +59,12 @@ class BehaviorExecutive : public BaseNode {
       z_reset_integrator_client, yaw_reset_integrator_client;
   ros::ServiceClient vx_reset_integrator_client, vy_reset_integrator_client,
       vz_reset_integrator_client, yawrate_reset_integrator_client;
+  ros::ServiceClient publish_control_client;
 
   // publishers
   ros::Publisher fixed_trajectory_pub;
   ros::Publisher in_air_pub;
+  ros::Publisher generate_ipp_plan_request_pub;
 
   // subscribers
   ros::Subscriber behavior_tree_command_sub;

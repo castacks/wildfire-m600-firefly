@@ -1,0 +1,24 @@
+<launch>
+
+  <arg name="robot_name" default="X3" />
+  
+  <!-- visualization -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find core_gazebo_sim)/rviz/fireflight.rviz" respawn="true">
+    <remap from="/move_base_simple/goal" to="custom_waypoint" />
+  </node>
+  
+  <node name="rqt" pkg="rqt_gui" type="rqt_gui" args="--perspective-file $(find core_gazebo_sim)/core.perspective" />
+  <include file="$(find model_publisher)/launch/model_publisher.launch" ns="drone">
+    <arg name="model_filename" value="$(find core_gazebo_sim)/meshes/hex_mesh.dae" />
+    <arg name="frame_id" value="$(arg robot_name)/base_link" />
+  </include>
+
+  <!-- visualize belief map in rviz -->
+  <include file="$(find fireflight_visualization)/launch/fireflight_visualization.launch"  pass_all_args="true"/>
+  <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualiztion" output="screen">
+    <rosparam command="load" file="$(find fireflight_visualization)/config/visualization.yaml"/>
+  </node>
+
+  <node name="rqt_control" pkg="rqt_gui" type="rqt_gui" args="--perspective-file $(find core_central)/config/control.perspective" />
+
+</launch>

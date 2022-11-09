@@ -1,0 +1,6 @@
+groups:
+  - Commands:
+    - Autonomy:
+        condition_name: Autonomy Commanded
+    - Execute Mission:
+        condition_name: Execute Mission Commanded

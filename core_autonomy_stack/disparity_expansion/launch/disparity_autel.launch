@@ -1,0 +1,14 @@
+<!-- -->
+<launch>
+    <param name="/baseline" type="double" value="0.10" />
+    <node pkg="disparity_expansion" type="disparity_expansion" name="disparity_expansion" output="screen">
+        <param name="lut_max_disparity" type="int" value="190" />
+        <param name="robot_radius" type="double" value="0.5" />
+        <param name="bg_multiplier" type="double" value="2.0" />
+        <param name="padding" type="double" value="-1" />
+        <param name="sensor_pixel_error" type="double" value="0.2" />
+        <param name="downsample_scale" type="double" value="2.0" />
+	<remap from="/nerian_sp1/right/camera_info" to="/narrow_stereo/right/camera_info"/>
+	<remap from="/nerian_sp1/disparity_map_32F" to="/narrow_stereo/disparity"/>	
+    </node>
+</launch>

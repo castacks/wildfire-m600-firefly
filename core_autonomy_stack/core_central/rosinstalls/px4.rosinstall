@@ -1,0 +1,99 @@
+- git:
+    local-name: base_main_class
+    uri: git@bitbucket.org:castacks/base_main_class.git
+- git:
+    local-name: behavior_tree_msgs
+    uri: git@bitbucket.org:castacks/behavior_tree_msgs.git
+- git:
+    local-name: core_behavior_executive
+    uri: git@bitbucket.org:castacks/core_behavior_executive.git
+- git:
+    local-name: core_central
+    uri: git@bitbucket.org:castacks/core_central.git
+- git:
+    local-name: core_disparity_map_representation
+    uri: git@bitbucket.org:castacks/core_disparity_map_representation.git
+- git:
+    local-name: core_drone_interface
+    uri: git@bitbucket.org:castacks/core_drone_interface.git
+- git:
+    local-name: core_gazebo_interface
+    uri: git@bitbucket.org:castacks/core_gazebo_interface.git
+- git:
+    local-name: core_gazebo_sim
+    uri: git@bitbucket.org:castacks/core_gazebo_sim.git
+- git:
+    local-name: core_local_planner
+    uri: git@bitbucket.org:castacks/core_local_planner.git
+- git:
+    local-name: core_map_representation_interface
+    uri: git@bitbucket.org:castacks/core_map_representation_interface.git
+- git:
+    local-name: core_odometry_transform
+    uri: git@bitbucket.org:castacks/core_odometry_transform.git
+- git:
+    local-name: core_pid_controller
+    uri: git@bitbucket.org:castacks/core_pid_controller.git
+- git:
+    local-name: core_pointcloud_map_representation
+    uri: git@bitbucket.org:castacks/core_pointcloud_map_representation.git
+- git:
+    local-name: core_pose_controller
+    uri: git@bitbucket.org:castacks/core_pose_controller.git
+- git:
+    local-name: core_takeoff_landing_planner
+    uri: git@bitbucket.org:castacks/core_takeoff_landing_planner.git
+- git:
+    local-name: core_trajectory_controller
+    uri: git@bitbucket.org:castacks/core_trajectory_controller.git
+- git:
+    local-name: core_trajectory_msgs
+    uri: git@bitbucket.org:castacks/core_trajectory_msgs.git
+- git:
+    local-name: core_trajectory_library
+    uri: git@bitbucket.org:castacks/core_trajectory_library.git
+- git:
+    local-name: core_velocity_controller
+    uri: git@bitbucket.org:castacks/core_velocity_controller.git
+- git:
+    local-name: disparity_expansion
+    uri: git@bitbucket.org:castacks/disparity_expansion.git
+    version: core
+- git:
+    local-name: model_publisher
+    uri: git@bitbucket.org:castacks/model_publisher.git
+- git:
+    local-name: disparity_graph_bkp
+    uri: git@bitbucket.org:castacks/disparity_graph_bkp.git
+    version: core
+- git:
+    local-name: rqt_behavior_tree_command
+    uri: git@bitbucket.org:castacks/rqt_behavior_tree_command.git
+- git:
+    local-name: tflib
+    uri: git@bitbucket.org:castacks/tflib.git
+- git:
+    local-name: tictoc_profiler
+    uri: git@bitbucket.org:castacks/tictoc_profiler.git
+- git:
+    local-name: velodyne_simulator
+    uri: git@bitbucket.org:castacks/velodyne_simulator.git
+- git:
+    local-name: behavior_tree
+    uri: git@bitbucket.org:castacks/behavior_tree.git
+- git:
+    local-name: mavlink
+    uri: https://github.com/mavlink/mavlink-gbp-release.git
+    version: refs/tags/upstream/2019.6.7
+- git:
+    local-name: mavros
+    uri: https://github.com/mavlink/mavros.git
+    version: 0.31.0
+- git:
+    local-name: core_px4_interface
+    uri: git@bitbucket.org:castacks/core_px4_interface.git
+    version: subt
+- git:
+    local-name: Firmware
+    uri: https://github.com/PX4/Firmware.git
+    version: 7ba658d5730c99e76007f4f30ff77f6c1b9987dc
