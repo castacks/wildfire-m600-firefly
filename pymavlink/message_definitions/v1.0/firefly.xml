@@ -5606,5 +5606,8 @@
       <description>Complete plan transmitted, reset IPP plan variables</description>
       <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
     </message>
+    <message id="13028" name="FIREFLY_MAP_SINGLE_ACK">
+      <description>Acknowledge receipt of new fire bins or new no fire bins message</description>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
   </messages>
 </mavlink>

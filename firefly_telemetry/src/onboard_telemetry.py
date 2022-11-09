@@ -202,7 +202,7 @@ class OnboardTelemetry:
                 self.connection.mav.firefly_init_to_no_fire_pose_send(seq_num, x, y, z, q)
                 rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
             return
-        elif (self.nt - self.na) % 128 >= self.wt:
+        elif len(self.map_transmitted_buf)>= self.wt:
             # Waiting for acks
             rospy.logwarn("Reached window buffer - waiting for acks")
             return
@@ -426,13 +426,13 @@ class OnboardTelemetry:
         elif msg['mavpackettype'] == 'FIREFLY_MAP_ACK':
             # time.time(), False, self.nt, payload_length, payload`
             for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
-                if self.map_transmitted_buf[i][2] == msg['seq_num']:
+                if self.map_transmitted_buf[i][2] < msg['seq_num']:
                     self.map_transmitted_buf.pop(i)
-            if self.na == msg['seq_num']:
-                self.na = self.nt
+        elif msg['mavpackettype'] == 'FIREFLY_MAP_SINGLE_ACK':
                 for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
-                    if self.map_transmitted_buf[i][2] < self.na:
-                        self.na = self.map_transmitted_buf[i][2]
+                    if self.map_transmitted_buf[i][2] == msg['seq_num']:
+                        self.map_transmitted_buf.pop(i)
+                        break
         elif msg['mavpackettype'] == 'FIREFLY_REQUEST_CONTROL':
             command = BehaviorTreeCommand()
             command.condition_name = "Request Control Commanded"

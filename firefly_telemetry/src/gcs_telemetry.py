@@ -138,53 +138,50 @@ class GCSTelemetry:
 
     def process_new_map_packet(self, msg, map_packet_type):
 
-        if (msg['seq_num'] - self.nr) % 128 > self.wr:
-            # Reject packet
-            pass
+        if map_packet_type == 2:
+            updated_bins_msg = Pose()
+            updated_bins_msg.position.x = msg['x']
+            updated_bins_msg.position.y = msg['y']
+            updated_bins_msg.position.z = msg['z']
+
+            updated_bins_msg.orientation.x = msg['q'][0]
+            updated_bins_msg.orientation.y = msg['q'][1]
+            updated_bins_msg.orientation.z = msg['q'][2]
+            updated_bins_msg.orientation.w = msg['q'][3]
         else:
-            if map_packet_type == 2:
-                updated_bins_msg = Pose()
-                updated_bins_msg.position.x = msg['x']
-                updated_bins_msg.position.y = msg['y']
-                updated_bins_msg.position.z = msg['z']
+            updated_bins_msg = Int32MultiArray()
+            payload = msg['payload']
+            for i in range(int(msg['payload_length'] / 3)):
+                bin_bytes = payload[3 * i:3 * i + 3]
+                bin = int.from_bytes(bin_bytes, byteorder='big')
+                updated_bins_msg.data.append(bin)
 
-                updated_bins_msg.orientation.x = msg['q'][0]
-                updated_bins_msg.orientation.y = msg['q'][1]
-                updated_bins_msg.orientation.z = msg['q'][2]
-                updated_bins_msg.orientation.w = msg['q'][3]
-            else:
-                updated_bins_msg = Int32MultiArray()
-                payload = msg['payload']
-                for i in range(int(msg['payload_length'] / 3)):
-                    bin_bytes = payload[3 * i:3 * i + 3]
-                    bin = int.from_bytes(bin_bytes, byteorder='big')
-                    updated_bins_msg.data.append(bin)
-
-            if msg['seq_num'] == self.nr:
-                if map_packet_type == 0:
-                    self.new_fire_pub.publish(updated_bins_msg)
-                elif map_packet_type == 1:
-                    self.new_no_fire_pub.publish(updated_bins_msg)
-                elif map_packet_type == 2:
-                    self.init_to_no_fire_with_pose_pub.publish(updated_bins_msg)
-                self.nr = (self.nr + 1) % 128
-                while True:
-                    if self.nr in self.map_received_buf:
-                        map_packet_type, updated_bins_msg = self.map_received_buf.pop(self.nr)
-                        if map_packet_type == 0:
-                            self.new_fire_pub.publish(updated_bins_msg)
-                        elif map_packet_type == 1:
-                            self.new_no_fire_pub.publish(updated_bins_msg)
-                        elif map_packet_type == 2:
-                            self.init_to_no_fire_with_pose_pub.publish(updated_bins_msg)
-                        self.nr = (self.nr + 1) % 128
-                    else:
-                        break
-            else:
-                self.map_received_buf[msg['seq_num']] = (map_packet_type, updated_bins_msg)
-
-        self.connection.mav.firefly_map_ack_send(msg['seq_num'])
+        if msg['seq_num'] == self.nr:
+            if map_packet_type == 0:
+                self.new_fire_pub.publish(updated_bins_msg)
+            elif map_packet_type == 1:
+                self.new_no_fire_pub.publish(updated_bins_msg)
+            elif map_packet_type == 2:
+                self.init_to_no_fire_with_pose_pub.publish(updated_bins_msg)
+            self.nr = (self.nr + 1) % 128
+            while True:
+                if self.nr in self.map_received_buf:
+                    map_packet_type, updated_bins_msg = self.map_received_buf.pop(self.nr)
+                    if map_packet_type == 0:
+                        self.new_fire_pub.publish(updated_bins_msg)
+                    elif map_packet_type == 1:
+                        self.new_no_fire_pub.publish(updated_bins_msg)
+                    elif map_packet_type == 2:
+                        self.init_to_no_fire_with_pose_pub.publish(updated_bins_msg)
+                    self.nr = (self.nr + 1) % 128
+                else:
+                    break
+            self.connection.mav.firefly_map_ack_send(self.nr)
+        else:
+            self.map_received_buf[msg['seq_num']] = (map_packet_type, updated_bins_msg)
+            self.connection.mav.firefly_map_single_ack_send(msg['seq_num'])
         rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
 
 
     def process_new_ipp_packet(self, msg):
