@@ -110,7 +110,7 @@ class GCSTelemetry:
         self.idle_send_flag = False
         self.reset_behavior_tree_send_flag = False
 
-        self.bytes_per_sec_send_rate = 1000.0
+        self.bytes_per_sec_send_rate = 2000.0
         self.mavlink_packet_overhead_bytes = 12
 
         rospy.Timer(rospy.Duration(1), self.heartbeat_send_callback)
@@ -121,7 +121,7 @@ class GCSTelemetry:
 
         try:
             self.connection = mavutil.mavlink_connection(
-                "/dev/mavlink", baud=57600, dialect="firefly"
+                "/dev/mavlink", baud=115200, dialect="firefly"
             )
             self.connectedToGCSRadio = True
             rospy.loginfo("Opened connection to GCS radio")
@@ -158,7 +158,7 @@ class GCSTelemetry:
         ):
             try:
                 self.connection = mavutil.mavlink_connection(
-                    "/dev/mavlink", baud=57600, dialect="firefly"
+                    "/dev/mavlink", baud=115200, dialect="firefly"
                 )
                 rospy.loginfo("Opened connection to GCS radio")
                 self.connectedToGCSRadio = True

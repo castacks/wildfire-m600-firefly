@@ -40,7 +40,7 @@ os.environ["MAVLINK20"] = "1"
 class OnboardTelemetry:
     def __init__(self):
         self.connection = mavutil.mavlink_connection(
-            "/dev/mavlink", baud=57600, dialect="firefly"
+            "/dev/mavlink", baud=115200, dialect="firefly"
         )
 
         self.tfBuffer = tf2_ros.Buffer()
@@ -100,7 +100,7 @@ class OnboardTelemetry:
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
 
-        self.bytes_per_sec_send_rate = 1000.0
+        self.bytes_per_sec_send_rate = 2000.0
         self.mavlink_packet_overhead_bytes = 12
 
         self.last_heartbeat_time = None
@@ -120,7 +120,7 @@ class OnboardTelemetry:
         self.recording_ros_bag = False
         try:
             self.connection = mavutil.mavlink_connection(
-                "/dev/mavlink", baud=57600, dialect="firefly"
+                "/dev/mavlink", baud=115200, dialect="firefly"
             )
             self.connectedToOnboardRadio = True
             rospy.loginfo("Opened connection to onboard radio")
@@ -510,7 +510,7 @@ class OnboardTelemetry:
         ):
             try:
                 self.connection = mavutil.mavlink_connection(
-                    "/dev/mavlink", baud=57600, dialect="firefly"
+                    "/dev/mavlink", baud=115200, dialect="firefly"
                 )
                 rospy.loginfo("Opened connection to Onboard radio")
                 self.connectedToOnboardRadio = True
