@@ -10,10 +10,10 @@
   <arg name="drone_interface" default="DJIInterface" />
   <arg name="run_ca_stack" default="true" />
   <arg name="map_resolution" default="0.5" />
-  <arg name="map_min_x" default="-500" />
-  <arg name="map_max_x" default="500" />
-  <arg name="map_min_y" default="-500" />
-  <arg name="map_max_y" default="500" />
+  <arg name="map_min_x" default="-1000" />
+  <arg name="map_max_x" default="1000" />
+  <arg name="map_min_y" default="-1000" />
+  <arg name="map_max_y" default="1000" />
 
   <group ns="$(arg robot_name)">
     <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen">

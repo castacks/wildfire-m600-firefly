@@ -4,10 +4,10 @@
   <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find firefly_bringup)/config/python_logging.conf" />
 
   <arg name="map_resolution" default="0.5" />
-  <arg name="map_min_x" default="-500" />
-  <arg name="map_max_x" default="500" />
-  <arg name="map_min_y" default="-500" />
-  <arg name="map_max_y" default="500" />
+  <arg name="map_min_x" default="-1000" />
+  <arg name="map_max_x" default="1000" />
+  <arg name="map_min_y" default="-1000" />
+  <arg name="map_max_y" default="1000" />
 
   <!-- This node maintains the local fire map-->
   <node pkg="firefly_mapping" type="gcs_mapping" name="gcs_mapping" output="screen">

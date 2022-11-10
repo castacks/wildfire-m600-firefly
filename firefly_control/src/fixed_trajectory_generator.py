@@ -384,24 +384,43 @@ def get_horizontal_lawnmower_waypoints(attributes):
     frame_id = str(attributes['frame_id'])
     length = float(attributes['length'])
     width = float(attributes['width'])
-    height = float(attributes['height'])
-    velocity = float(attributes['velocity'])
-    stepover_dist = float(attributes['stepover_dist'])
+    height = 50
+    velocity = 8
+    stepover_dist = 30
 
-    ccw_vertices = [(0, 0),(width, 0),(width, length),(0, length)]
-    path = get_polygon_path(ccw_vertices, stepover_dist=stepover_dist)
+    ccw_vertices = [
+        [-982.56036, 100.96495],
+        [167.80191, -27.388016],
+        [221.66235, 455.33606],
+        [-928.69995, 583.689],
+    ]
+    path = get_polygon_path(
+        rotate_path(ccw_vertices, -83.63349151611328), stepover_dist=20
+    )
+    path = rotate_path(path, 83.63349151611328)
+
+    # ccw_vertices = [(0, 0),(width, 0),(width, length),(0, length)]
+    # path = get_polygon_path(ccw_vertices, stepover_dist=stepover_dist)
     path.append((0,0))
     path = interpolate_path(path, max_spacing=2.5)
 
     traj = TrajectoryXYZVYaw()
     traj.header.frame_id = frame_id
 
+    wp1 = WaypointXYZVYaw()
+    wp1.position.x = 0
+    wp1.position.y = 0
+    wp1.position.z = height
+    wp1.yaw = np.deg2rad(83.63349151611328+90.0)
+    wp1.velocity = 3.0
+    traj.waypoints.append(wp1)
+
     for (x,y) in path:
         wp1 = WaypointXYZVYaw()
         wp1.position.x = x
         wp1.position.y = y
         wp1.position.z = height
-        wp1.yaw = 0
+        wp1.yaw = np.deg2rad(83.63349151611328+90.0)
         wp1.velocity = velocity
         traj.waypoints.append(wp1)
 
@@ -464,8 +483,8 @@ def fixed_trajectory_callback(msg):
     elif msg.type == 'Rectangle':
         trajectory_msg = get_rectangle_waypoints(attributes)
     elif msg.type == 'Horizontal_Lawnmower':
-        # trajectory_msg = get_horizontal_lawnmower_waypoints(attributes)
-        trajectory_msg = get_coverage_waypoints(attributes)
+        trajectory_msg = get_horizontal_lawnmower_waypoints(attributes)
+        # trajectory_msg = get_coverage_waypoints(attributes)
 
     if trajectory_msg != None:
         trajectory_track_pub.publish(trajectory_msg)
