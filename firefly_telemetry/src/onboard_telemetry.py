@@ -569,7 +569,7 @@ class OnboardTelemetry:
             if self.na == msg["seq_num"]:
                 self.na = self.nt
                 for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
-                    if self.map_transmitted_buf[i][2] < self.na:
+                    if  (self.na - self.map_transmitted_buf[i][2]) % 128 <= self.wt:
                         self.na = self.map_transmitted_buf[i][2]
         elif msg["mavpackettype"] == "FIREFLY_RESET_BEHAVIOR_TREE":
             command = BehaviorTreeCommand()
@@ -641,7 +641,7 @@ class OnboardTelemetry:
             if self.ipp_na == msg["seq_num"]:
                 self.ipp_na = self.ipp_nt
                 for i in range(len(self.ipp_transmit_buf) - 1, -1, -1):
-                    if self.ipp_transmit_buf[i]["seq_num"] < self.ipp_na:
+                    if (self.ipp_na - self.ipp_transmit_buf[i]["seq_num"]) % 128 <= self.wt:
                         self.ipp_na = self.ipp_transmit_buf[i]["seq_num"]
 
         if len(behavior_tree_commands.commands) > 0:
