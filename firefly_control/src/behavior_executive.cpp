@@ -329,13 +329,13 @@ bool BehaviorExecutive::execute() {
     in_air_condition->set(true);
 
     if (takeoff_action->active_has_changed()) {
-      // Turn on pose controller output
-      enable_pose_controller_output();
-
       core_takeoff_landing_planner::TakeoffLandingCommand takeoff_srv;
       takeoff_srv.request.command =
           core_takeoff_landing_planner::TakeoffLandingCommand::Request::TAKEOFF;
       takeoff_landing_client.call(takeoff_srv);
+
+      // Turn on pose controller output
+      enable_pose_controller_output();
     }
 
     if (takeoff_state == "COMPLETE") {
@@ -349,13 +349,12 @@ bool BehaviorExecutive::execute() {
     land_action->set_running();
 
     if (land_action->active_has_changed()) {
-      // Turn on pose controller output
-      enable_pose_controller_output();
-
       core_takeoff_landing_planner::TakeoffLandingCommand land_srv;
       land_srv.request.command =
           core_takeoff_landing_planner::TakeoffLandingCommand::Request::LAND;
       takeoff_landing_client.call(land_srv);
+      // Turn on pose controller output
+      enable_pose_controller_output();
     }
 
     if (landing_state == "COMPLETE") {
@@ -369,15 +368,14 @@ bool BehaviorExecutive::execute() {
     traj_control_action->set_running();
 
     if (traj_control_action->active_has_changed()) {
-      // Turn on pose controller output
-      enable_pose_controller_output();
-
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
           core_trajectory_controller::TrajectoryMode::Request::TRACK;
       trajectory_mode_client.call(srv);
       const auto fixed_trajectory = GetSquareFixedTraj();
       fixed_trajectory_pub.publish(fixed_trajectory);
+      // Turn on pose controller output
+      enable_pose_controller_output();
     }
   }
 
@@ -386,15 +384,14 @@ bool BehaviorExecutive::execute() {
     coverage_planner_action->set_running();
 
     if (coverage_planner_action->active_has_changed()) {
-      // Turn on pose controller output
-      enable_pose_controller_output();
-
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
           core_trajectory_controller::TrajectoryMode::Request::TRACK;
       trajectory_mode_client.call(srv);
       const auto fixed_trajectory = GetLawnmowerTraj();
       fixed_trajectory_pub.publish(fixed_trajectory);
+      // Turn on pose controller output
+      enable_pose_controller_output();
     }
   }
 
@@ -403,9 +400,6 @@ bool BehaviorExecutive::execute() {
     ipp_planner_action->set_running();
 
     if (ipp_planner_action->active_has_changed()) {
-      // Turn on pose controller output
-      enable_pose_controller_output();
-
       core_trajectory_controller::TrajectoryMode srv;
       srv.request.mode =
           core_trajectory_controller::TrajectoryMode::Request::TRACK;
@@ -414,6 +408,9 @@ bool BehaviorExecutive::execute() {
       std_msgs::Bool true_msg;
       true_msg.data = true;
       execute_ipp_plan_pub.publish(true_msg);
+      
+      // Turn on pose controller output
+      enable_pose_controller_output();
     }
   } else {
     // Transitioned from active to inactive
