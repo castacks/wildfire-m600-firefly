@@ -21,18 +21,22 @@
 #include <chrono>
 #include <unordered_set>
 #include <geometry_msgs/Pose.h>
+#include <grid_map_ros/grid_map_ros.hpp>
+#include <grid_map_msgs/GridMap.h>
 
 
 class OnboardMapping {
 
 public:
-    OnboardMapping(): pnh("~") {
+    GCSMapping(): pnh("~"), gridMap({"firemap", "elevation"}) {
+
         image_sub = nh.subscribe("image_to_project", 1000, &OnboardMapping::project_image, this);
         map_pub = nh.advertise<nav_msgs::OccupancyGrid>("observed_firemap", 10);
         new_fire_pub = nh.advertise<std_msgs::Int32MultiArray>("new_fire_bins", 10);
         new_no_fire_pub = nh.advertise<std_msgs::Int32MultiArray>("new_no_fire_bins", 10);
         init_to_no_fire_with_pose_pub = nh.advertise<geometry_msgs::Pose>("init_to_no_fire_with_pose_bins", 10);
         clear_sub = nh.subscribe("clear_map", 1000, &OnboardMapping::clear, this);
+        grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 10, true);
 
         K_inv << 1.0/fx,  0.0,    -cx/fx,
                  0.0,     1.0/fy, -cy/fy,
@@ -56,6 +60,18 @@ public:
         outputMap.data = std::vector<std::int8_t> (mapWidth * mapHeight, 50); // Initialize map to 50 percent certainty
         map = std::vector<float> (mapWidth * mapHeight, -1); // Initialize map to 50 percent certainty
         map_pub.publish(outputMap);
+
+        // set grid map length and resolution. center defaults to (0, 0) - in the world frame
+        gridMap.setFrameId("map");
+        // CAUTION - grid_map frame is (x: up, y: left, z: out) - hence need to interchange x and y
+        float lengthX = maxY - minY;
+        float lengthY = maxX - minX;
+        gridMap.setGeometry(grid_map::Length(lengthX, lengthY), 0.5);
+        gridMap.add("firemap", grid_map::Matrix::Constant(mapHeight, mapWidth, 50)); // Initialize map to 50 percent certainty
+        gridMap.add("elevation", grid_map::Matrix::Constant(mapHeight, mapWidth, 1)); // Initialize map to 50 percent certainty
+        // publish grid map
+        grid_map::GridMapRosConverter::toMessage(gridMap, gridMapMessage);
+        grid_map_pub.publish(gridMapMessage);
     }
 
 private:
@@ -64,9 +80,15 @@ private:
     ros::Subscriber image_sub;
     ros::Publisher map_pub, new_fire_pub, new_no_fire_pub, init_to_no_fire_with_pose_pub;
     ros::Subscriber clear_sub;
+    ros::Publisher grid_map_pub;
 
     nav_msgs::OccupancyGrid outputMap;
     std::vector<float> map; // Internal map representation
+
+    // Create grid map with 2 layers
+    grid_map::GridMap gridMap;
+    // Create grid map ros message to publish
+    grid_map_msgs::GridMap gridMapMessage;
 
     Eigen::Vector3d ground_normal{0, 0, 1}; //Should point up from ground - if pointing into ground, will cause errors
     float ground_offset = 0;
@@ -131,6 +153,8 @@ private:
                 size_t gridRow = (size_t) ((intersect(1)-minY)/resolution);
                 size_t gridCol = (size_t) ((intersect(0)-minX)/resolution);
 
+                grid_map::Index index{gridRow, gridCol};
+
                 int mapBin = gridCol + gridRow * outputMap.info.width;
                 uint8_t pixelValue = msg.image.data[i + j * msg.image.width];
                 float prior = map[mapBin];
@@ -145,6 +169,8 @@ private:
                     float posterior = (fnr/probOfNegative) * prior;
                     map[mapBin] = posterior;
                     outputMap.data[mapBin] = posterior*100;
+                    gridMap.at("firemap", index) = posterior*100;
+                    gridMap.at("elevation", index) = posterior;
                     if (uninitialized && (posterior < 0.5)) {
                         init_to_no_fire_bins.insert(mapBin);
                     }
@@ -158,6 +184,8 @@ private:
                     float posterior = 1.0; //(tpr/probOfPositive) * prior;
                     map[mapBin] = 1.0;
                     outputMap.data[mapBin] = 100;
+                    gridMap.at("firemap", index) = 100;
+                    gridMap.at("elevation", index) = 1;
                     if ((prior <= 0.5) && (posterior > 0.5)) { // If bin changed value
                         new_no_fire_bins.erase(mapBin);
                         init_to_no_fire_bins.erase(mapBin);
@@ -193,6 +221,11 @@ private:
         std::cout << "Projection of single image took: " << duration.count() << " milliseconds" << std::endl;
 
         map_pub.publish(outputMap);
+
+        // publish grid map
+        grid_map::GridMapRosConverter::toMessage(gridMap, gridMapMessage);
+        grid_map_pub.publish(gridMapMessage);
+
         return;
     }
 
@@ -201,6 +234,11 @@ private:
         outputMap.data = std::vector<std::int8_t> (mapWidth * mapHeight, 50); // Set map to 50 percent certainty
         map = std::vector<float> (mapWidth * mapHeight, -1); // Set map to 50 percent certainty
         map_pub.publish(outputMap);
+
+        gridMap.add("firemap", grid_map::Matrix::Constant(mapHeight, mapWidth, 50)); // Set grid map to 50 percent certainty
+        gridMap.add("elevation", grid_map::Matrix()); // Clear elevation map
+        grid_map::GridMapRosConverter::toMessage(gridMap, gridMapMessage);
+        grid_map_pub.publish(gridMapMessage);
     }
 };
 int main(int argc, char** argv) {
