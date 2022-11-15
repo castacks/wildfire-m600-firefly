@@ -28,7 +28,7 @@
 class OnboardMapping {
 
 public:
-    GCSMapping(): pnh("~"), gridMap({"firemap", "elevation"}) {
+    OnboardMapping(): pnh("~"), gridMap({"firemap", "elevation"}) {
 
         image_sub = nh.subscribe("image_to_project", 1000, &OnboardMapping::project_image, this);
         map_pub = nh.advertise<nav_msgs::OccupancyGrid>("observed_firemap", 10);
