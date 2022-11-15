@@ -1,0 +1,33 @@
+<launch>
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find firefly_bringup)/config/rosconsole.config" />
+    <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find firefly_bringup)/config/python_logging.conf" />
+
+    <arg name="replay_mode" default="false" />
+    <arg name="open_flir" default="false" />
+    <arg name="continuous" default="true" />
+    <arg name="threshold" default="50" />
+    <arg name="robot_name" default="uav1" />
+
+
+    <arg name="map_resolution" default="0.5" />
+    <arg name="map_min_x" default="-500" />
+    <arg name="map_max_x" default="500" />
+    <arg name="map_min_y" default="-500" />
+    <arg name="map_max_y" default="500" />
+
+    <group ns="$(arg robot_name)">
+        <node pkg="firefly_mapping" type="terrain_mapping" name="terrain_mapping" output="screen">
+            <param name="resolution" value="$(arg map_resolution)" />
+            <param name="min_x" value="$(arg map_min_x)" />
+            <param name="max_x" value="$(arg map_max_x)" />
+            <param name="min_y" value="$(arg map_min_y)" />
+            <param name="max_y" value="$(arg map_max_y)" />
+        </node>
+
+        <!-- <include file="$(find core_central)/launch/dji/sim/dji_sim_state_estimation.launch" pass_all_args="true" /> -->
+        <!-- <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.0543145 0.041098 -0.27658746 -1.5707963 0 3.14159 $(arg robot_name)/base_link $(arg robot_name)/thermal/camera_link 100" /> -->
+        <node pkg="tf" type="static_transform_publisher" name="base_to_lidar" args="0.17 -0.03 -0.15 -1.5707963 0 -1.5707963 $(arg robot_name)/base_link $(arg robot_name)/lidar 100" />
+
+    </group>
+
+</launch>
