@@ -191,6 +191,7 @@ class LidarReader
     ros::Publisher lidar_mapping_pub_;
     ros::Publisher lidar_obstacle_pub_;
     ros::Publisher lidar_altitude_pub_;
+    ros::Publisher altitude_pub_;
 
     ros::Subscriber lidar_subscriber;
 
@@ -203,6 +204,7 @@ public:
         lidar_mapping_pub_ = nh_.advertise< pcl::PointCloud<pcl::PointXYZ>>("lidar_cropped_mapping", 1);
         lidar_obstacle_pub_ = nh_.advertise< pcl::PointCloud<pcl::PointXYZ>>("lidar_cropped_obstacle", 1);
         lidar_altitude_pub_ = nh_.advertise< pcl::PointCloud<pcl::PointXYZ>>("altitude", 1);
+        altitude_pub_ = nh_.advertise< std::float>("height_estimation", 1);
 
 
     }
@@ -234,12 +236,6 @@ public:
         std::vector<std::vector<uint8_t>> mapping_point_cloud;
         std::vector<std::vector<uint8_t>> obstacle_point_cloud;
         
-        // for(int x=0;x<16;x++){
-        //     auto start_y=temp_cloud->data.begin() + x * temp_cloud->height;  
-        //     auto mid_y=temp_cloud->data.begin() + int(temp_cloud->height * (40/lidar_max)) + x * temp_cloud->height;
-        //     auto end_y=temp_cloud->data.begin() + int(temp_cloud->height * (130/lidar_max)) + x * temp_cloud->height;
-
-        // }    
         // Test the PointCloud<PointT> method
         pcl::CropBox<pcl::PointXYZ> cropBoxFilter (true);
         cropBoxFilter.setInputCloud (temp_cloud);
@@ -249,39 +245,44 @@ public:
         // y is breadth of scan (i think its in radians) -ve value is towards right
         // z is vertical axis (i.e. number of lines of scan)
         // for (int i = 0; i < 20 ; i++)    
-        // {
-            // std::cout << i << std::endl;
+        
         Eigen::Vector4f min_pt_mapping (00.0f, -10.0f, -10.0f, 1.0f);
         Eigen::Vector4f max_pt_mapping (5.0f, 1.0f, 1.0f, 1.0f);
-
-            // Cropbox slighlty bigger then bounding box of points
-            // cropBoxFilter.setMin (min_pt_mapping);
-            // cropBoxFilter.setMax (max_pt_mapping);
-
-            // Cloud
         pcl::PointCloud<pcl::PointXYZ> cloud_out_mapping;
         cropBoxFilter.filter (cloud_out_mapping);
         lidar_mapping_pub_.publish(cloud_out_mapping);
-        // }
-        
 
-
-        pcl::CropBox<pcl::PointXYZ> cropBoxFilterObstacle (true);
-        cropBoxFilterObstacle.setInputCloud (temp_cloud);
-        Eigen::Vector4f min_pt_obstacle (0.0f, -2.0f, -10.0f, 1.0f);
-        Eigen::Vector4f max_pt_obstacle (100.0f, 1.0f, 10.0f, 1.0f);
-        pcl::PointCloud<pcl::PointXYZ> cloud_out_obstacle;
-        cropBoxFilterObstacle.filter (cloud_out_obstacle);
-        lidar_obstacle_pub_.publish(cloud_out_obstacle);
+        // pcl::CropBox<pcl::PointXYZ> cropBoxFilterObstacle (true);
+        // cropBoxFilterObstacle.setInputCloud (temp_cloud);
+        // Eigen::Vector4f min_pt_obstacle (0.0f, -2.0f, -10.0f, 1.0f);
+        // Eigen::Vector4f max_pt_obstacle (100.0f, 1.0f, 10.0f, 1.0f);
+        // pcl::PointCloud<pcl::PointXYZ> cloud_out_obstacle;
+        // cropBoxFilterObstacle.filter (cloud_out_obstacle);
+        // lidar_obstacle_pub_.publish(cloud_out_obstacle);
 
         pcl::CropBox<pcl::PointXYZ> cropBoxFilterAltitude (true);
         cropBoxFilterAltitude.setInputCloud (temp_cloud);
-        Eigen::Vector4f min_pt_altitude (0.0f, 0.0f, 0.0f, 1.0f);
-        Eigen::Vector4f max_pt_altitude (1.f, 100.0f, 1.0f, 1.0f);
+        Eigen::Vector4f min_pt_altitude (-0.1f, 0.0f, -0.1f, 1.0f);
+        Eigen::Vector4f max_pt_altitude (0.1f, 100.0f, 0.1f, 1.0f);
+        cropBoxFilterAltitude.setMin (min_pt_altitude);
+        cropBoxFilterAltitude.setMax (max_pt_altitude);
+
         pcl::PointCloud<pcl::PointXYZ> cloud_out_altitude;
-        cropBoxFilterObstacle.filter (cloud_out_altitude);
-        std::cout<< cloud_out_altitude.height << " " << cloud_out_altitude.width << std::endl;
+        cropBoxFilterAltitude.filter (cloud_out_altitude);
         lidar_altitude_pub_.publish(cloud_out_altitude);
+        
+        float height = 0;
+        for (int i = 0; i < cloud_out_altitude.points.size(); i++)
+        {
+            height += cloud_out_altitude.points[i].y;
+            // std::cout << cloud_out_altitude.points[i].x << " " << cloud_out_altitude.points[i].y << " " << cloud_out_altitude.points[i].z << std::endl;
+
+        }
+        height /= cloud_out_altitude.points.size();
+        altitude_pub_.publish(height);
+
+        std::cout << "Height : "<< height <<std::endl;
+
 
     }
 };
