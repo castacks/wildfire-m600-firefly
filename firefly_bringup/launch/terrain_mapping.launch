@@ -9,11 +9,11 @@
     <arg name="robot_name" default="uav1" />
 
 
-    <arg name="map_resolution" default="0.5" />
-    <arg name="map_min_x" default="-500" />
-    <arg name="map_max_x" default="500" />
-    <arg name="map_min_y" default="-500" />
-    <arg name="map_max_y" default="500" />
+    <arg name="map_resolution" default="0.1" />
+    <arg name="map_min_x" default="-20" />
+    <arg name="map_max_x" default="20" />
+    <arg name="map_min_y" default="-10" />
+    <arg name="map_max_y" default="10" />
 
     <group ns="$(arg robot_name)">
         <node pkg="firefly_mapping" type="terrain_mapping" name="terrain_mapping" output="screen">
@@ -27,7 +27,11 @@
         <!-- <include file="$(find core_central)/launch/dji/sim/dji_sim_state_estimation.launch" pass_all_args="true" /> -->
         <!-- <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.0543145 0.041098 -0.27658746 -1.5707963 0 3.14159 $(arg robot_name)/base_link $(arg robot_name)/thermal/camera_link 100" /> -->
         <node pkg="tf" type="static_transform_publisher" name="base_to_lidar" args="0.17 -0.03 -0.15 -1.5707963 0 -1.5707963 $(arg robot_name)/base_link $(arg robot_name)/lidar 100" />
-
+        <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_base" args="2 1 10 0 0.2 0 $(arg robot_name)/map $(arg robot_name)/base_link 100" /> -->
+        <node pkg="firefly_perception" type="firefly_perception" name="firefly_perception" output="screen">
+        <param name="threshold" value="$(arg threshold)" />
+        <param name="continuous" value="$(arg continuous)" />
+        </node>
     </group>
 
 </launch>

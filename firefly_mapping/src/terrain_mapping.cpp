@@ -24,7 +24,7 @@ using namespace grid_map;
 class TerrainMapping {
  public:
   TerrainMapping() : pnh("~"), map({"elevation"}) {
-    cloud_sub = nh.subscribe("velodyne_points", 1000,
+    cloud_sub = nh.subscribe("lidar_cropped_mapping", 1,
                              &TerrainMapping::cloudCallback, this);
 
     grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1);
@@ -35,16 +35,15 @@ class TerrainMapping {
     pnh.param<float>("min_y", minY, -100.0);
     pnh.param<float>("max_y", maxY, 100.0);
 
-    mapWidth = int((maxX - minX) / resolution);
-    mapHeight = int((maxY - minY) / resolution);
-
-    float lengthX = maxY - minY;
-    float lengthY = maxX - minX;
+    float lengthX = maxX - minX;
+    float lengthY = maxY - minY;
 
     map.setFrameId("uav1/map");
     map.setGeometry(grid_map::Length(lengthX, lengthY), resolution);
+    mapWidth = map.getSize()(0);
+    mapHeight = map.getSize()(1);
     map.add("elevation", grid_map::Matrix::Constant(
-                             mapHeight, mapWidth,
+                             mapWidth, mapHeight,
                              0));  // Initialize map to 50 percent certainty
     ROS_INFO("Created map with size %f x %f m (%i x %i cells).",
              map.getLength().x(), map.getLength().y(), map.getSize()(0),
@@ -74,8 +73,7 @@ class TerrainMapping {
   int mapHeight;  // Number of cells
 
   void cloudCallback(const sensor_msgs::PointCloud2& cloud) {
-    // Loop through all points and adjust our stored map accordingly
-    // Publish map (probably do in separate timer)
+    auto start = std::chrono::high_resolution_clock::now();
     std::unordered_map<int, float> map_bin_to_max_altitude;
 
     try {
@@ -112,10 +110,18 @@ class TerrainMapping {
         static constexpr float MAX_OBSERVABLE_DISTANCE = 100;
         if (MAX_OBSERVABLE_DISTANCE < measurement_distance) continue;
 
-        size_t gridRow = (size_t)((pt_cloud.y - minY) / resolution);
-        size_t gridCol = (size_t)((pt_cloud.x - minX) / resolution);
+        const int grid_map_col =  mapHeight - (const int)((pt_cloud.y - minY) / resolution);
+        const int grid_map_row = mapWidth - (const int)((pt_cloud.x - minX) / resolution);
 
-        int mapBin = gridCol + gridRow * mapWidth;
+        const bool valid_row = (0 <= grid_map_row) && (grid_map_row < mapWidth);
+        const bool valid_col = (0 <= grid_map_col) && (grid_map_col < mapHeight);
+
+
+        if (!valid_row || !valid_col) {
+          continue;
+        }
+
+        int mapBin = grid_map_col + grid_map_row * mapHeight;
 
         const auto search = map_bin_to_max_altitude.find(mapBin);
         if (search == map_bin_to_max_altitude.end() ||
@@ -133,12 +139,15 @@ class TerrainMapping {
       const auto map_bin = iter.first;
       const auto bin_height = iter.second;
 
-      const int grid_row = floor(map_bin / mapWidth);
-      const int grid_col = map_bin % mapWidth;
+      const int grid_row = floor(map_bin / mapHeight);
+      const int grid_col = map_bin % mapHeight;
 
       grid_map::Index index{grid_row, grid_col};
       map.at("elevation", index) = bin_height;
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Mapping of point cloud took: " << duration.count() << " milliseconds" << std::endl;
   }
 
   void publish_map_callback(const ros::TimerEvent& e) {

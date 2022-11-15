@@ -4,5 +4,5 @@
     <rosparam command="load" file="$(find firefly_mapping)/config/grid_map.yaml" />
   </node>
   <!-- Launch RViz with the demo configuration args="-d $(find firefly_mapping)/rviz/grid_map.rviz" -->
-  <node name="rviz" pkg="rviz" type="rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find firefly_mapping)/rviz/terrain_mapping.rviz"/>
 </launch>
