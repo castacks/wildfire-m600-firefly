@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include <grid_map_ros/grid_map_ros.hpp>
+#include <unordered_map>
 #include <vector>
 
 #include "sensor_msgs/PointCloud2.h"
@@ -28,9 +29,23 @@ class TerrainMapping {
 
     grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1);
 
-    map.setFrameId("/uav1/map");
-    map.setGeometry(Length(1000, 1000), 0.5);
-    map.add("elevation", grid_map::Matrix::Constant(2000, 2000, 0));
+    pnh.param<float>("resolution", resolution, 0.5);
+    pnh.param<float>("min_x", minX, -100.0);
+    pnh.param<float>("max_x", maxX, 100.0);
+    pnh.param<float>("min_y", minY, -100.0);
+    pnh.param<float>("max_y", maxY, 100.0);
+
+    mapWidth = int((maxX - minX) / resolution);
+    mapHeight = int((maxY - minY) / resolution);
+
+    float lengthX = maxY - minY;
+    float lengthY = maxX - minX;
+
+    map.setFrameId("uav1/map");
+    map.setGeometry(grid_map::Length(lengthX, lengthY), resolution);
+    map.add("elevation", grid_map::Matrix::Constant(
+                             mapHeight, mapWidth,
+                             0));  // Initialize map to 50 percent certainty
     ROS_INFO("Created map with size %f x %f m (%i x %i cells).",
              map.getLength().x(), map.getLength().y(), map.getSize()(0),
              map.getSize()(1));
@@ -50,19 +65,23 @@ class TerrainMapping {
 
   tf::TransformListener listener;
 
+  float resolution;
+  float minX;
+  float maxX;
+  float minY;
+  float maxY;
+  int mapWidth;   // Number of cells
+  int mapHeight;  // Number of cells
+
   void cloudCallback(const sensor_msgs::PointCloud2& cloud) {
-    // Convert all points to /uav1/map frame
     // Loop through all points and adjust our stored map accordingly
     // Publish map (probably do in separate timer)
+    std::unordered_map<int, float> map_bin_to_max_altitude;
 
     try {
       sensor_msgs::PointCloud2 cloud_target_frame;
-      // tf::StampedTransform lidar_to_target_frame_transform;
-
       // listener.waitForTransform("uav1/map", "uav1/lidar", cloud.header.stamp,
       //                           ros::Duration(0.1));
-      // listener.lookupTransform("uav1/map", "uav1/lidar", cloud.header.stamp,
-      //                          lidar_to_target_frame_transform);
 
       pcl_ros::transformPointCloud("uav1/map", cloud, cloud_target_frame,
                                    listener);
@@ -92,8 +111,33 @@ class TerrainMapping {
 
         static constexpr float MAX_OBSERVABLE_DISTANCE = 100;
         if (MAX_OBSERVABLE_DISTANCE < measurement_distance) continue;
+
+        size_t gridRow = (size_t)((pt_cloud.y - minY) / resolution);
+        size_t gridCol = (size_t)((pt_cloud.x - minX) / resolution);
+
+        int mapBin = gridCol + gridRow * mapWidth;
+
+        const auto search = map_bin_to_max_altitude.find(mapBin);
+        if (search == map_bin_to_max_altitude.end() ||
+            pt_cloud.z > search->second) {
+          map_bin_to_max_altitude[mapBin] = pt_cloud.z;
+        }
       }
     } catch (tf::TransformException& ex) {
+      ROS_ERROR_STREAM(
+          "Transform Exception in distance_to_obstacle while looking up tf: "
+          << ex.what());
+    }
+
+    for (const auto iter : map_bin_to_max_altitude) {
+      const auto map_bin = iter.first;
+      const auto bin_height = iter.second;
+
+      const int grid_row = floor(map_bin / mapWidth);
+      const int grid_col = map_bin % mapWidth;
+
+      grid_map::Index index{grid_row, grid_col};
+      map.at("elevation", index) = bin_height;
     }
   }
 
