@@ -3,7 +3,7 @@ project(firefly_mapping)
 
 add_compile_options(-std=c++17)
 
-set(PCL_DIR /usr/lib/x86_64-linux-gnu/cmake/pcl/)
+set(PCL_DIR /usr/lib/aarch64-linux-gnu/cmake/pcl/)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
