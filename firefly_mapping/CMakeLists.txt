@@ -3,6 +3,8 @@ project(firefly_mapping)
 
 add_compile_options(-std=c++17)
 
+set(PCL_DIR /usr/lib/x86_64-linux-gnu/cmake/pcl/)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -18,7 +20,11 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_rviz_plugin
   grid_map_sdf
   grid_map_visualization
+  PCL
+  pcl_conversions
+  pcl_ros
 )
+
 add_message_files(
         FILES
         ImageWithPose.msg
@@ -61,3 +67,7 @@ target_link_libraries(gcs_mapping ${catkin_LIBRARIES})
 add_executable(mapping_accuracy src/mapping_accuracy.cpp)
 add_dependencies(mapping_accuracy ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(mapping_accuracy ${catkin_LIBRARIES})
+
+add_executable(terrain_mapping src/terrain_mapping.cpp)
+add_dependencies(terrain_mapping ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(terrain_mapping ${catkin_LIBRARIES})
