@@ -41,7 +41,7 @@ namespace rviz {
         capture_frame_button_ = new QPushButton("Capture");
         ros_record_button_ = new QPushButton("ROS Bag Record");
         ros_stop_record_button_ = new QPushButton("Stop ROS Bag Recording");
-        view_coverage_poly_button_ = new QPushButton("View Coverage Polygon");
+        view_coverage_poly_button_ = new QPushButton("Load Coverage Polygon");
         send_coverage_poly_button_ = new QPushButton("Send Coverage Polygon");
 
         //define color for killswitch

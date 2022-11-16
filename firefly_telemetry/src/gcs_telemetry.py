@@ -24,7 +24,7 @@ from std_msgs.msg import Empty, Bool, Float32
 import time
 from sensor_msgs.msg import NavSatFix
 import serial
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import Pose, PoseStamped, PolygonStamped, Point32
 from nav_msgs.msg import Path
 
 os.environ["MAVLINK20"] = "1"
@@ -77,6 +77,8 @@ class GCSTelemetry:
         rospy.Subscriber(
             "reset_behavior_tree", Empty, self.reset_behavior_tree_callback
         )
+        rospy.Subscriber('coverage_poly', PolygonStamped, self.load_polygon_callback)
+        rospy.Subscriber('send_coverage_poly', Empty, self.send_coverage_poly_callback)
 
         # See https://en.wikipedia.org/wiki/Sliding_window_protocol
         self.map_received_buf = {}
@@ -118,6 +120,10 @@ class GCSTelemetry:
         self.last_heartbeat_time = None
         self.connectedToOnboard = False
         self.watchdog_timeout = 2.0
+
+        self.send_coverage_poly_flag = False
+        self.polygon_list = {}
+        self.polygon_pt_idx = 0
 
         try:
             self.connection = mavutil.mavlink_connection(
@@ -345,6 +351,13 @@ class GCSTelemetry:
                 self.process_new_ipp_packet(msg, "end")
             elif msg["mavpackettype"] == "FIREFLY_IPP_TRANSMIT_START":
                 self.process_new_ipp_packet(msg, "start")
+            elif msg["mavpackettype"] == "FIREFLY_COVERAGE_POLYGON_POINT_ACK":
+                try:
+                    self.polygon_list.pop(msg["seq_num"])
+                    if len(self.polygon_list.keys()) == 0:
+                        self.send_coverage_poly_flag = False
+                except:
+                    pass
 
     def send_outgoing(self):
         if self.clear_map_send_flag:
@@ -491,6 +504,27 @@ class GCSTelemetry:
                 (self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate
             )
 
+        if self.send_coverage_poly_flag:
+            try:
+                pt_idx = list(self.polygon_list.keys())[0]
+            except:
+                return
+            pt = self.polygon_list[pt_idx]
+            if len(self.polygon_list.keys()) != 1:
+                self.connection.mav.firefly_coverage_polygon_point_send(
+                    pt_idx,
+                    pt.x,
+                    pt.y,
+                    uint8(pt.z)
+                )
+            else:
+                self.connection.mav.firefly_coverage_polygon_point_end_send(
+                    pt_idx,
+                    pt.x,
+                    pt.y,
+                    uint8(pt.z)
+                )
+
     def clear_map_callback(self, empty_msg):
         self.clear_map_send_flag = True
 
@@ -544,6 +578,25 @@ class GCSTelemetry:
 
     def reset_behavior_tree_callback(self, empty_msg):
         self.reset_behavior_tree_callback = True
+
+    def load_polygon_callback(self, polygon):
+        if polygon.header.seq == 0:
+            self.polygon_list = {}
+            self.polygon_pt_idx = 0
+        for pt in polygon.polygon.points:
+            point  = Point32()
+            point.x = pt.x
+            point.y = pt.y
+            '''
+            * using Z as a proxy for polygon ID with 0 being the outer polygon and very subsequent ID corresponding to holes
+            '''
+            point.z = polygon.header.seq
+            self.polygon_list[self.polygon_pt_idx] = point
+            self.polygon_pt_idx += 1
+
+    def send_coverage_poly_callback(self):
+        self.send_coverage_poly_flag = True
+        
 
 
 if __name__ == "__main__":

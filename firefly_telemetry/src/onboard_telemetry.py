@@ -398,7 +398,7 @@ class OnboardTelemetry:
                 self.coverage_polygon_dict.clear()
 
             # add the received message to the dict
-            self.coverage_polygon_dict[msg["seq_num"]] = Point32(msg["x"], msg["y"])
+            self.coverage_polygon_dict[msg["seq_num"]] = Point32(msg["x"], msg["y"], msg["poly_ID"])
             self.connection.mav.firefly_coverage_polygon_point_ack_send(msg["seq_num"])
             rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
@@ -407,6 +407,9 @@ class OnboardTelemetry:
             self.polygon_complete = True
             outer_polygon_points = Polygon()
             # list of (x, y) Point32 objects sorted based on seq num - of type dict_values
+            '''
+             * Using Z value as a proxy for polygon ID with polygon ID of 0 corresponding to outer polygon and all others being holes
+            '''
             sortedDict = dict(sorted(self.coverage_polygon_dict.items())).values()
             outer_polygon_points.points = list(sortedDict)
 

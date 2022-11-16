@@ -44,9 +44,7 @@ def load_poly_from_file():
         point.y = pt[1]
         point.z = 0.0
         polygon.polygon.points.append(point)
-    polygon.header.frame_id = "Outer Polygon"
-    if len(pt_dict['holes']) == 0:
-        polygon.header.frame_id = "Outer Polygon Final"
+    polygon.header.seq = 0
     polygon_pub.publish(polygon)
     for hole_id, hole in enumerate(pt_dict['holes']):
         pts_list = []
@@ -56,9 +54,7 @@ def load_poly_from_file():
         origin = np.mean(pts_list, axis=0)
         sorted(pts_list, key= clockwiseangle, reverse=True)
         polygon.polygon.points = []
-        polygon.header.frame_id = "Hole " + str(hole_id)
-        if hole_id == len(pt_dict['holes']) - 1:
-            polygon.header.frame_id = "Hole Final"
+        polygon.header.seq = hole_id + 1
         polygon_pub.publish(polygon)
 
     file.close()
