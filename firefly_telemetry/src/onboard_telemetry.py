@@ -476,7 +476,7 @@ class OnboardTelemetry:
             behavior_tree_commands.commands.append(command)
         elif msg["mavpackettype"] == "FIREFLY_LAND":
             command = BehaviorTreeCommand()
-            command.condition_name = "Autonomy Mode Is Land)"
+            command.condition_name = "Autonomy Mode Is Land"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
         elif msg["mavpackettype"] == "FIREFLY_TRAJ_CONTROL":
