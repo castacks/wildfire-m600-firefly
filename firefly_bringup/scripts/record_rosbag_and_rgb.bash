@@ -5,7 +5,7 @@ set -e
 script_name=$0
 script_full_path=$(dirname "$0")
 
-trap 'echo "Killing"; bash "$script_full_path"/stop.bash' INT TERM HUP QUIT
+trap 'echo "Killing"; bash "$script_full_path"/stop_rosbag_and_rgb.bash' INT TERM HUP QUIT
 
 DEFAULT_ROOT="/mnt/nvme0n1/data"
 
