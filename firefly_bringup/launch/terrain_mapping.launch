@@ -9,7 +9,7 @@
     <arg name="robot_name" default="uav1" />
 
 
-    <arg name="map_resolution" default="0.1" />
+    <arg name="map_resolution" default="0.25" />
     <arg name="map_min_x" default="-20" />
     <arg name="map_max_x" default="20" />
     <arg name="map_min_y" default="-10" />

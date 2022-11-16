@@ -1,0 +1,11 @@
+<launch>
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find firefly_bringup)/config/rosconsole.config" />
+  <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find firefly_bringup)/config/python_logging.conf" />
+
+  <arg name="robot_name" default="uav1" />
+
+  <group ns="$(arg robot_name)">
+      <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+  </group>
+
+</launch>

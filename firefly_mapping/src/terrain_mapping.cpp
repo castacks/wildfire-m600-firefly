@@ -29,7 +29,7 @@ class TerrainMapping {
 
     grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1);
 
-    pnh.param<float>("resolution", resolution, 0.5);
+    pnh.param<float>("terrain_resolution", resolution, 0.5);
     pnh.param<float>("min_x", minX, -100.0);
     pnh.param<float>("max_x", maxX, 100.0);
     pnh.param<float>("min_y", minY, -100.0);
@@ -108,7 +108,8 @@ class TerrainMapping {
             sqrt(pow(sensor_x, 2) + pow(sensor_y, 2) + pow(sensor_z, 2));
 
         static constexpr float MAX_OBSERVABLE_DISTANCE = 100;
-        if (MAX_OBSERVABLE_DISTANCE < measurement_distance) continue;
+        static constexpr float MIN_OBSERVABLE_DISTANCE = 0.75;
+        if (MAX_OBSERVABLE_DISTANCE < measurement_distance || measurement_distance < MIN_OBSERVABLE_DISTANCE) continue;
 
         const int grid_map_col =  mapHeight - (const int)((pt_cloud.y - minY) / resolution);
         const int grid_map_row = mapWidth - (const int)((pt_cloud.x - minX) / resolution);

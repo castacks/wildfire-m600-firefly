@@ -202,7 +202,7 @@ class LidarReader
 public:
     LidarReader() : private_nh_("~")
     {
-        lidar_subscriber = nh_.subscribe("/velodyne_points", 1,
+        lidar_subscriber = nh_.subscribe("velodyne_points", 1,
                                    &LidarReader::point_cloud_extractor, this);
         
         lidar_mapping_pub_ = nh_.advertise< pcl::PointCloud<pcl::PointXYZ>>("lidar_cropped_mapping", 1);
