@@ -1,29 +1,48 @@
 ?
+	-> 
+		(Reset Behavior Tree Commanded)
+		[Reset Behavior Tree]
 	->
 		(Disarm Commanded)
 		[Disarm]
 	->
-		(Request Control Commanded)
-		[Request Control]
-	->
-		(Takeoff Commanded)
-		?
-			(Takeoff Complete)
-			[Takeoff]
-	->
-		(Land Commanded)
-		?
-			(Landed)
-			[Land]
-	->
 		(Arm Commanded)
 		[Arm]
-	->	
-		(Traj Control Commanded)
-		[Traj Control]
-	->	
-		(Coverage Planner Commanded)
-		[Coverage Planner]
-	->	
-		(IPP Planner Commanded)
-		[IPP Planner]
+	->
+		(Set Local Position Reference Commanded)
+		[Set Local Position Reference]
+	->
+		(Local Position Reference Set)
+		?
+			->
+				(Request Control Commanded)
+				[Request Control]
+			->	
+				(Get Initial IPP Plan Commanded)
+				[Idle and Get Initial IPP Plan]
+			->
+				(Have Control)
+				?
+					-> 
+						(Autonomy Mode Is Idle)
+						[Autonomy Idle]
+					->
+						(Autonomy Mode Is Takeoff)
+						?
+							(Takeoff Complete)
+							[Autonomy Takeoff]
+					->
+						(Autonomy Mode Is Land)
+						?
+							(Landed)
+							[Autonomy Land]
+					->	
+						(Autonomy Mode Is Traj Control)
+						[Autonomy Traj Control]
+					->	
+						(Autonomy Mode Is Coverage Planner)
+						[Autonomy Coverage Planner]
+					->
+						(Autonomy Mode Is IPP Planner)
+						(Got Initial IPP Plan)
+						[Autonomy IPP Planner]

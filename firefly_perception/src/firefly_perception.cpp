@@ -173,12 +173,10 @@ public:
     }
 };
 
-
-
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "ThermalCameraSave");
-
+    ThermalImageReader ic;
     ros::spin();
     return 0;
 }

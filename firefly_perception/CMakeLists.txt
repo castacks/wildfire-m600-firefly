@@ -20,7 +20,6 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
-  PCL
 )
 find_package(
   OpenCV
@@ -42,7 +41,6 @@ catkin_package(
 include_directories(
         ${catkin_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
-        ${PCL_INCLUDE_DIRS}
 )
 add_executable(firefly_perception src/firefly_perception.cpp)
 add_executable(lidar_perception src/lidar_perception.cpp)
