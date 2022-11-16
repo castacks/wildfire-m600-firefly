@@ -54,6 +54,10 @@ namespace rviz {
 
         void stop_record_ros_bag();
 
+        void display_coverage_polygon();
+
+        void send_coverage_polygon();
+
     protected:
 
 
@@ -64,6 +68,8 @@ namespace rviz {
         QPushButton *capture_frame_button_;
         QPushButton *ros_record_button_;
         QPushButton *ros_stop_record_button_;
+        QPushButton *view_coverage_poly_button_;
+        QPushButton *send_coverage_poly_button_;
 
 
         ros::Publisher start_mission_pub_;
@@ -73,6 +79,8 @@ namespace rviz {
         ros::Publisher capture_frame_pub_;
         ros::Publisher ros_record_;
         ros::Publisher stop_ros_record_;
+        ros::Publisher coverage_poly_view;
+        ros::Publisher coverage_poly_send;
         
         ros::Subscriber camera_health_gcs_;
         ros::Subscriber battery_status_gcs_;
