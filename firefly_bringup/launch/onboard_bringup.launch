@@ -29,6 +29,7 @@
       <param name="threshold" value="$(arg threshold)" />
       <param name="continuous" value="$(arg continuous)" />
     </node>
+    <node pkg="firefly_perception" type="lidar_perception" name="lidar_perception" output="screen" />
     <node pkg="firefly_mapping" type="terrain_mapping" name="terrain_mapping" output="screen">
       <param name="terrain_resolution" value="$(arg terrain_resolution)" />
       <param name="min_x" value="$(arg map_min_x)" />

@@ -45,7 +45,12 @@ include_directories(
         ${PCL_INCLUDE_DIRS}
 )
 add_executable(firefly_perception src/firefly_perception.cpp)
+add_executable(lidar_perception src/lidar_perception.cpp)
 target_link_libraries(firefly_perception
+                            ${catkin_LIBRARIES}
+                            ${OpenCV_LIBRARIES}
+                            ${PCL_LIBRARIES})
+target_link_libraries(lidar_perception
                             ${catkin_LIBRARIES}
                             ${OpenCV_LIBRARIES}
                             ${PCL_LIBRARIES})
