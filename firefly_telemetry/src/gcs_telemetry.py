@@ -476,7 +476,7 @@ class GCSTelemetry:
         self.idle_send_flag = True
 
     def reset_behavior_tree_callback(self, empty_msg):
-        self.reset_behavior_tree_callback = True
+        self.reset_behavior_tree_send_flag = True
 
 
 if __name__ == "__main__":
