@@ -5618,5 +5618,21 @@
       <description>Start of IPP Plan Transmission</description>
       <field type="uint8_t" name="seq_num">Sequence Number</field>
     </message>
+    <message id="13031" name="FIREFLY_COVERAGE_POLYGON_POINT">
+      <description>Outer coverage polygon point</description>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
+      <field type="float" name="x" units="m">X Position</field>
+      <field type="float" name="y" units="m">Y Position</field>
+    </message>
+    <message id="13032" name="FIREFLY_COVERAGE_POLYGON_POINT_END">
+      <description>Last outer coverage polygon point</description>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
+      <field type="float" name="x" units="m">X Position</field>
+      <field type="float" name="y" units="m">Y Position</field>
+    </message>
+    <message id="13033" name="FIREFLY_COVERAGE_POLYGON_POINT_ACK">
+      <description>Acknowledge receipt of coverage polygon point</description>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
+    </message>
   </messages>
 </mavlink>
