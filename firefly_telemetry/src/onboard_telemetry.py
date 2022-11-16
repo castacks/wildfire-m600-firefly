@@ -27,7 +27,7 @@ import struct
 import time
 import serial
 import datetime
-from geometry_msgs.msg import Pose, Polygon, Point32
+from geometry_msgs.msg import Pose
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg import BatteryState, NavSatFix
 from behavior_tree_msgs.msg import BehaviorTreeCommand, BehaviorTreeCommands, Status
