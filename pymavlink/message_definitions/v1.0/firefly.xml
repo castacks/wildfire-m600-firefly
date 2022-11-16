@@ -5620,17 +5620,17 @@
     </message>
     <message id="13031" name="FIREFLY_COVERAGE_POLYGON_POINT">
       <description>Coverage polygon point</description>
-      <field type="uint8_t" name="seq_num">Sequence Number</field>
+      <field type="uint8_t" name="seq_num">Sequence number of the polygon point</field>
+      <field type="uint8_t" name="poly_ID">ID of the polygon</field>
       <field type="float" name="x" units="m">X Position</field>
       <field type="float" name="y" units="m">Y Position</field>
-      <field type="uint8_t" name="poly_ID">Y Position</field>
     </message>
     <message id="13032" name="FIREFLY_COVERAGE_POLYGON_POINT_END">
       <description>Last coverage polygon point</description>
-      <field type="uint8_t" name="seq_num">Sequence Number</field>
+      <field type="uint8_t" name="seq_num">Sequence number of the polygon point</field>
+      <field type="uint8_t" name="poly_ID">ID of the polygon</field>
       <field type="float" name="x" units="m">X Position</field>
       <field type="float" name="y" units="m">Y Position</field>
-      <field type="uint8_t" name="poly_ID">Y Position</field>
     </message>
     <message id="13033" name="FIREFLY_COVERAGE_POLYGON_POINT_ACK">
       <description>Acknowledge receipt of coverage polygon point</description>

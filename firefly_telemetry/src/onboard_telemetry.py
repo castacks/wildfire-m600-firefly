@@ -33,6 +33,7 @@ from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg import BatteryState, NavSatFix
 from behavior_tree_msgs.msg import BehaviorTreeCommand, BehaviorTreeCommands, Status
 from planner_map_interfaces.msg import Plan
+from firefly_telemetry.msg import PolygonArray
 
 os.environ["MAVLINK20"] = "1"
 
@@ -70,8 +71,11 @@ class OnboardTelemetry:
         self.ipp_nt = 0
         self.ipp_na = 0
 
+        # nested dictionary with key as polygon IDs and value as another dictionary storing (seq_num, points)
+        # Polygon ID 0 is the outer polygon. The others are holes
         self.coverage_polygon_dict = {}
         self.polygon_complete = False
+        self.last_seq_num = -1
 
         rospy.Subscriber("new_fire_bins", Int32MultiArray, self.new_fire_bins_callback)
         rospy.Subscriber("new_no_fire_bins", Int32MultiArray, self.new_no_fire_bins_callback)
@@ -90,7 +94,7 @@ class OnboardTelemetry:
 
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
-        self.coverage_polygon_points_pub = rospy.Publisher("coverage_polygon_points", Polygon, queue_size=100)
+        self.coverage_polygon_points_pub = rospy.Publisher("coverage_polygon_points", PolygonArray, queue_size=10)
 
         self.bytes_per_sec_send_rate = 2000.0
         self.mavlink_packet_overhead_bytes = 12
@@ -386,34 +390,42 @@ class OnboardTelemetry:
 
     def process_new_polygon_point(self, msg, end):
         if self.polygon_complete:
-            # full outer polygon already received, send last acknowledgement again
-            self.connection.mav.firefly_coverage_polygon_point_ack_send(self.coverage_polygon_dict.keys()[-1])
-            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-            return
-
-        if not end:
-            if self.polygon_complete:
-                # received points for a new polygon, clear old dict
+            if end:
+                # full outer polygon already received, send last acknowledgement again and return - no further action required
+                self.connection.mav.firefly_coverage_polygon_point_ack_send(self.last_seq_num)
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+                return
+            else:
+                # received points for a new set of polygons, reset everything
                 self.polygon_complete = False
                 self.coverage_polygon_dict.clear()
+                self.last_seq_num = -1
 
-            # add the received message to the dict
-            self.coverage_polygon_dict[msg["seq_num"]] = Point32(msg["x"], msg["y"], msg["poly_ID"])
-            self.connection.mav.firefly_coverage_polygon_point_ack_send(msg["seq_num"])
-            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+        # add the received message to the dict
+        if msg["poly_ID"] not in self.coverage_polygon_dict:
+            self.coverage_polygon_dict[msg["poly_ID"]] = {} # initialize a new dictionary for a new polygon
 
-        else:
+        self.coverage_polygon_dict[msg["poly_ID"]][msg["seq_num"]] = Point32(msg["x"], msg["y"])
+        self.connection.mav.firefly_coverage_polygon_point_ack_send(msg["seq_num"])
+        rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if end:
+            self.last_seq_num = msg["seq_num"]
             # sort dict, create and publish message
             self.polygon_complete = True
-            outer_polygon_points = Polygon()
+            coverage_polygon_array = PolygonArray()
             # list of (x, y) Point32 objects sorted based on seq num - of type dict_values
-            '''
-             * Using Z value as a proxy for polygon ID with polygon ID of 0 corresponding to outer polygon and all others being holes
-            '''
-            sortedDict = dict(sorted(self.coverage_polygon_dict.items())).values()
-            outer_polygon_points.points = list(sortedDict)
+            sortedDict = dict(sorted(self.coverage_polygon_dict[0].items())).values() # outer polygon ID is 0
+            coverage_polygon_array.outerPolygon.points = list(sortedDict)
+            del self.coverage_polygon_dict[0]
 
-            self.coverage_polygon_points_pub.publish(outer_polygon_points)
+            holePoints = Polygon()
+            for holeDict in self.coverage_polygon_dict.values():
+                sortedDict = dict(sorted(holeDict.items())).values()
+                holePoints.points = list(sortedDict)
+                coverage_polygon_array.holes.append(holePoints)
+
+            self.coverage_polygon_points_pub.publish(coverage_polygon_array)
 
     def run(self):
         if (self.last_heartbeat_time is None) or (
