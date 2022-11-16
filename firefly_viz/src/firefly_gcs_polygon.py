@@ -27,7 +27,7 @@ def clockwiseangle(point):
         return 2*math.pi+angle
     return angle
 
-def load_poly_from_file():
+def load_poly_from_file(empty_msg):
     global origin
     file = open("polygon.yaml")
     pt_dict = yaml.safe_load(file)

@@ -594,7 +594,7 @@ class GCSTelemetry:
             self.polygon_list[self.polygon_pt_idx] = point
             self.polygon_pt_idx += 1
 
-    def send_coverage_poly_callback(self):
+    def send_coverage_poly_callback(self, empty_msg):
         self.send_coverage_poly_flag = True
         
 

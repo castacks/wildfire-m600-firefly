@@ -89,8 +89,8 @@ namespace rviz {
         layout->addWidget(capture_frame_button_,1 , 2);
         layout->addWidget(ros_record_button_,2 ,0);
         layout->addWidget(ros_stop_record_button_,2 ,1);
-        layout->addWidget(view_coverage_poly_button_,3 ,0);
-        layout->addWidget(send_coverage_poly_button_,3 ,1);
+        layout->addWidget(view_coverage_poly_button_,10 ,0);
+        layout->addWidget(send_coverage_poly_button_,10 ,1);
 
         //Update layout
         layout->addWidget(battery_status_text, 3, 0);
@@ -204,10 +204,10 @@ namespace rviz {
         ros_record_button_->setEnabled(true);
     }
     void FireflyPanel::display_coverage_polygon() {
-        coverage_poly_view.publish(std::msgs::Empty());
+        coverage_poly_view.publish(std_msgs::Empty());
     }
     void FireflyPanel::send_coverage_polygon() {
-        coverage_poly_send.publish(std::msgs::Empty());
+        coverage_poly_send.publish(std_msgs::Empty());
     }
 
 // Save all configuration data from this panel to the given
