@@ -4,7 +4,8 @@ import rospy
 from planner_map_interfaces.msg import Plan, Waypoint
 from core_trajectory_msgs.msg import TrajectoryXYZVYaw, WaypointXYZVYaw
 from tf.transformations import euler_from_quaternion
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Bool, String
+import time
 
 
 class IppPlanToTrajectory:
@@ -12,26 +13,72 @@ class IppPlanToTrajectory:
         self.trajectory_track_pub = rospy.Publisher(
             "trajectory_track", TrajectoryXYZVYaw, queue_size=1
         )
+        self.got_initial_plan_pub = rospy.Publisher(
+            "got_initial_ipp_plan", Bool, queue_size=1
+        )
+        self.replan_pub = rospy.Publisher("/planner/replan", String, queue_size=1)
+        self.initial_ipp_plan_to_transmit_pub = rospy.Publisher(
+            "initial_ipp_plan_to_transmit", Plan, queue_size=1
+        )
 
         rospy.Subscriber("/global_path", Plan, self.ipp_plan_callback)
-        rospy.Subscriber("execute_ipp_plan", Empty, self.execute_plan_callback)
+        rospy.Subscriber("execute_ipp_plan", Bool, self.execute_plan_callback)
+        rospy.Subscriber(
+            "wait_for_initial_ipp_plan", Empty, self.wait_for_initial_ipp_plan
+        )
 
-        self.trajectory_msg = TrajectoryXYZVYaw()
+        self.waiting_for_initial_ipp_plan = False
+        self.executing = False
+        self.initial_plan = None
 
-    def execute_plan_callback(self, empty_msg):
-        self.trajectory_track_pub.publish(self.trajectory_msg)
+        self.request_replan_timer = rospy.Timer(
+            rospy.Duration(1.0), self.request_replan_callback
+        )
+        self.last_replan_time = None
+
+        self.got_initial_ipp_plan_timer = rospy.Timer(
+            rospy.Duration(0.1), self.got_initial_ipp_plan_callback
+        )
+
+    def request_replan_callback(self, event):
+        if self.last_replan_time is None:
+            return
+
+        if self.executing and time.time() - self.last_replan_time > 15:
+            self.replan_pub.publish(String())
+            self.last_replan_time = time.time()
+
+    def got_initial_ipp_plan_callback(self, event):
+        have_initial_plan = self.initial_plan is not None
+        self.got_initial_plan_pub.publish(have_initial_plan)
+
+    def execute_plan_callback(self, msg):
+        self.last_replan_time = time.time()
+        self.executing = msg.data
+        self.waiting_for_initial_ipp_plan = False
+        if self.executing:
+            if self.initial_plan is not None:
+                self.trajectory_track_pub.publish(self.initial_plan)
+        else:
+            self.initial_plan = None
+
+    def wait_for_initial_ipp_plan(self, empty_msg):
+        self.initial_plan = None
+        self.waiting_for_initial_ipp_plan = True
+        self.executing = False
 
     def ipp_plan_callback(self, ipp_plan):
-        self.trajectory_msg.header = ipp_plan.header
-        self.trajectory_msg.header.frame_id = "/uav1/map"
+        trajectory_msg = TrajectoryXYZVYaw()
+        trajectory_msg.header = ipp_plan.header
+        trajectory_msg.header.frame_id = "/uav1/map"
 
-        wp1 = WaypointXYZVYaw()
-        wp1.position.x = 0
-        wp1.position.y = 0
-        wp1.position.z = 30
-        wp1.yaw = 0
-        wp1.velocity = 3.0
-        self.trajectory_msg.waypoints.append(wp1)
+        # wp1 = WaypointXYZVYaw()
+        # wp1.position.x = 0
+        # wp1.position.y = 0
+        # wp1.position.z = 30
+        # wp1.yaw = 0
+        # wp1.velocity = 3.0
+        # trajectory_msg.waypoints.append(wp1)
 
         for wp in ipp_plan.plan:
             output_wp = WaypointXYZVYaw()
@@ -47,15 +94,21 @@ class IppPlanToTrajectory:
 
             output_wp.velocity = 3.0
 
-            self.trajectory_msg.waypoints.append(output_wp)
+            trajectory_msg.waypoints.append(output_wp)
 
-        wp1 = WaypointXYZVYaw()
-        wp1.position.x = 0
-        wp1.position.y = 0
-        wp1.position.z = 30
-        wp1.yaw = 0
-        wp1.velocity = 3.0
-        self.trajectory_msg.waypoints.append(wp1)
+        # wp1 = WaypointXYZVYaw()
+        # wp1.position.x = 0
+        # wp1.position.y = 0
+        # wp1.position.z = 30
+        # wp1.yaw = 0
+        # wp1.velocity = 3.0
+        # trajectory_msg.waypoints.append(wp1)
+
+        if self.executing:
+            self.trajectory_track_pub.publish(trajectory_msg)
+        elif self.waiting_for_initial_ipp_plan and self.initial_plan is None:
+            self.initial_plan = trajectory_msg
+            self.initial_ipp_plan_to_transmit_pub.publish(ipp_plan)
 
 
 if __name__ == "__main__":

@@ -5488,7 +5488,7 @@
       <description>Command perception node to extract frame and pass it on for segmentation</description>
       <field type="uint8_t" name="get_frame">Boolean to decide whether to extract frame (1) or not (0)</field>
     </message>
-    <message id="13002" name="FIREFLY_CLEAR_MAP"> 
+    <message id="13002" name="FIREFLY_CLEAR_MAP">
       <description>Command to clear the current occupancy grid map</description>
       <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
     </message>
@@ -5532,7 +5532,7 @@
       <field type="float" name="x" units="m">X Position</field>
       <field type="float" name="y" units="m">Y Position</field>
       <field type="float" name="z" units="m">Z Position</field>
-      <field type="float[4]" name="q">Quaternion components, w, x, y, z (1 0 0 0 is the null-rotation)</field> 
+      <field type="float[4]" name="q">Quaternion components, w, x, y, z (1 0 0 0 is the null-rotation)</field>
     </message>
     <message id="13011" name="FIREFLY_BATTERY_STATUS">
       <description>Message type to transmit battery status over telemetry</description>
@@ -5546,11 +5546,11 @@
       <description>Message type to transmit the altitude over telemetry</description>
       <field type="float" name="alt">Integer defining altitude</field>
     </message>
-      <message id="13014" name="FIREFLY_EXEC_AUTO">
+    <message id="13014" name="FIREFLY_EXEC_AUTO">
       <description>Command to begin autonomous flight</description>
       <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
-      </message>
-      <message id="13015" name="FIREFLY_KILL">
+    </message>
+    <message id="13015" name="FIREFLY_KILL">
       <description>Command to execute Kill Switch</description>
       <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
     </message>
@@ -5604,7 +5604,19 @@
     </message>
     <message id="13027" name="FIREFLY_IPP_TRANSMIT_COMPLETE">
       <description>Complete plan transmitted, reset IPP plan variables</description>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
+    </message>
+    <message id="13028" name="FIREFLY_RESET_BEHAVIOR_TREE">
+      <description>Command to reset behavior tree</description>
       <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
+    </message>
+    <message id="13029" name="FIREFLY_IDLE">
+      <description>Command to enter an idle autonomy state</description>
+      <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
+    </message>
+    <message id="13030" name="FIREFLY_IPP_TRANSMIT_START">
+      <description>Start of IPP Plan Transmission</description>
+      <field type="uint8_t" name="seq_num">Sequence Number</field>
     </message>
   </messages>
 </mavlink>

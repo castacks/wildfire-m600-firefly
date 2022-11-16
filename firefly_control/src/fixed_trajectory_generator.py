@@ -396,12 +396,20 @@ def get_horizontal_lawnmower_waypoints(attributes):
     traj = TrajectoryXYZVYaw()
     traj.header.frame_id = frame_id
 
+    wp1 = WaypointXYZVYaw()
+    wp1.position.x = 0
+    wp1.position.y = 0
+    wp1.position.z = height
+    wp1.yaw = np.deg2rad(83.63349151611328+90.0)
+    wp1.velocity = 3.0
+    traj.waypoints.append(wp1)
+
     for (x,y) in path:
         wp1 = WaypointXYZVYaw()
         wp1.position.x = x
         wp1.position.y = y
         wp1.position.z = height
-        wp1.yaw = 90
+        wp1.yaw = np.deg2rad(83.63349151611328+90.0)
         wp1.velocity = velocity
         traj.waypoints.append(wp1)
 
@@ -436,7 +444,7 @@ def get_coverage_waypoints(attributes):
         wp1.position.x = x
         wp1.position.y = y
         wp1.position.z = height
-        wp1.yaw = 90
+        wp1.yaw = np.pi/2
         wp1.velocity = velocity
         traj.waypoints.append(wp1)
 
@@ -464,8 +472,8 @@ def fixed_trajectory_callback(msg):
     elif msg.type == 'Rectangle':
         trajectory_msg = get_rectangle_waypoints(attributes)
     elif msg.type == 'Horizontal_Lawnmower':
-        # trajectory_msg = get_horizontal_lawnmower_waypoints(attributes)
-        trajectory_msg = get_coverage_waypoints(attributes)
+        trajectory_msg = get_horizontal_lawnmower_waypoints(attributes)
+        # trajectory_msg = get_coverage_waypoints(attributes)
 
     if trajectory_msg != None:
         trajectory_track_pub.publish(trajectory_msg)

@@ -31,7 +31,6 @@ from geometry_msgs.msg import Pose
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg import BatteryState, NavSatFix
 from behavior_tree_msgs.msg import BehaviorTreeCommand, BehaviorTreeCommands, Status
-from dji_sdk.srv import SetLocalPosRef
 from planner_map_interfaces.msg import Plan
 
 os.environ['MAVLINK20'] = '1'
@@ -39,7 +38,10 @@ os.environ['MAVLINK20'] = '1'
 
 class OnboardTelemetry:
     def __init__(self):
-        self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
+        self.connection = mavutil.mavlink_connection(
+            "/dev/mavlink", baud=115200, dialect="firefly"
+        )
+
 
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
@@ -67,8 +69,6 @@ class OnboardTelemetry:
         self.ipp_transmit_buf = []
         self.ipp_nt = 0
         self.ipp_na = 0
-        self.send_ipp_plan_flag = False
-        self.ipp_transmit_complete_flag = False
 
         rospy.Subscriber("new_fire_bins", Int32MultiArray, self.new_fire_bins_callback)
         rospy.Subscriber("new_no_fire_bins", Int32MultiArray, self.new_no_fire_bins_callback)
@@ -77,18 +77,16 @@ class OnboardTelemetry:
         rospy.Subscriber("dji_sdk/gps_position", NavSatFix , self.get_altitude_callback)
         rospy.Subscriber("dji_sdk/battery_state", BatteryState, self.battery_health_callback)
         rospy.Subscriber("onboard_temperature", Float32, self.onboard_temperature_callback)
-        rospy.Subscriber("/global_path", Plan, self.ipp_publish_callback)
+        rospy.Subscriber("initial_ipp_plan_to_transmit", Plan, self.ipp_publish_callback)
 
-        self.set_local_pos_ref_pub = rospy.Publisher("set_local_pos_ref", Empty, queue_size=100)
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
         self.behavior_tree_commands_pub = rospy.Publisher("behavior_tree_commands", BehaviorTreeCommands, queue_size=100)
         self.kill_switch = rospy.Publisher("kill_switch", Empty, queue_size=10)
-        self.execute_ipp_pub = rospy.Publisher("execute_ipp_plan", Empty, queue_size=1)
 
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
 
-        self.bytes_per_sec_send_rate = 1000.0
+        self.bytes_per_sec_send_rate = 2000.0
         self.mavlink_packet_overhead_bytes = 12
 
         self.last_heartbeat_time = None
@@ -107,7 +105,9 @@ class OnboardTelemetry:
 
         self.recording_ros_bag = False
         try:
-            self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
+            self.connection = mavutil.mavlink_connection(
+                "/dev/mavlink", baud=115200, dialect="firefly"
+            )
             self.connectedToOnboardRadio = True
             rospy.loginfo("Opened connection to onboard radio")
         except serial.serialutil.SerialException:
@@ -141,10 +141,10 @@ class OnboardTelemetry:
 
     def get_altitude_callback(self, data):
         self.altitude = data.altitude
-    
+
     def battery_health_callback(self, data):
         self.battery_charge = data.percentage
-    
+
     def onboard_temperature_callback(self, data):
         self.onboard_temperature = data.data
 
@@ -152,26 +152,22 @@ class OnboardTelemetry:
         self.pose_send_flag = True
 
     def ipp_publish_callback(self, ipp_plan):
-        '''
-            init plan array to be published
-            discard new plan if previous one is yet to be transmitted
-        '''
-        if self.send_ipp_plan_flag:
-            return
-        self.send_ipp_plan_flag = True
-        self.ipp_plan = []
+        self.ipp_plan.append({"type": "start"})
         for idx, wp in enumerate(ipp_plan.plan):
             plan_msg = {
                 "x": wp.position.position.x,
                 "y": wp.position.position.y,
                 "z": wp.position.position.z,
-                "q": [wp.position.orientation.x,
-                     wp.position.orientation.y,
-                     wp.position.orientation.z,
-                     wp.position.orientation.w],
-                "seq_num": idx
+                "q": [
+                    wp.position.orientation.x,
+                    wp.position.orientation.y,
+                    wp.position.orientation.z,
+                    wp.position.orientation.w,
+                ],
+                "type": "waypoint",
             }
             self.ipp_plan.append(plan_msg)
+        self.ipp_plan.append({"type": "end"})
 
     def send_map_update(self):
         if (len(self.map_transmitted_buf) != 0) and (
@@ -194,8 +190,8 @@ class OnboardTelemetry:
                 y = payload.position.y
                 z = payload.position.z
                 q = [payload.orientation.x,
-                     payload.orientation.y,
-                     payload.orientation.z,
+                    payload.orientation.y,
+                    payload.orientation.z,
                      payload.orientation.w]
                 self.map_transmitted_buf.append((time.time(), 2, seq_num, -1, payload))
                 rospy.logwarn("Warning: Resending packet with sequence id: %d" % seq_num)
@@ -250,8 +246,8 @@ class OnboardTelemetry:
                 y = updates_to_send.position.y
                 z = updates_to_send.position.z
                 q = [updates_to_send.orientation.x,
-                     updates_to_send.orientation.y,
-                     updates_to_send.orientation.z,
+                    updates_to_send.orientation.y,
+                    updates_to_send.orientation.z,
                      updates_to_send.orientation.w]
                 seq_num = self.nt
                 self.map_transmitted_buf.append((time.time(), 2, seq_num, -1, updates_to_send))
@@ -269,8 +265,8 @@ class OnboardTelemetry:
             y = transform.transform.translation.y
             z = transform.transform.translation.z
             q = [transform.transform.rotation.x,
-                 transform.transform.rotation.y,
-                 transform.transform.rotation.z,
+                transform.transform.rotation.y,
+                transform.transform.rotation.z,
                  transform.transform.rotation.w]
             self.connection.mav.firefly_pose_send(x, y, z, q)
             rospy.sleep((self.mavlink_packet_overhead_bytes + 28) / self.bytes_per_sec_send_rate)
@@ -286,13 +282,27 @@ class OnboardTelemetry:
             ipp_packet = self.ipp_transmit_buf.pop(0)
             ipp_packet["timestamp"] = time.time()
             self.ipp_transmit_buf.append(ipp_packet)
-            rospy.logwarn("Warning: Resending packet with sequence id: %d" % ipp_packet['seq_num'])
-            self.connection.mav.firefly_ipp_plan_preview_send(ipp_packet['seq_num'],
-                                                                ipp_packet['x'],
-                                                                ipp_packet['y'],
-                                                                ipp_packet['z'],
-                                                                ipp_packet['q'])
-            rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
+            rospy.logwarn(
+                "Warning: Resending packet with sequence id: %d" % ipp_packet["seq_num"]
+            )
+            if ipp_packet["type"] == "waypoint":
+                self.connection.mav.firefly_ipp_plan_preview_send(
+                    ipp_packet["seq_num"],
+                    ipp_packet["x"],
+                    ipp_packet["y"],
+                    ipp_packet["z"],
+                    ipp_packet["q"],
+                )
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
+
+            elif ipp_packet["type"] == "start":
+                self.connection.mav.firefly_ipp_transmit_start_send(ipp_packet["seq_num"])
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+            elif ipp_packet["type"] == "end":
+                self.connection.mav.firefly_ipp_transmit_complete_send(ipp_packet["seq_num"])
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
             return
         elif (self.ipp_nt - self.ipp_na) % 128 >= self.wt:
             # Waiting for acks
@@ -301,19 +311,27 @@ class OnboardTelemetry:
         elif len(self.ipp_plan) != 0:
             next_wp = self.ipp_plan.pop(0)
             next_wp["timestamp"] = time.time()
+            next_wp["seq_num"] = self.ipp_nt
             self.ipp_transmit_buf.append(next_wp)
             self.ipp_nt = (self.ipp_nt + 1) % 128
-            self.connection.mav.firefly_ipp_plan_preview_send(next_wp['seq_num'],
-                                                                next_wp['x'],
-                                                                next_wp['y'],
-                                                                next_wp['z'],
-                                                                next_wp['q'])
-            rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
-        else:
-            self.send_ipp_plan_flag = False
-            self.ipp_nt = 0
-            self.ipp_na = 0
-            self.ipp_transmit_complete_flag = True
+
+            if next_wp["type"] == "waypoint":
+                self.connection.mav.firefly_ipp_plan_preview_send(
+                    next_wp["seq_num"],
+                    next_wp["x"],
+                    next_wp["y"],
+                    next_wp["z"],
+                    next_wp["q"],
+                )
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 29) / self.bytes_per_sec_send_rate)
+
+            elif next_wp["type"] == "start":
+                self.connection.mav.firefly_ipp_transmit_start_send(next_wp["seq_num"])
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+            elif next_wp["type"] == "end":
+                self.connection.mav.firefly_ipp_transmit_complete_send(next_wp["seq_num"])
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
 
     def run(self):
@@ -332,6 +350,7 @@ class OnboardTelemetry:
                 if self.connectedToGCS:
                     self.send_map_update()
                     self.send_pose_update()
+                    self.send_ipp_plan()
 
                 if self.heartbeat_send_flag:
                     if self.camera_health:
@@ -341,9 +360,9 @@ class OnboardTelemetry:
                     rospy.logdebug("Sending Heartbeat")
                     self.heartbeat_send_flag = False
                     rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
-              
+
                 #send altitude
-                if self.altitude_status_send_flag: 
+                if self.altitude_status_send_flag:
                     self.connection.mav.firefly_altitude_send(float(self.altitude))
                     self.altitude_status_send_flag = False
                     rospy.sleep((self.mavlink_packet_overhead_bytes + 4) / self.bytes_per_sec_send_rate)
@@ -357,21 +376,15 @@ class OnboardTelemetry:
                     self.connection.mav.firefly_onboard_temp_send(self.onboard_temperature)
                     self.temperature_status_send_flag = False
                     rospy.sleep((self.mavlink_packet_overhead_bytes + 4) / self.bytes_per_sec_send_rate)
-                # send ipp preview
-                if self.send_ipp_plan_flag:
-                    self.send_ipp_plan()
-                # send acknowledgement of complete ipp preview transmission
-                if self.ipp_transmit_complete_flag:
-                    self.ipp_transmit_complete_flag = False
-                    self.connection.mav.firefly_ipp_transmit_complete_send(1)
-                    rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
             except serial.serialutil.SerialException as e:
                 self.connectedToOnboardRadio = False
                 rospy.logerr(e)
         elif time.time() - self.last_serial_attempt_time >= self.serial_reconnect_wait_time:
             try:
-                self.connection = mavutil.mavlink_connection('/dev/mavlink', baud=57600, dialect='firefly')
+                self.connection = mavutil.mavlink_connection(
+                    "/dev/mavlink", baud=115200, dialect="firefly"
+                )
                 rospy.loginfo("Opened connection to Onboard radio")
                 self.connectedToOnboardRadio = True
             except serial.serialutil.SerialException as e:
@@ -389,16 +402,6 @@ class OnboardTelemetry:
 
         if msg['mavpackettype'] == 'FIREFLY_CLEAR_MAP':
             self.clear_map_pub.publish(Empty())
-        elif msg['mavpackettype'] == 'FIREFLY_SET_LOCAL_POS_REF':
-            self.clear_map_pub.publish(Empty())
-            rospy.wait_for_service('dji_sdk/set_local_pos_ref', timeout=0.1)
-            try:
-                set_local_pos_ref = rospy.ServiceProxy('dji_sdk/set_local_pos_ref', SetLocalPosRef)
-                response = set_local_pos_ref()
-                # self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
-                self.connection.mav.firefly_local_pos_ref_send(0, 0, 0)
-            except rospy.ServiceException as e:
-                rospy.logerr("Service call failed: %s" % e)            
         elif msg['mavpackettype'] == 'FIREFLY_KILL':
             self.kill_switch.publish(Empty())
         elif msg['mavpackettype'] == 'FIREFLY_GET_FRAME':
@@ -431,9 +434,22 @@ class OnboardTelemetry:
             if self.na == msg['seq_num']:
                 self.na = self.nt
                 for i in range(len(self.map_transmitted_buf) - 1, -1, -1):
-                    if self.map_transmitted_buf[i][2] < self.na:
+                    if  (self.na - self.map_transmitted_buf[i][2]) % 128 <= self.wt:
                         self.na = self.map_transmitted_buf[i][2]
-        elif msg['mavpackettype'] == 'FIREFLY_REQUEST_CONTROL':
+        elif msg["mavpackettype"] == "FIREFLY_RESET_BEHAVIOR_TREE":
+            command = BehaviorTreeCommand()
+            command.condition_name = "Reset Behavior Tree Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg["mavpackettype"] == "FIREFLY_SET_LOCAL_POS_REF":
+            self.clear_map_pub.publish(Empty())
+            command = BehaviorTreeCommand()
+            command.condition_name = "Set Local Position Reference Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+            # self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
+            self.connection.mav.firefly_local_pos_ref_send(0, 0, 0)
+        elif msg["mavpackettype"] == "FIREFLY_REQUEST_CONTROL":
             command = BehaviorTreeCommand()
             command.condition_name = "Request Control Commanded"
             command.status = Status.SUCCESS
@@ -448,42 +464,49 @@ class OnboardTelemetry:
             command.condition_name = "Disarm Commanded"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
-        elif msg['mavpackettype'] == 'FIREFLY_TAKEOFF':
+        elif msg["mavpackettype"] == "FIREFLY_IDLE":
             command = BehaviorTreeCommand()
-            command.condition_name = "Takeoff Commanded"
+            command.condition_name = "Autonomy Mode Is Idle"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
-        elif msg['mavpackettype'] == 'FIREFLY_LAND':
+        elif msg["mavpackettype"] == "FIREFLY_TAKEOFF":
             command = BehaviorTreeCommand()
-            command.condition_name = "Land Commanded"
+            command.condition_name = "Autonomy Mode Is Takeoff"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
-        elif msg['mavpackettype'] == 'FIREFLY_TRAJ_CONTROL':
+        elif msg["mavpackettype"] == "FIREFLY_LAND":
             command = BehaviorTreeCommand()
-            command.condition_name = "Traj Control Commanded"
+            command.condition_name = "Autonomy Mode Is Land"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
-        elif msg['mavpackettype'] == 'FIREFLY_COVERAGE_PLANNER':
+        elif msg["mavpackettype"] == "FIREFLY_TRAJ_CONTROL":
             command = BehaviorTreeCommand()
-            command.condition_name = "Coverage Planner Commanded"
+            command.condition_name = "Autonomy Mode Is Traj Control"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
-        elif msg['mavpackettype'] == 'FIREFLY_IPP_PLANNER':
-            if not self.send_ipp_plan_flag:
-                command = BehaviorTreeCommand()
-                command.condition_name = "IPP Planner Commanded"
-                command.status = Status.SUCCESS
-                behavior_tree_commands.commands.append(command)
-        elif msg['mavpackettype'] == 'FIREFLY_EXECUTE_IPP_PLAN':
-            self.execute_ipp_pub.publish(Empty())
-        elif msg['mavpackettype'] == 'FIREFLY_IPP_PLAN_PREVIEW_ACK':
+        elif msg["mavpackettype"] == "FIREFLY_COVERAGE_PLANNER":
+            command = BehaviorTreeCommand()
+            command.condition_name = "Autonomy Mode Is Coverage Planner"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg["mavpackettype"] == "FIREFLY_IPP_PLANNER":
+            command = BehaviorTreeCommand()
+            command.condition_name = "Get Initial IPP Plan Commanded"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg["mavpackettype"] == "FIREFLY_EXECUTE_IPP_PLAN":
+            command = BehaviorTreeCommand()
+            command.condition_name = "Autonomy Mode Is IPP Planner"
+            command.status = Status.SUCCESS
+            behavior_tree_commands.commands.append(command)
+        elif msg["mavpackettype"] == "FIREFLY_IPP_PLAN_PREVIEW_ACK":
             for i in range(len(self.ipp_transmit_buf) - 1, -1, -1):
                 if self.ipp_transmit_buf[i]["seq_num"] == msg['seq_num']:
                     self.ipp_transmit_buf.pop(i)
             if self.ipp_na == msg['seq_num']:
                 self.ipp_na = self.ipp_nt
                 for i in range(len(self.ipp_transmit_buf) - 1, -1, -1):
-                    if self.ipp_transmit_buf[i]["seq_num"] < self.ipp_na:
+                    if (self.ipp_na - self.ipp_transmit_buf[i]["seq_num"]) % 128 <= self.wt:
                         self.ipp_na = self.ipp_transmit_buf[i]["seq_num"]
 
         if len(behavior_tree_commands.commands) > 0:
@@ -494,7 +517,7 @@ class OnboardTelemetry:
 
     def altitude_send_callback(self, event):
         self.altitude_status_send_flag = True
-    
+
     def battery_status_send_callback(self, event):
         self.battery_status_send_flag = True
 
