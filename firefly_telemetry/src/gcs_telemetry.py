@@ -79,6 +79,8 @@ class GCSTelemetry:
         )
         rospy.Subscriber('coverage_poly', PolygonStamped, self.load_polygon_callback)
         rospy.Subscriber('send_coverage_poly', Empty, self.send_coverage_poly_callback)
+        rospy.Subscriber('start_coverage_poly', Empty, self.reset_polygon)
+
 
         # See https://en.wikipedia.org/wiki/Sliding_window_protocol
         self.map_received_buf = {}
@@ -580,9 +582,6 @@ class GCSTelemetry:
         self.reset_behavior_tree_callback = True
 
     def load_polygon_callback(self, polygon):
-        if polygon.header.seq == 0:
-            self.polygon_list = {}
-            self.polygon_pt_idx = 0
         for pt in polygon.polygon.points:
             point  = Point32()
             point.x = pt.x
@@ -596,6 +595,11 @@ class GCSTelemetry:
 
     def send_coverage_poly_callback(self, empty_msg):
         self.send_coverage_poly_flag = True
+
+    def reset_polygon(self, empty_msg):
+        self.polygon_list = {}
+        self.polygon_pt_idx = 0
+
         
 
 
