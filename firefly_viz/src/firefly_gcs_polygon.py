@@ -42,7 +42,6 @@ def load_poly_from_file(empty_msg):
     polygon.header.frame_id = "world"
     polygon.header.stamp = rospy.Time.now()
     polygon.header.seq = 0
-    polygon_new.publish(Empty())
     for pt in pt_dict['outer_polygon']['points']:
         curr_pt = [pt['x'], pt['y']]
         pts_list.append(curr_pt)
@@ -58,26 +57,29 @@ def load_poly_from_file(empty_msg):
         polygon.polygon.points.append(point)
     rospy.loginfo("publishing poly outer")
     polygon_pub.publish(polygon)
-    for hole_id, hole in enumerate(pt_dict['holes']):
-        pts_list = []
-        for pt in hole['points']:
-            curr_pt = [pt['x'], pt['y']]
-            pts_list.append(curr_pt)
-        origin = np.mean(pts_list, axis=0).flatten()
-        poly_viz_list += sorted(pts_list, key= clockwiseangle)
-        poly_viz_list.append(sorted(pts_list, key= clockwiseangle)[0])
-        pts_list = sorted(pts_list, key= clockwiseangle, reverse=True)
-        polygon.polygon.points = []
-        polygon.header.seq = hole_id + 1
-        polygon.header.stamp = rospy.Time.now()
-        for pt in pts_list:
-            point = Point32()
-            point.x = pt[0]
-            point.y = pt[1]
-            point.z = 0.0
-            polygon.polygon.points.append(point)
-        rospy.loginfo("publishing poly hole")
-        polygon_pub.publish(polygon)
+    try:
+        for hole_id, hole in enumerate(pt_dict['holes']):
+            pts_list = []
+            for pt in hole['points']:
+                curr_pt = [pt['x'], pt['y']]
+                pts_list.append(curr_pt)
+            origin = np.mean(pts_list, axis=0).flatten()
+            poly_viz_list += sorted(pts_list, key= clockwiseangle)
+            poly_viz_list.append(sorted(pts_list, key= clockwiseangle)[0])
+            pts_list = sorted(pts_list, key= clockwiseangle, reverse=True)
+            polygon.polygon.points = []
+            polygon.header.seq = hole_id + 1
+            polygon.header.stamp = rospy.Time.now()
+            for pt in pts_list:
+                point = Point32()
+                point.x = pt[0]
+                point.y = pt[1]
+                point.z = hole_id + 1
+                polygon.polygon.points.append(point)
+            rospy.loginfo("publishing poly hole")
+            polygon_pub.publish(polygon)
+    except:
+        pass
     for pt in poly_viz_list:
         point = Point32()
         point.x = pt[0]
@@ -91,7 +93,6 @@ def load_poly_from_file(empty_msg):
 if __name__ == '__main__':
     rospy.init_node('gcs_polygon_node')
     polygon_pub = rospy.Publisher('coverage_poly', PolygonStamped, queue_size=1)
-    polygon_new = rospy.Publisher('start_coverage_poly', Empty)
     polygon_rviz = rospy.Publisher('display_poly', PolygonStamped, queue_size=1)
     load_polygon = rospy.Subscriber("view_coverage_poly", Empty, load_poly_from_file)
     rospy.spin()

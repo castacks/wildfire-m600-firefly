@@ -15,6 +15,7 @@ Created:  03 Apr 2022
 #########################################################
 """
 
+from numpy import uint8
 import rospy
 from std_msgs.msg import Int32MultiArray
 from pymavlink import mavutil
@@ -79,7 +80,7 @@ class GCSTelemetry:
         )
         rospy.Subscriber('coverage_poly', PolygonStamped, self.load_polygon_callback)
         rospy.Subscriber('send_coverage_poly', Empty, self.send_coverage_poly_callback)
-        rospy.Subscriber('start_coverage_poly', Empty, self.reset_polygon)
+        rospy.Subscriber('view_coverage_poly', Empty, self.reset_polygon)
 
 
         # See https://en.wikipedia.org/wiki/Sliding_window_protocol
@@ -508,24 +509,30 @@ class GCSTelemetry:
 
         if self.send_coverage_poly_flag:
             try:
-                pt_idx = list(self.polygon_list.keys())[0]
+                key_list = list(self.polygon_list.keys())
+                pt_idx = key_list[0]
             except:
                 return
             pt = self.polygon_list[pt_idx]
+            self.polygon_list.pop(pt_idx)
+            self.polygon_list[pt_idx] = pt # for round robin transmission
             if len(self.polygon_list.keys()) != 1:
                 self.connection.mav.firefly_coverage_polygon_point_send(
                     pt_idx,
+                    uint8(pt.z),
                     pt.x,
-                    pt.y,
-                    uint8(pt.z)
+                    pt.y
                 )
             else:
                 self.connection.mav.firefly_coverage_polygon_point_end_send(
                     pt_idx,
+                    uint8(pt.z),
                     pt.x,
-                    pt.y,
-                    uint8(pt.z)
+                    pt.y
                 )
+            rospy.sleep(
+                (self.mavlink_packet_overhead_bytes + 10) / self.bytes_per_sec_send_rate
+            )
 
     def clear_map_callback(self, empty_msg):
         self.clear_map_send_flag = True
@@ -589,12 +596,13 @@ class GCSTelemetry:
             '''
             * using Z as a proxy for polygon ID with 0 being the outer polygon and very subsequent ID corresponding to holes
             '''
-            point.z = polygon.header.seq
+            point.z = pt.z
             self.polygon_list[self.polygon_pt_idx] = point
             self.polygon_pt_idx += 1
 
     def send_coverage_poly_callback(self, empty_msg):
-        self.send_coverage_poly_flag = True
+        if(len(self.polygon_list) != 0):
+            self.send_coverage_poly_flag = True
 
     def reset_polygon(self, empty_msg):
         self.polygon_list = {}
