@@ -11,6 +11,13 @@ If you face a build error saying that "common is required but boost was not foun
 
 Note that the sdk.launch file in the dji_sdk package expects the DJI_SDK_APP_ID and DJI_SDK_ENC_KEY to be set.
 
-Install the udev rules by running the following command.
+Install the udev rules on the onboard computer by running the following command.
 
-    sudo cp firefly_bringup/99-firefly.rules /etc/udev/rules.d
+    sudo cp firefly_bringup/99-firefly-onboard.rules /etc/udev/rules.d
+    sudo udevadm control --reload-rules && udevadm trigger
+
+Install the udev rules on the ground control station by running the following command.
+
+    sudo cp firefly_bringup/99-firefly-gcs.rules /etc/udev/rules.d
+    sudo udevadm control --reload-rules && udevadm trigger
+

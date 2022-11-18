@@ -222,15 +222,10 @@ class GCSTelemetry:
                     else:
                         break
             else:
-                self.map_received_buf[msg["seq_num"]] = (
-                    map_packet_type,
-                    updated_bins_msg,
-                )
+                self.map_received_buf[msg['seq_num']] = (map_packet_type, updated_bins_msg)
 
-        self.connection.mav.firefly_map_ack_send(msg["seq_num"])
-        rospy.sleep(
-            (self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate
-        )
+        self.connection.mav.firefly_map_ack_send(msg['seq_num'])
+        rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
     @staticmethod
     def extract_pose_from_ipp_waypoint(msg):
@@ -292,12 +287,8 @@ class GCSTelemetry:
                     "poseStamped": poseStamped,
                 }
 
-        self.connection.mav.firefly_ipp_plan_preview_ack_send(
-            msg["seq_num"]
-        )  # send an ack of the seq num received
-        rospy.sleep(
-            (self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate
-        )
+        self.connection.mav.firefly_ipp_plan_preview_ack_send(msg['seq_num']) # send an ack of the seq num received
+        rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
     def read_incoming(self):
         msg = self.connection.recv_match()
@@ -311,15 +302,13 @@ class GCSTelemetry:
                 self.process_new_map_packet(msg, 1)
             elif msg["mavpackettype"] == "FIREFLY_INIT_TO_NO_FIRE_POSE":
                 self.process_new_map_packet(msg, 2)
-            elif msg["mavpackettype"] == "FIREFLY_POSE":
-                self.br.sendTransform(
-                    (msg["x"], msg["y"], msg["z"]),
-                    msg["q"],
+            elif msg['mavpackettype'] == 'FIREFLY_POSE':
+                self.br.sendTransform((msg['x'], msg['y'], msg['z']),
+                                      msg['q'],
                     rospy.Time.now(),
                     "world",
-                    "base_link",
-                )
-            elif msg["mavpackettype"] == "FIREFLY_LOCAL_POS_REF":
+                                      "base_link")
+            elif msg['mavpackettype'] == 'FIREFLY_LOCAL_POS_REF':
                 nav_msg = NavSatFix()
                 nav_msg.header.frame_id = "world"
                 nav_msg.latitude = msg["latitude"]
@@ -415,9 +404,7 @@ class GCSTelemetry:
             self.connection.mav.firefly_land_send(0)
             rospy.loginfo("Landing")
             self.land_send_flag = False
-            rospy.sleep(
-                (self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate
-            )
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
         if self.traj_control_send_flag:
             self.connection.mav.firefly_traj_control_send(0)
@@ -471,9 +458,7 @@ class GCSTelemetry:
             rospy.loginfo("Recording ROS Bags")
             self.connection.mav.firefly_record_bag_send(1)
             self.record_ros_bag_send_flag = False
-            rospy.sleep(
-                (self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate
-            )
+            rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
         if self.stop_record_ros_bag_send_flag:
             rospy.loginfo("Stopping ROS Bag recording")
@@ -586,7 +571,7 @@ class GCSTelemetry:
         self.idle_send_flag = True
 
     def reset_behavior_tree_callback(self, empty_msg):
-        self.reset_behavior_tree_callback = True
+        self.reset_behavior_tree_send_flag = True
 
     def load_polygon_callback(self, polygon):
         for pt in polygon.polygon.points:
