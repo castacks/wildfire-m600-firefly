@@ -4,7 +4,7 @@ project(firefly_perception)
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
-set(PCL_DIR /usr/lib/aarch64-linux-gnu/cmake/pcl/)
+# set(PCL_DIR /usr/lib/aarch64-linux-gnu/cmake/pcl/)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -20,6 +20,9 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
+  PCL
+  pcl_conversions
+  pcl_ros
 )
 find_package(
   OpenCV

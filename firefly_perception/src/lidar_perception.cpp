@@ -96,8 +96,8 @@ public:
         pcl::PCLPointCloud2 point_cloud2_mappping;
         pcl::CropBox<pcl::PointXYZ> cropBoxFilterMapping (true);
         cropBoxFilterMapping.setInputCloud (temp_cloud);    
-        Eigen::Vector4f min_pt_mapping (-1.0f, 0.0f, -50.0f, 1.0f);
-        Eigen::Vector4f max_pt_mapping (1.0f, 100.0f, 50.0f, 1.0f);
+        Eigen::Vector4f min_pt_mapping (-5.0f, 0.0f, -50.0f, 1.0f);
+        Eigen::Vector4f max_pt_mapping (5.0f, 100.0f, 50.0f, 1.0f);
         pcl::PointCloud<pcl::PointXYZ> cloud_out_mapping;
         cropBoxFilterMapping.setMin (min_pt_mapping);
         cropBoxFilterMapping.setMax (max_pt_mapping);

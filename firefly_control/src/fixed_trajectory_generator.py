@@ -382,15 +382,16 @@ def get_rectangle_waypoints(attributes):
 
 def get_horizontal_lawnmower_waypoints(attributes):
     frame_id = str(attributes['frame_id'])
-    length = float(attributes['length'])
-    width = float(attributes['width'])
-    height = float(attributes['height'])
-    velocity = float(attributes['velocity'])
-    stepover_dist = float(attributes['stepover_dist'])
+    length = 50
+    width = 50
+    height = 50
+    velocity = 4
+    stepover_dist = 30
 
     ccw_vertices = [(0, 0),(width, 0),(width, length),(0, length)]
     path = get_polygon_path(ccw_vertices, stepover_dist=stepover_dist)
     path.append((0,0))
+    path = rotate_path(path, 50)
     path = interpolate_path(path, max_spacing=2.5)
 
     traj = TrajectoryXYZVYaw()
@@ -400,8 +401,8 @@ def get_horizontal_lawnmower_waypoints(attributes):
     wp1.position.x = 0
     wp1.position.y = 0
     wp1.position.z = height
-    wp1.yaw = np.deg2rad(83.63349151611328+90.0)
-    wp1.velocity = 3.0
+    wp1.yaw = np.deg2rad(50+90.0)
+    wp1.velocity = 4.0
     traj.waypoints.append(wp1)
 
     for (x,y) in path:
@@ -409,7 +410,7 @@ def get_horizontal_lawnmower_waypoints(attributes):
         wp1.position.x = x
         wp1.position.y = y
         wp1.position.z = height
-        wp1.yaw = np.deg2rad(83.63349151611328+90.0)
+        wp1.yaw = np.deg2rad(50+90.0)
         wp1.velocity = velocity
         traj.waypoints.append(wp1)
 
