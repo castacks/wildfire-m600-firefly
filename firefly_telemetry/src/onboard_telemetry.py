@@ -34,6 +34,7 @@ from sensor_msgs.msg import BatteryState, NavSatFix
 from behavior_tree_msgs.msg import BehaviorTreeCommand, BehaviorTreeCommands, Status
 from planner_map_interfaces.msg import Plan
 from firefly_telemetry.msg import PolygonArray
+from collections import OrderedDict
 
 os.environ["MAVLINK20"] = "1"
 
@@ -405,7 +406,7 @@ class OnboardTelemetry:
         if msg["poly_ID"] not in self.coverage_polygon_dict:
             self.coverage_polygon_dict[msg["poly_ID"]] = {} # initialize a new dictionary for a new polygon
 
-        self.coverage_polygon_dict[msg["poly_ID"]][msg["seq_num"]] = Point32(msg["x"], msg["y"])
+        self.coverage_polygon_dict[msg["poly_ID"]][msg["seq_num"]] = Point32(msg["x"], msg["y"], 0)
         self.connection.mav.firefly_coverage_polygon_point_ack_send(msg["seq_num"])
         rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
@@ -415,14 +416,14 @@ class OnboardTelemetry:
             self.polygon_complete = True
             coverage_polygon_array = PolygonArray()
             # list of (x, y) Point32 objects sorted based on seq num - of type dict_values
-            sortedDict = dict(sorted(self.coverage_polygon_dict[0].items())).values() # outer polygon ID is 0
-            coverage_polygon_array.outerPolygon.points = list(sortedDict)
+            sortedDict = OrderedDict(sorted(self.coverage_polygon_dict[0].items())) # outer polygon ID is 0
+            coverage_polygon_array.outerPolygon.points = list(sortedDict.values())
             del self.coverage_polygon_dict[0]
 
-            holePoints = Polygon()
             for holeDict in self.coverage_polygon_dict.values():
-                sortedDict = dict(sorted(holeDict.items())).values()
-                holePoints.points = list(sortedDict)
+                holePoints = Polygon()
+                sortedDict = OrderedDict(sorted(holeDict.items()))
+                holePoints.points = list(sortedDict.values())
                 coverage_polygon_array.holes.append(holePoints)
 
             self.coverage_polygon_points_pub.publish(coverage_polygon_array)
