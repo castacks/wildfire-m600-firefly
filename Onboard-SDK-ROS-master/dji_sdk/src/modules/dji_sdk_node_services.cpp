@@ -52,6 +52,15 @@ DJISDKNode::droneArmCallback(dji_sdk::DroneArmControl::Request&  request,
 
   if (request.arm)
   {
+    // Only allow arming when remote controller in F mode
+    if (!this->rcInFMode()) {
+      ROS_WARN("Attempting to arm but remote controller not in F mode.");
+      response.cmd_set  = (int)ack.info.cmd_set;
+      response.cmd_id   = (int)ack.info.cmd_id;
+      response.ack_data = (unsigned int)ack.data;
+      response.result = false;
+      return false;
+    }
     ack = vehicle->control->armMotors(WAIT_TIMEOUT);
     ROS_DEBUG("called vehicle->control->armMotors()");
   }
@@ -92,6 +101,15 @@ DJISDKNode::sdkCtrlAuthorityCallback(
   ACK::ErrorCode ack;
   if (request.control_enable)
   {
+    // Only allow request control enable when remote controller in F mode
+    if (!this->rcInFMode()) {
+      ROS_WARN("Attempting to request control enable but remote controller not in F mode.");
+      response.cmd_set  = (int)ack.info.cmd_set;
+      response.cmd_id   = (int)ack.info.cmd_id;
+      response.ack_data = (unsigned int)ack.data;
+      response.result = false;
+      return false;
+    }
     ack = vehicle->obtainCtrlAuthority(WAIT_TIMEOUT);
     ROS_DEBUG("called vehicle->obtainCtrlAuthority");
   }
@@ -161,7 +179,16 @@ DJISDKNode::droneTaskCallback(dji_sdk::DroneTaskControl::Request&  request,
   ROS_DEBUG("called droneTaskCallback");
 
   ACK::ErrorCode ack;
-  if (request.task == 4)
+  if (!this->rcInFMode()) {
+     // Only allow arming when remote controller in F mode
+    ROS_WARN("Attempting to request task but remote controller not in F mode.");
+    response.cmd_set  = (int)ack.info.cmd_set;
+    response.cmd_id   = (int)ack.info.cmd_id;
+    response.ack_data = (unsigned int)ack.data;
+    response.result = false;
+    return false;
+  }
+  else if (request.task == 4)
   {
     // takeoff
     ack = vehicle->control->takeoff(WAIT_TIMEOUT);

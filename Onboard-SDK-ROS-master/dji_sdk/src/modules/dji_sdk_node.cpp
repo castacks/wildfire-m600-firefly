@@ -696,3 +696,22 @@ void DJISDKNode::gpsConvertENU(double &ENU_x, double &ENU_y,
   ENU_y = DEG2RAD(d_lat) * C_EARTH;
   ENU_x = DEG2RAD(d_lon) * C_EARTH * cos(DEG2RAD(gps_t_lat));
 };
+
+bool DJISDKNode::rcInFMode()
+{
+  if (!this->current_mode.has_value()){
+    return false;
+  }
+  // Might need to check a different value if drone is not an M600
+  return this->current_mode.value() == -10000;
+}
+
+void DJISDKNode::update_current_mode(const int16_t new_mode) 
+{
+  const bool wasInFMode = this->rcInFMode();
+  this->current_mode = new_mode;
+  const bool nowInFMode = this->rcInFMode();
+  if (wasInFMode && !nowInFMode) {
+    ROS_DEBUG("Controller switched out of F Mode");
+  }
+}

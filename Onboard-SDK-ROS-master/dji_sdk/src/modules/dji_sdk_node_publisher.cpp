@@ -47,7 +47,8 @@ DJISDKNode::dataBroadcastCallback()
     rc_joy.axes.push_back(static_cast<float>(vehicle->broadcast->getRC().yaw      / 10000.0));
     rc_joy.axes.push_back(static_cast<float>(vehicle->broadcast->getRC().throttle / 10000.0));
 
-    rc_joy.axes.push_back(static_cast<float>(vehicle->broadcast->getRC().mode));
+    this->update_current_mode(vehicle->broadcast->getRC().mode);
+    rc_joy.axes.push_back(static_cast<float>(this->current_mode.value()));
     rc_joy.axes.push_back(static_cast<float>(vehicle->broadcast->getRC().gear));
     rc_publisher.publish(rc_joy);
   }
@@ -466,7 +467,8 @@ DJISDKNode::publish50HzData(Vehicle* vehicle, RecvContainer recvFrame,
     {
       Telemetry::TypeMap<Telemetry::TOPIC_RC_FULL_RAW_DATA>::type rc_full_raw =
         vehicle->subscribe->getValue<Telemetry::TOPIC_RC_FULL_RAW_DATA>();
-      rc_joy.axes.push_back(static_cast<float>(-(rc_full_raw.lb2.mode - 1024)    / 660));
+      p->update_current_mode(-(rc_full_raw.lb2.mode - 1024) / 660);
+      rc_joy.axes.push_back(static_cast<float>(p->current_mode.value()));
       rc_joy.axes.push_back(static_cast<float>(-(rc_full_raw.lb2.gear - 1519)    / 165));
       rc_joy.axes.push_back(static_cast<float>((rc_full_raw.lb2.camera -364)   / 1320));
       rc_joy.axes.push_back(static_cast<float>((rc_full_raw.lb2.video - 364)    / 1320));
@@ -479,6 +481,8 @@ DJISDKNode::publish50HzData(Vehicle* vehicle, RecvContainer recvFrame,
     {
       Telemetry::TypeMap<Telemetry::TOPIC_RC>::type rc =
         vehicle->subscribe->getValue<Telemetry::TOPIC_RC>();
+      
+      p->update_current_mode(rc.mode);
 
       rc_joy.axes.push_back(static_cast<float>(rc.mode*1.0));
       rc_joy.axes.push_back(static_cast<float>(rc.gear*1.0));
@@ -534,6 +538,7 @@ DJISDKNode::publish50HzData(Vehicle* vehicle, RecvContainer recvFrame,
     rc_joy.axes.push_back(static_cast<float>(rc.pitch    / 10000.0));
     rc_joy.axes.push_back(static_cast<float>(rc.yaw      / 10000.0));
     rc_joy.axes.push_back(static_cast<float>(rc.throttle / 10000.0));
+    p->update_current_mode(rc.mode);
     rc_joy.axes.push_back(static_cast<float>(rc.mode*1.0));
     rc_joy.axes.push_back(static_cast<float>(rc.gear*1.0));
     p->rc_publisher.publish(rc_joy);
