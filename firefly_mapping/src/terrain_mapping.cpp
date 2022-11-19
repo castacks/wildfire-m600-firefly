@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "sensor_msgs/PointCloud2.h"
+#include "std_msgs/Bool.h"
 
 using namespace grid_map;
 
@@ -23,6 +24,8 @@ class TerrainMapping {
   TerrainMapping() : pnh("~"), map({"elevation"}) {
     cloud_sub = nh.subscribe("lidar_cropped_mapping", 1,
                              &TerrainMapping::cloudCallback, this);
+    enable_terrain_mapping_sub = nh.subscribe("enable_terrain_mapping", 1,
+                                  &TerrainMapping::enableCallback, this);
 
     grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1);
 
@@ -31,6 +34,8 @@ class TerrainMapping {
     pnh.param<float>("max_x", maxX, 100.0);
     pnh.param<float>("min_y", minY, -100.0);
     pnh.param<float>("max_y", maxY, 100.0);
+
+    terrain_mapping_enabled = false;
 
     float lengthX = maxX - minX;
     float lengthY = maxY - minY;
@@ -54,6 +59,7 @@ class TerrainMapping {
   ros::NodeHandle nh;
   ros::NodeHandle pnh;
   ros::Subscriber cloud_sub;
+  ros::Subscriber enable_terrain_mapping_sub;
   ros::Publisher grid_map_pub;
   ros::Timer map_pub_timer;
 
@@ -68,8 +74,13 @@ class TerrainMapping {
   float maxY;
   int mapWidth;   // Number of cells
   int mapHeight;  // Number of cells
+  bool terrain_mapping_enabled;
 
   void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud) {
+    if (!terrain_mapping_enabled) {
+      return;
+    }
+
     auto start = std::chrono::high_resolution_clock::now();
     std::unordered_map<int, float> map_bin_to_max_altitude;
 
@@ -145,6 +156,10 @@ class TerrainMapping {
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "Mapping of point cloud took: " << duration.count() << " milliseconds" << std::endl;
+  }
+
+  void enableCallback(const std_msgs::Bool& msg) {
+    terrain_mapping_enabled = msg.data;
   }
 
   void publish_map_callback(const ros::TimerEvent& e) {
