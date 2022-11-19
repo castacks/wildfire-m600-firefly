@@ -85,6 +85,7 @@ class OnboardTelemetry:
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
         self.behavior_tree_commands_pub = rospy.Publisher("behavior_tree_commands", BehaviorTreeCommands, queue_size=100)
         self.kill_switch = rospy.Publisher("kill_switch", Empty, queue_size=10)
+        self.enable_terrain_mapping_pub = rospy.Publisher("enable_terrain_mapping", Bool, queue_size=10)
 
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
@@ -463,7 +464,7 @@ class OnboardTelemetry:
                 dir = DEFAULT_ROOT + "/" + time_rosbag
                 rospy.loginfo("Starting ros bag recording to file : " + dir + time_rosbag + "_dji_sdk_and_thermal.bag")
                 os.system(
-                    "rosbag record -a -O " + dir + "_dji_sdk_and_thermal.bag __name:='data_collect' -x '(.*)/compressed(.*)|(.*)/theora(.*)' &")
+                    "rosbag record -a -O " + dir + "_dji_sdk_and_thermal.bag __name:='data_collect' -x '(.*)/compressed(.*)|(.*)/theora(.*))|/uav1/lidar_cropped_mapping|/uav1/lidar_cropped_obstacle|/uav1/altitude' &")
                 self.recording_ros_bag = True
             elif msg['get_frame'] == 0 and self.recording_ros_bag:
                 rospy.loginfo("Stopping ros bag recording")
@@ -512,6 +513,10 @@ class OnboardTelemetry:
             command.condition_name = "Autonomy Mode Is Idle"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
+        elif msg["mavpackettype"] == "FIREFLY_START_TERRAIN_MAPPING":
+            self.enable_terrain_mapping_pub.publish(True)
+        elif msg["mavpackettype"] == "FIREFLY_STOP_TERRAIN_MAPPING":
+            self.enable_terrain_mapping_pub.publish(False)
         elif msg["mavpackettype"] == "FIREFLY_TAKEOFF":
             command = BehaviorTreeCommand()
             command.condition_name = "Autonomy Mode Is Takeoff"

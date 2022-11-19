@@ -59,6 +59,8 @@ class GCSTelemetry:
         rospy.Subscriber("stop_record_rosbag", Empty, self.stop_record_ros_bag_callback)
         rospy.Subscriber("execute_ipp_plan", Empty, self.execute_ipp_plan_callback)
         rospy.Subscriber("idle", Empty, self.idle_callback)
+        rospy.Subscriber("start_terrain_mapping", Empty, self.start_terrain_mapping_callback)
+        rospy.Subscriber("stop_terrain_mapping", Empty, self.stop_terrain_mapping_callback)
         rospy.Subscriber(
             "reset_behavior_tree", Empty, self.reset_behavior_tree_callback
         )
@@ -97,6 +99,8 @@ class GCSTelemetry:
         self.stop_record_ros_bag_send_flag = False
         self.execute_ipp_plan_flag = False
         self.idle_send_flag = False
+        self.start_terrain_mapping_send_flag = False
+        self.stop_terrain_mapping_send_flag = False
         self.reset_behavior_tree_send_flag = False
 
         self.bytes_per_sec_send_rate = 2000.0
@@ -430,6 +434,22 @@ class GCSTelemetry:
             rospy.sleep(
                 (self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate
             )
+        
+        if self.start_terrain_mapping_send_flag:
+            rospy.loginfo("Starting Terrain Mapping")
+            self.connection.mav.firefly_start_terrain_mapping_send(1)
+            self.start_terrain_mapping_send_flag = False
+            rospy.sleep(
+                (self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate
+            )
+                
+        if self.stop_terrain_mapping_send_flag:
+            rospy.loginfo("Stopping Terrain Mapping")
+            self.connection.mav.firefly_stop_terrain_mapping_send(1)
+            self.stop_terrain_mapping_send_flag = False
+            rospy.sleep(
+                (self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate
+            )
 
         if self.reset_behavior_tree_send_flag:
             rospy.loginfo("Resetting behavior tree")
@@ -515,6 +535,12 @@ class GCSTelemetry:
 
     def idle_callback(self, empty_msg):
         self.idle_send_flag = True
+
+    def start_terrain_mapping_callback(self, empty_msg):
+        self.start_terrain_mapping_send_flag = True
+
+    def stop_terrain_mapping_callback(self, empty_msg):
+        self.stop_terrain_mapping_send_flag = True
 
     def reset_behavior_tree_callback(self, empty_msg):
         self.reset_behavior_tree_send_flag = True
