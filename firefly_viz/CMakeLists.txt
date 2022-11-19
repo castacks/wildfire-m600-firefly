@@ -67,3 +67,8 @@ install(FILES
         plugin_description.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
+catkin_install_python(PROGRAMS
+  src/firefly_gcs_polygon.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
