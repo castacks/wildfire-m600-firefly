@@ -40,10 +40,6 @@ os.environ['MAVLINK20'] = '1'
 
 class OnboardTelemetry:
     def __init__(self):
-        self.connection = mavutil.mavlink_connection(
-            "/dev/mavlink", baud=115200, dialect="firefly"
-        )
-
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
 

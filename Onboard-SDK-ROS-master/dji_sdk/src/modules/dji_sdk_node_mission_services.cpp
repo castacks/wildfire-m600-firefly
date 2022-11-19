@@ -138,6 +138,14 @@ DJISDKNode::missionWpActionCallback(
   switch (request.action)
   {
     case DJI::OSDK::MISSION_ACTION::START:
+      if (!this->rcInFMode()) {
+        ROS_WARN("Attempting to start waypoint mission but remote controller not in F mode.");
+        response.cmd_set  = (int)ack.info.cmd_set;
+        response.cmd_id   = (int)ack.info.cmd_id;
+        response.ack_data = (unsigned int)ack.data;
+        response.result = false;
+        return false;
+      }
       ack = vehicle->missionManager->wpMission->start(WAIT_TIMEOUT);
       ROS_DEBUG("start waypoint mission");
       break;
@@ -150,6 +158,14 @@ DJISDKNode::missionWpActionCallback(
       ROS_DEBUG("pause waypoint mission");
       break;
     case DJI::OSDK::MISSION_ACTION::RESUME:
+      if (!this->rcInFMode()) {
+        ROS_WARN("Attempting to resume waypoint mission but remote controller not in F mode.");
+        response.cmd_set  = (int)ack.info.cmd_set;
+        response.cmd_id   = (int)ack.info.cmd_id;
+        response.ack_data = (unsigned int)ack.data;
+        response.result = false;
+        return false;
+      }
       ack = vehicle->missionManager->wpMission->resume(WAIT_TIMEOUT);
       ROS_DEBUG("resume waypoint mission");
       break;
@@ -332,6 +348,14 @@ DJISDKNode::missionHpActionCallback(
   switch (request.action)
   {
     case DJI::OSDK::MISSION_ACTION::START:
+      if (!this->rcInFMode()) {
+        ROS_WARN("Attempting to start hotpoint mission but remote controller not in F mode.");
+        response.cmd_set  = (int)ack.info.cmd_set;
+        response.cmd_id   = (int)ack.info.cmd_id;
+        response.ack_data = (unsigned int)ack.data;
+        response.result = false;
+        return false;
+      }
       ack = vehicle->missionManager->hpMission->start(WAIT_TIMEOUT);
       ROS_DEBUG("start hotpoint mission");
       break;
@@ -344,6 +368,14 @@ DJISDKNode::missionHpActionCallback(
       ROS_DEBUG("pause hotpoint mission");
       break;
     case DJI::OSDK::MISSION_ACTION::RESUME:
+      if (!this->rcInFMode()) {
+        ROS_WARN("Attempting to resume hotpoint mission but remote controller not in F mode.");
+        response.cmd_set  = (int)ack.info.cmd_set;
+        response.cmd_id   = (int)ack.info.cmd_id;
+        response.ack_data = (unsigned int)ack.data;
+        response.result = false;
+        return false;
+      }
       ack = vehicle->missionManager->hpMission->resume(WAIT_TIMEOUT);
       ROS_DEBUG("resume hotpoint mission");
       break;
