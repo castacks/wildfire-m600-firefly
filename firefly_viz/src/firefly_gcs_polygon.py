@@ -1,5 +1,4 @@
 import rospy
-import yaml
 import numpy as np
 from std_msgs.msg import Empty
 from geometry_msgs.msg import PolygonStamped
@@ -31,8 +30,7 @@ def clockwiseangle(point):
 def load_poly_from_file(empty_msg):
     global origin
     rospack = rospkg.RosPack()
-    file = open(rospack.get_path("firefly_viz") + "/src/polygon.yaml")
-    pt_dict = yaml.safe_load(file)
+    pt_dict = np.load(rospack.get_path("firefly_viz") + "/src/polygon.npy", allow_pickle="TRUE").item()
     pts_list = []
     poly_viz_list = []
     display_polygon = PolygonStamped()
