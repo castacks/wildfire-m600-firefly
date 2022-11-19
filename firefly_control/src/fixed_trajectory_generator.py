@@ -10,10 +10,13 @@ from firefly_telemetry.msg import PolygonArray
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 from tf import TransformListener
+import tf
 
 # global variables
-polygonPointsList = []
+coverage_planner_outer_polygon = None
+coverage_planner_holes = []
 current_odom = None
+tf_listener = TransformListener()
 
 def get_velocities(traj, velocity, max_acc):
     v_prev = 0.
@@ -462,16 +465,14 @@ def convert_to_point2D(point32_list):
     return pts
 
 def coverage_polygon_callback(msg):
-    global polygonPointsList
+    global coverage_planner_outer_polygon
+    global coverage_planner_holes
 
-    outerPoints = convert_to_point2D(msg.outerPolygon.points)
-    polygonPointsList.append(outerPoints)
+    coverage_planner_outer_polygon = convert_to_point2D(msg.outerPolygon.points)
 
-    holesList = []
+    coverage_planner_holes = []
     for hole in msg.holes:
-        holesList.append(convert_to_point2D(hole))
-
-    polygonPointsList.append(holesList)
+        coverage_planner_holes.append(convert_to_point2D(hole))
 
 def get_stepover_distance(height):
     cam_fov = 56
@@ -482,22 +483,27 @@ def get_stepover_distance(height):
     return stepover
 
 def transform_odom(curr_odom, target_frame):
-
-    tf_listener = TransformListener()
+    global tf_listener
 
     if tf_listener.frameExists(curr_odom.header.frame_id) and tf_listener.frameExists(target_frame):
         curr_pose = PoseStamped()
         curr_pose.header.frame_id = curr_odom.header.frame_id
         curr_pose.pose = curr_odom.pose.pose
 
-        transformed_pose = tf_listener.transformPose(target_frame, curr_pose)
+        try:
+            transformed_pose = tf_listener.transformPose(target_frame, curr_pose)
+        except tf.Exception as e:
+            rospy.logerr("Failed to transform odom pose to target frame.")
+            return (False, None)
 
         return (True, transformed_pose)
     else:
         rospy.logerr("Could not find transform between odom source frame and target map frame")
         return (False, None)
 
-def get_extra_waypoint(curr_pose: PoseStamped, first_x, first_y, first_height, velocity):
+def get_initial_waypoints(curr_pose: PoseStamped, first_x, first_y, first_height, velocity):
+    initial_waypoints = []
+
     wp = WaypointXYZVYaw()
     wp.yaw = np.pi/2
     wp.velocity = velocity
@@ -506,18 +512,29 @@ def get_extra_waypoint(curr_pose: PoseStamped, first_x, first_y, first_height, v
         wp.position.x = first_x
         wp.position.y = first_y
         wp.position.z = curr_pose.pose.position.z
+        initial_waypoints.append(wp)
     else:
         wp.position.x = curr_pose.pose.position.x
         wp.position.y = curr_pose.pose.position.y
         wp.position.z = first_height
+        initial_waypoints.append(wp)
+    
+    wp = WaypointXYZVYaw()
+    wp.yaw = np.pi/2
+    wp.velocity = velocity
+    wp.position.x = first_x
+    wp.position.y = first_y
+    wp.position.z = first_height
+    initial_waypoints.append(wp)
 
-    return wp
+    return initial_waypoints
 
 def execute_coverage_planner_callback(msg):
-    global polygonPointsList
+    global coverage_planner_outer_polygon
+    global coverage_planner_holes
     global current_odom
 
-    if polygonPointsList:
+    if coverage_planner_outer_polygon is not None:
         attributes = {}
 
         for key_value in msg.attributes:
@@ -527,38 +544,38 @@ def execute_coverage_planner_callback(msg):
         height = float(attributes['height'])
         velocity = float(attributes['velocity'])
 
-        global polygonPointsList
-        outer_boundary, holes = polygonPointsList
+        success, transformed_curr_pose = transform_odom(current_odom, frame_id)
 
-        cells = trapezoidal_decomposition(outer_boundary, holes)
+        if not success:
+            return
+
+        cells = trapezoidal_decomposition(coverage_planner_outer_polygon, coverage_planner_holes)
         cell_path = generate_cell_traversal(cells)
         stepover_dist = get_stepover_distance(height)
 
         path = get_full_coverage_path(cell_path, stepover_dist)
-        path.append((0,0))
+        path.append((transformed_curr_pose.pose.position.x, transformed_curr_pose.pose.position.y))
         path = interpolate_path(path, max_spacing=2.5)
 
         traj = TrajectoryXYZVYaw()
         traj.header.frame_id = frame_id
 
-        success, transformed_curr_pose = transform_odom(current_odom, frame_id)
-        if success:
-            x, y = path[0]
-            extra_wp = get_extra_waypoint(transformed_curr_pose, x, y, height, velocity)
-            traj.waypoints.append(extra_wp)
+        x, y = path[0]
+        initial_wps = get_initial_waypoints(transformed_curr_pose, x, y, height, velocity)
+        traj.waypoints.extend(initial_wps)
 
-            for (x,y) in path:
-                wp1 = WaypointXYZVYaw()
-                wp1.position.x = x
-                wp1.position.y = y
-                wp1.position.z = height
-                wp1.yaw = np.pi/2
-                wp1.velocity = velocity
-                traj.waypoints.append(wp1)
-
-            trajectory_track_pub.publish(traj)
-        else:
-            print('No trajectory sent.')
+        for (x,y) in path:
+            wp1 = WaypointXYZVYaw()
+            wp1.position.x = x
+            wp1.position.y = y
+            wp1.position.z = height
+            wp1.yaw = np.pi/2
+            wp1.velocity = velocity
+            traj.waypoints.append(wp1)
+            
+        trajectory_track_pub.publish(traj)
+    else:
+        rospy.logwarn("Attempted to execute coverage planner but outer polygon is none.")
 
 def odometry_callback(msg):
     global current_odom

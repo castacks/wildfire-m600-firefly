@@ -185,18 +185,18 @@ static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
   return fixed_trajectory;
 }
 
-static core_trajectory_msgs::FixedTrajectory GetLawnmowerTraj() {
+static core_trajectory_msgs::FixedTrajectory GetCoveragePlannerTraj() {
   core_trajectory_msgs::FixedTrajectory fixed_trajectory;
   fixed_trajectory.type = "Horizontal_Lawnmower";
   diagnostic_msgs::KeyValue attrib1;
   attrib1.key = "frame_id";
   attrib1.value = "world";
   diagnostic_msgs::KeyValue attrib2;
-  attrib4.key = "height";
-  attrib4.value = "30";
+  attrib2.key = "height";
+  attrib2.value = "30";
   diagnostic_msgs::KeyValue attrib3;
-  attrib5.key = "velocity";
-  attrib5.value = "2.0";
+  attrib3.key = "velocity";
+  attrib3.value = "2.0";
   fixed_trajectory.attributes = {attrib1, attrib2, attrib3};
   return fixed_trajectory;
 }
@@ -380,7 +380,7 @@ bool BehaviorExecutive::execute() {
       srv.request.mode =
           core_trajectory_controller::TrajectoryMode::Request::TRACK;
       trajectory_mode_client.call(srv);
-      const auto fixed_trajectory = GetLawnmowerTraj();
+      const auto fixed_trajectory = GetCoveragePlannerTraj();
       execute_coverage_planner_pub.publish(fixed_trajectory);
       // Turn on pose controller output
       enable_pose_controller_output();
