@@ -143,8 +143,11 @@ bool BehaviorExecutive::initialize() {
   execute_ipp_plan_pub = nh->advertise<std_msgs::Bool>("execute_ipp_plan", 1);
   wait_for_initial_ipp_plan_pub =
       nh->advertise<std_msgs::Empty>("wait_for_initial_ipp_plan", 1);
-  execute_coverage_planner_pub = nh->advertise<core_trajectory_msgs::FixedTrajectory>(
-      "execute_coverage_planner", 10);
+  execute_coverage_planner_pub =
+      nh->advertise<core_trajectory_msgs::FixedTrajectory>(
+          "execute_coverage_planner", 10);
+  local_pos_ref_llh_pub =
+      nh->advertise<sensor_msgs::NavSatFix>("local_pos_ref_llh", 1);
 
   // init subscribers
   behavior_tree_command_sub =
@@ -159,6 +162,8 @@ bool BehaviorExecutive::initialize() {
   got_initial_ipp_plan_sub =
       nh->subscribe("got_initial_ipp_plan", 10,
                     &BehaviorExecutive::got_initial_ipp_plan_callback, this);
+  dji_gps_sub = nh->subscribe("dji_sdk/gps_position", 1,
+                              &BehaviorExecutive::gps_callback, this);
 
   return true;
 }
@@ -219,23 +224,33 @@ bool BehaviorExecutive::execute() {
   // Set local position reference action
   if (set_local_pos_ref_action->is_active()) {
     if (set_local_pos_ref_action->active_has_changed()) {
-      disable_pose_controller_output();
-
-      if (!local_pos_ref_set_condition->get()) {
-        // Only reset these conditions if this is the first time setting the local pos ref
-        takeoff_complete_condition->set(false);
-        landed_condition->set(false);
-        request_control_commanded_condition->set(false);
-        get_initial_ipp_plan_commanded->set(false);
-        have_control_condition->set(false);
-      }
-
-      dji_sdk::SetLocalPosRef set_local_pos_ref_srv;
-      set_local_pos_ref_client.call(set_local_pos_ref_srv);
-
-      set_local_pos_ref_action->set_success();
       set_local_pos_ref_commanded_condition->set(false);
-      local_pos_ref_set_condition->set(true);
+      if (current_gps_position.has_value()) {
+        disable_pose_controller_output();
+
+        dji_sdk::SetLocalPosRef set_local_pos_ref_srv;
+        set_local_pos_ref_client.call(set_local_pos_ref_srv);
+
+        if (set_local_pos_ref_srv.response.result) {
+          set_local_pos_ref_action->set_success();
+
+          local_pos_ref_llh_pub.publish(current_gps_position.value());
+
+          if (!local_pos_ref_set_condition->get()) {
+            // Only reset these conditions if this is the first time setting the
+            // local pos ref
+            takeoff_complete_condition->set(false);
+            landed_condition->set(false);
+            request_control_commanded_condition->set(false);
+            get_initial_ipp_plan_commanded->set(false);
+            have_control_condition->set(false);
+          }
+
+          local_pos_ref_set_condition->set(true);
+        } else {
+          set_local_pos_ref_action->set_failure();
+        }
+      }
     }
   }
 
@@ -400,7 +415,7 @@ bool BehaviorExecutive::execute() {
       std_msgs::Bool true_msg;
       true_msg.data = true;
       execute_ipp_plan_pub.publish(true_msg);
-      
+
       // Turn on pose controller output
       enable_pose_controller_output();
     }
@@ -479,6 +494,10 @@ void BehaviorExecutive::has_control_callback(std_msgs::Bool msg) {
 
 void BehaviorExecutive::got_initial_ipp_plan_callback(std_msgs::Bool msg) {
   got_initial_ipp_plan_condition->set(msg.data);
+}
+
+void BehaviorExecutive::gps_callback(const sensor_msgs::NavSatFix& msg) {
+  current_gps_position = msg;
 }
 
 void BehaviorExecutive::reset_integrators() {

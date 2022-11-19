@@ -11,11 +11,13 @@
 #include <core_trajectory_msgs/FixedTrajectory.h>
 #include <diagnostic_msgs/KeyValue.h>
 #include <dji_sdk/SetLocalPosRef.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
 
+#include <optional>
 #include <string>
 
 class BehaviorExecutive : public BaseNode {
@@ -79,6 +81,7 @@ class BehaviorExecutive : public BaseNode {
   ros::Publisher execute_ipp_plan_pub;
   ros::Publisher wait_for_initial_ipp_plan_pub;
   ros::Publisher execute_coverage_planner_pub;
+  ros::Publisher local_pos_ref_llh_pub;
 
   // subscribers
   ros::Subscriber behavior_tree_command_sub;
@@ -86,6 +89,9 @@ class BehaviorExecutive : public BaseNode {
   ros::Subscriber landing_state_sub;
   ros::Subscriber has_control_sub;
   ros::Subscriber got_initial_ipp_plan_sub;
+  ros::Subscriber dji_gps_sub;
+
+  std::optional<sensor_msgs::NavSatFix> current_gps_position;
 
   // callbacks
   void behavior_tree_command_callback(
@@ -94,6 +100,7 @@ class BehaviorExecutive : public BaseNode {
   void landing_state_callback(std_msgs::String msg);
   void has_control_callback(std_msgs::Bool msg);
   void got_initial_ipp_plan_callback(std_msgs::Bool msg);
+  void gps_callback(const sensor_msgs::NavSatFix &msg);
 
   void reset_integrators();
   void enable_pose_controller_output();
