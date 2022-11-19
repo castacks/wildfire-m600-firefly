@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python2
 import numpy as np
 import rospy
 from core_trajectory_msgs.msg import WaypointXYZVYaw
@@ -16,7 +16,7 @@ import tf
 coverage_planner_outer_polygon = None
 coverage_planner_holes = []
 current_odom = None
-tf_listener = TransformListener()
+tf_listener = None
 
 def get_velocities(traj, velocity, max_acc):
     v_prev = 0.
@@ -472,18 +472,23 @@ def coverage_polygon_callback(msg):
 
     coverage_planner_holes = []
     for hole in msg.holes:
-        coverage_planner_holes.append(convert_to_point2D(hole))
+        coverage_planner_holes.append(convert_to_point2D(hole.points))
 
 def get_stepover_distance(height):
     cam_fov = 56
     non_overlapping_fov = 0.6 * cam_fov
 
-    stepover = 2*np.tan(non_overlapping_fov/2)*height
+    stepover = 2*np.tan(np.deg2rad(non_overlapping_fov/2))*height
 
     return stepover
 
 def transform_odom(curr_odom, target_frame):
     global tf_listener
+
+    curr_pose = PoseStamped()
+    curr_pose.header.frame_id = curr_odom.header.frame_id
+    curr_pose.pose = curr_odom.pose.pose
+    return (True, curr_pose)
 
     if tf_listener.frameExists(curr_odom.header.frame_id) and tf_listener.frameExists(target_frame):
         curr_pose = PoseStamped()
@@ -498,10 +503,11 @@ def transform_odom(curr_odom, target_frame):
 
         return (True, transformed_pose)
     else:
-        rospy.logerr("Could not find transform between odom source frame and target map frame")
+        rospy.logerr("Odom header frame id or target frame does not exist")
         return (False, None)
 
-def get_initial_waypoints(curr_pose: PoseStamped, first_x, first_y, first_height, velocity):
+# (curr_pose: PoseStamped, first_x, first_y, first_height, velocity)
+def get_initial_waypoints(curr_pose, first_x, first_y, first_height, velocity):
     initial_waypoints = []
 
     wp = WaypointXYZVYaw()
@@ -583,6 +589,9 @@ def odometry_callback(msg):
 
 if __name__ == '__main__':
     rospy.init_node('fixed_trajectory_generator')
+
+    global tf_listener
+    tf_listener = TransformListener()
 
     fixed_trajectory_sub = rospy.Subscriber('fixed_trajectory', FixedTrajectory, fixed_trajectory_callback)
 

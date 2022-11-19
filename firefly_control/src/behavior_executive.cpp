@@ -168,7 +168,7 @@ static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
   fixed_trajectory.type = "Rectangle";
   diagnostic_msgs::KeyValue attrib1;
   attrib1.key = "frame_id";
-  attrib1.value = "world";
+  attrib1.value = "/uav1/map";
   diagnostic_msgs::KeyValue attrib2;
   attrib2.key = "length";
   attrib2.value = "25";
@@ -190,7 +190,7 @@ static core_trajectory_msgs::FixedTrajectory GetCoveragePlannerTraj() {
   fixed_trajectory.type = "Horizontal_Lawnmower";
   diagnostic_msgs::KeyValue attrib1;
   attrib1.key = "frame_id";
-  attrib1.value = "world";
+  attrib1.value = "/uav1/map";
   diagnostic_msgs::KeyValue attrib2;
   attrib2.key = "height";
   attrib2.value = "30";
