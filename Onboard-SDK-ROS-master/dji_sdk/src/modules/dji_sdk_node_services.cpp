@@ -134,6 +134,12 @@ DJISDKNode::sdkCtrlAuthorityCallback(
   else
   {
     response.result = true;
+    if (request.control_enable) {
+      this->has_control = true;
+    }
+    else {
+      this->has_control = false;
+    }
   }
 
   return true;

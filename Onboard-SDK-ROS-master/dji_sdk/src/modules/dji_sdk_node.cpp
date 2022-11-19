@@ -38,6 +38,9 @@ DJISDKNode::DJISDKNode(ros::NodeHandle& nh, ros::NodeHandle& nh_private)
   //! RTK support check
   rtkSupport = false;
 
+  // SDK does not have control at start up
+  has_control = false;
+
   // @todo need some error handling for init functions
   //! @note parsing launch file to get environment parameters
   if (!initVehicle(nh_private))
@@ -711,7 +714,15 @@ void DJISDKNode::update_current_mode(const int16_t new_mode)
   const bool wasInFMode = this->rcInFMode();
   this->current_mode = new_mode;
   const bool nowInFMode = this->rcInFMode();
+
   if (wasInFMode && !nowInFMode) {
     ROS_DEBUG("Controller switched out of F Mode");
+
+    if (this->has_control)
+    {
+      ROS_DEBUG("calling non-blocking vehicle->releaseCtrlAuthority");
+      vehicle->releaseCtrlAuthority(vehicle,  (UserData) this);
+      this->has_control = false;
+    }
   }
 }

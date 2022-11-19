@@ -457,6 +457,7 @@ private:
   double current_gps_latitude, current_gps_longitude, current_gps_altitude;
   int current_gps_health;
   bool rtkSupport;
+  bool has_control;
   std::optional<int16_t> current_mode;
   
 };
