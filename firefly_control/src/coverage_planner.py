@@ -1,5 +1,5 @@
-from __future__ import annotations
-from typing import Tuple, List
+# from __future__ import annotations
+# from typing import Tuple, List
 from enum import Enum
 import numpy as np
 
@@ -117,27 +117,31 @@ def get_polygon_path(ccw_vertices, stepover_dist):
 
 
 class Point2d:
-    def __init__(self, x: float, y: float):
+    # (self, x: float, y: float)
+    def __init__(self, x, y):
         self.x = x
         self.y = y
 
-    def __eq__(self, point: Point2d) -> bool:
+    # (self, point: Point2d) -> bool
+    def __eq__(self, point):
         return self.x == point.x and self.y == point.y
 
 
 class Edge:
-    def __init__(self, p1: Point2d, p2: Point2d):
+    # (self, p1: Point2d, p2: Point2d)
+    def __init__(self, p1, p2):
         assert p1.x != p2.x
         self.p1 = p1
         self.p2 = p2
 
-    def __eq__(self, edge: Edge) -> bool:
+    # (self, edge: Edge) -> bool
+    def __eq__(self, edge):
         return (self.p1 == edge.p1 and self.p2 == edge.p2) or (
             self.p1 == edge.p2 and self.p2 == edge.p1
         )
 
-
-def get_vertical_intersection_with_edge(x: float, edge: Edge) -> Point2d:
+# (x: float, edge: Edge) -> Point2d
+def get_vertical_intersection_with_edge(x, edge):
     assert edge.p1.x != edge.p2.x
     y = edge.p1.y + (edge.p2.y - edge.p1.y) * (x - edge.p1.x) / (edge.p2.x - edge.p1.x)
     return Point2d(x, y)
@@ -153,11 +157,19 @@ class EventType(Enum):
 
 
 class Event:
-    def __init__(
+    '''
+    (
         self,
         current_vertices: List[Point2d],
         prev_vertex: Point2d,
         next_vertex: Point2d,
+    )
+    '''
+    def __init__(
+        self,
+        current_vertices,
+        prev_vertex,
+        next_vertex,
     ):
         self.x = current_vertices[0].x
         assert all(
@@ -189,8 +201,8 @@ class Event:
         else:
             self.type = EventType.CEILING
 
-
-def get_events_from_polygon(polygon: List[Point2d]) -> List[Event]:
+# (polygon: List[Point2d]) -> List[Event]
+def get_events_from_polygon(polygon):
     # The current vertices list passed to an event consists of a consecutive
     # set of vertices with the same x-ccordinate. Prev and next are the first
     # vertex with a different x-coordinate before and after the current vertices.
@@ -219,9 +231,8 @@ def get_events_from_polygon(polygon: List[Point2d]) -> List[Event]:
 
 
 class Trapezoidal_Cell:
-    def __init__(
-        self, floor: Edge, ceiling: Edge, left_x: float, right_x: float, neighbors=[]
-    ) -> None:
+    # (self, floor: Edge, ceiling: Edge, left_x: float, right_x: float, neighbors=[]) -> None
+    def __init__(self, floor, ceiling, left_x, right_x, neighbors=[]):
         assert floor is not None
         assert ceiling is not None
         assert left_x is not None
@@ -235,7 +246,8 @@ class Trapezoidal_Cell:
 
         self.id = None
 
-    def get_vertices(self) -> List[Point2d]:
+    # (self) -> List[Point2d]
+    def get_vertices(self):
         points = []
         points.append(get_vertical_intersection_with_edge(self.left_x, self.floor))
         points.append(get_vertical_intersection_with_edge(self.right_x, self.floor))
@@ -243,7 +255,8 @@ class Trapezoidal_Cell:
         points.append(get_vertical_intersection_with_edge(self.left_x, self.ceiling))
         return points
 
-    def get_centroid(self) -> Point2d:
+    # (self) -> Point2d
+    def get_centroid(self):
         points = self.get_vertices()
         average_x = 0
         average_y = 0
@@ -254,8 +267,8 @@ class Trapezoidal_Cell:
         average_y /= len(points)
         return Point2d(average_x, average_y)
 
-
-def get_floor_and_ceiling_edge(event: Event, edges: List[Edge]) -> Tuple[Edge, Edge]:
+# (event: Event, edges: List[Edge]) -> Tuple[Edge, Edge]
+def get_floor_and_ceiling_edge(event, edges):
     floor = None
     ceiling = None
     dist_to_floor = None
@@ -278,8 +291,8 @@ def get_floor_and_ceiling_edge(event: Event, edges: List[Edge]) -> Tuple[Edge, E
 
     return floor, ceiling
 
-
-def remove_degenerate_cells(cells: List[Trapezoidal_Cell]) -> List[Trapezoidal_Cell]:
+# (cells: List[Trapezoidal_Cell]) -> List[Trapezoidal_Cell]
+def remove_degenerate_cells(cells):
     new_cell_list = []
     for cell in cells:
         if cell.left_x != cell.right_x:
@@ -299,10 +312,8 @@ def remove_degenerate_cells(cells: List[Trapezoidal_Cell]) -> List[Trapezoidal_C
 
     return new_cell_list
 
-
-def trapezoidal_decomposition(
-    outer_boundary: List[Point2d], holes: List[List[Point2d]]
-) -> List[Trapezoidal_Cell]:
+# (outer_boundary: List[Point2d], holes: List[List[Point2d]]) -> List[Trapezoidal_Cell]
+def trapezoidal_decomposition(outer_boundary, holes):
     # TODO: Assert that outer is ccw and holes are cw
     events = []
     events += get_events_from_polygon(outer_boundary)
@@ -401,15 +412,15 @@ def trapezoidal_decomposition(
 
     return remove_degenerate_cells(closed_cells)
 
-
-def get_cell_dist(cell1: Trapezoidal_Cell, cell2: Trapezoidal_Cell) -> float:
+# (cell1: Trapezoidal_Cell, cell2: Trapezoidal_Cell) -> float
+def get_cell_dist(cell1, cell2):
     centroid1 = cell1.get_centroid()
     centroid2 = cell2.get_centroid()
     dist = np.sqrt((centroid1.x - centroid2.x) ** 2 + (centroid1.y - centroid2.y) ** 2)
     return dist
 
-
-def generate_cell_traversal(cells: List[Trapezoidal_Cell]) -> List[Trapezoidal_Cell]:
+# (cells: List[Trapezoidal_Cell]) -> List[Trapezoidal_Cell]
+def generate_cell_traversal(cells):
     assert len(cells) > 0
     for i, cell in enumerate(cells):
         cell.id = i
@@ -444,10 +455,8 @@ def generate_cell_traversal(cells: List[Trapezoidal_Cell]) -> List[Trapezoidal_C
     path = [cells[id] for id in path_list]
     return path
 
-
-def get_full_coverage_path(
-    cell_traversal: List[Trapezoidal_Cell], stepover_dist: float
-):
+# (cell_traversal: List[Trapezoidal_Cell], stepover_dist: float)
+def get_full_coverage_path(cell_traversal, stepover_dist):
     path = []
     for cell in cell_traversal:
         ccw_vertices = [(p.x, p.y) for p in cell.get_vertices()]

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python2
 import numpy as np
 import rospy
 from core_trajectory_msgs.msg import WaypointXYZVYaw
@@ -6,6 +6,17 @@ from core_trajectory_msgs.msg import TrajectoryXYZVYaw
 from core_trajectory_msgs.msg import FixedTrajectory
 import copy
 from coverage_planner import get_polygon_path, Point2d, trapezoidal_decomposition, generate_cell_traversal, get_full_coverage_path
+from firefly_telemetry.msg import PolygonArray
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped
+from tf import TransformListener
+import tf
+
+# global variables
+coverage_planner_outer_polygon = None
+coverage_planner_holes = []
+current_odom = None
+tf_listener = None
 
 def get_velocities(traj, velocity, max_acc):
     v_prev = 0.
@@ -415,41 +426,6 @@ def get_horizontal_lawnmower_waypoints(attributes):
 
     return traj
 
-def get_coverage_waypoints(attributes):
-    frame_id = str(attributes['frame_id'])
-    height = float(attributes['height'])
-    velocity = float(attributes['velocity'])
-
-    outer_boundary = [
-        Point2d(90, 0),
-        Point2d(70, 50),
-        Point2d(20, 50),
-        Point2d(0, 0),
-    ]
-
-    hole1 = [Point2d(30, 20), Point2d(45, 40), Point2d(60, 20)]
-
-    holes = [hole1]
-    cells = trapezoidal_decomposition(outer_boundary, holes)
-    cell_path = generate_cell_traversal(cells)
-    path = get_full_coverage_path(cell_path, 10)
-    path.append((0,0))
-    path = interpolate_path(path, max_spacing=2.5)
-
-    traj = TrajectoryXYZVYaw()
-    traj.header.frame_id = frame_id
-
-    for (x,y) in path:
-        wp1 = WaypointXYZVYaw()
-        wp1.position.x = x
-        wp1.position.y = y
-        wp1.position.z = height
-        wp1.yaw = np.pi/2
-        wp1.velocity = velocity
-        traj.waypoints.append(wp1)
-
-    return traj    
-
 
 def fixed_trajectory_callback(msg):
     attributes = {}
@@ -480,11 +456,151 @@ def fixed_trajectory_callback(msg):
     else:
         print('No trajectory sent.')
 
+def convert_to_point2D(point32_list):
+    pts = []
+    for point32 in point32_list:
+        p = Point2d(point32.x, point32.y)
+        pts.append(p)
+
+    return pts
+
+def coverage_polygon_callback(msg):
+    global coverage_planner_outer_polygon
+    global coverage_planner_holes
+
+    coverage_planner_outer_polygon = convert_to_point2D(msg.outerPolygon.points)
+
+    coverage_planner_holes = []
+    for hole in msg.holes:
+        coverage_planner_holes.append(convert_to_point2D(hole.points))
+
+def get_stepover_distance(height):
+    cam_fov = 56
+    non_overlapping_fov = 0.6 * cam_fov
+
+    stepover = 2*np.tan(np.deg2rad(non_overlapping_fov/2))*height
+
+    return stepover
+
+def transform_odom(curr_odom, target_frame):
+    global tf_listener
+
+    curr_pose = PoseStamped()
+    curr_pose.header.frame_id = curr_odom.header.frame_id
+    curr_pose.pose = curr_odom.pose.pose
+    return (True, curr_pose)
+
+    if tf_listener.frameExists(curr_odom.header.frame_id) and tf_listener.frameExists(target_frame):
+        curr_pose = PoseStamped()
+        curr_pose.header.frame_id = curr_odom.header.frame_id
+        curr_pose.pose = curr_odom.pose.pose
+
+        try:
+            transformed_pose = tf_listener.transformPose(target_frame, curr_pose)
+        except tf.Exception as e:
+            rospy.logerr("Failed to transform odom pose to target frame.")
+            return (False, None)
+
+        return (True, transformed_pose)
+    else:
+        rospy.logerr("Odom header frame id or target frame does not exist")
+        return (False, None)
+
+# (curr_pose: PoseStamped, first_x, first_y, first_height, velocity)
+def get_initial_waypoints(curr_pose, first_x, first_y, first_height, velocity):
+    initial_waypoints = []
+
+    wp = WaypointXYZVYaw()
+    wp.yaw = np.pi/2
+    wp.velocity = velocity
+
+    if curr_pose.pose.position.z > first_height:
+        wp.position.x = first_x
+        wp.position.y = first_y
+        wp.position.z = curr_pose.pose.position.z
+        initial_waypoints.append(wp)
+    else:
+        wp.position.x = curr_pose.pose.position.x
+        wp.position.y = curr_pose.pose.position.y
+        wp.position.z = first_height
+        initial_waypoints.append(wp)
+    
+    wp = WaypointXYZVYaw()
+    wp.yaw = np.pi/2
+    wp.velocity = velocity
+    wp.position.x = first_x
+    wp.position.y = first_y
+    wp.position.z = first_height
+    initial_waypoints.append(wp)
+
+    return initial_waypoints
+
+def execute_coverage_planner_callback(msg):
+    global coverage_planner_outer_polygon
+    global coverage_planner_holes
+    global current_odom
+
+    if coverage_planner_outer_polygon is not None:
+        attributes = {}
+
+        for key_value in msg.attributes:
+            attributes[key_value.key] = key_value.value
+
+        frame_id = str(attributes['frame_id'])
+        height = float(attributes['height'])
+        velocity = float(attributes['velocity'])
+
+        success, transformed_curr_pose = transform_odom(current_odom, frame_id)
+
+        if not success:
+            return
+
+        cells = trapezoidal_decomposition(coverage_planner_outer_polygon, coverage_planner_holes)
+        cell_path = generate_cell_traversal(cells)
+        stepover_dist = get_stepover_distance(height)
+
+        path = get_full_coverage_path(cell_path, stepover_dist)
+        path.append((transformed_curr_pose.pose.position.x, transformed_curr_pose.pose.position.y))
+        path = interpolate_path(path, max_spacing=2.5)
+
+        traj = TrajectoryXYZVYaw()
+        traj.header.frame_id = frame_id
+
+        x, y = path[0]
+        initial_wps = get_initial_waypoints(transformed_curr_pose, x, y, height, velocity)
+        traj.waypoints.extend(initial_wps)
+
+        for (x,y) in path:
+            wp1 = WaypointXYZVYaw()
+            wp1.position.x = x
+            wp1.position.y = y
+            wp1.position.z = height
+            wp1.yaw = np.pi/2
+            wp1.velocity = velocity
+            traj.waypoints.append(wp1)
+            
+        trajectory_track_pub.publish(traj)
+    else:
+        rospy.logwarn("Attempted to execute coverage planner but outer polygon is none.")
+
+def odometry_callback(msg):
+    global current_odom
+    current_odom = msg
+
 if __name__ == '__main__':
     rospy.init_node('fixed_trajectory_generator')
+
+    global tf_listener
+    tf_listener = TransformListener()
 
     fixed_trajectory_sub = rospy.Subscriber('fixed_trajectory', FixedTrajectory, fixed_trajectory_callback)
 
     trajectory_track_pub = rospy.Publisher('trajectory_track', TrajectoryXYZVYaw, queue_size=1)
+
+    coverage_polygon_pub = rospy.Subscriber('coverage_polygon_points', PolygonArray, coverage_polygon_callback)
+
+    odometry_sub = rospy.Subscriber('odometry', Odometry, odometry_callback)
+
+    execute_coverage_planner_sub = rospy.Subscriber('execute_coverage_planner', FixedTrajectory, execute_coverage_planner_callback)
 
     rospy.spin()
