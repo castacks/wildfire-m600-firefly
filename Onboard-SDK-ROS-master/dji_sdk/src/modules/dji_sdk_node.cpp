@@ -721,7 +721,7 @@ void DJISDKNode::update_current_mode(const int16_t new_mode)
     if (this->has_control)
     {
       ROS_DEBUG("calling non-blocking vehicle->releaseCtrlAuthority");
-      vehicle->releaseCtrlAuthority(vehicle,  (UserData) this);
+      vehicle->releaseCtrlAuthority();
       this->has_control = false;
     }
   }
