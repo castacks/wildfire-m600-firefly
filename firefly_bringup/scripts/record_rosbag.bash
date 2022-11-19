@@ -24,4 +24,4 @@ mkdir -p "$OUT_FOLDER"
 echo "Saving to $OUTPUT ..."
 sleep 2
 
-rosbag record -a -O "$OUT_FOLDER"/"$DATETIME"_dji_sdk_and_thermal.bag __name:="data_collect" -x "(.*)/compressed(.*)|(.*)/theora(.*)"
+rosbag record -a -O "$OUT_FOLDER"/"$DATETIME"_dji_sdk_and_thermal.bag __name:="data_collect" -x "(.*)/compressed(.*)|(.*)/theora(.*)|/uav1/lidar_cropped_mapping|/uav1/lidar_cropped_obstacle|/uav1/altitude"

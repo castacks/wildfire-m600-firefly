@@ -467,7 +467,7 @@ class OnboardTelemetry:
                 dir = DEFAULT_ROOT + "/" + time_rosbag
                 rospy.loginfo("Starting ros bag recording to file : " + dir + time_rosbag + "_dji_sdk_and_thermal.bag")
                 os.system(
-                    "rosbag record -a -O " + dir + "_dji_sdk_and_thermal.bag __name:='data_collect' -x '(.*)/compressed(.*)|(.*)/theora(.*)' &")
+                    "rosbag record -a -O " + dir + "_dji_sdk_and_thermal.bag __name:='data_collect' -x '(.*)/compressed(.*)|(.*)/theora(.*))|/uav1/lidar_cropped_mapping|/uav1/lidar_cropped_obstacle|/uav1/altitude' &")
                 self.recording_ros_bag = True
             elif msg['get_frame'] == 0 and self.recording_ros_bag:
                 rospy.loginfo("Stopping ros bag recording")
