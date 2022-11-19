@@ -50,7 +50,7 @@ class LidarReader
 public:
     LidarReader() : private_nh_("~")
     {
-        lidar_subscriber = nh_.subscribe("velodyne_points", 1,
+        lidar_subscriber = nh_.subscribe("/uav1/velodyne_points", 1,
                                    &LidarReader::point_cloud_extractor, this);
         
         lidar_mapping_pub_ = nh_.advertise< pcl::PointCloud<pcl::PointXYZ>>("lidar_cropped_mapping", 1);
@@ -96,13 +96,12 @@ public:
         pcl::PCLPointCloud2 point_cloud2_mappping;
         pcl::CropBox<pcl::PointXYZ> cropBoxFilterMapping (true);
         cropBoxFilterMapping.setInputCloud (temp_cloud);    
-        Eigen::Vector4f min_pt_mapping (-5.0f, 0.0f, -50.0f, 1.0f);
-        Eigen::Vector4f max_pt_mapping (5.0f, 100.0f, 50.0f, 1.0f);
+        Eigen::Vector4f min_pt_mapping (-10.0f, 0.0f, -100.0f, 1.0f);
+        Eigen::Vector4f max_pt_mapping (10.0f, 100.0f, 100.0f, 1.0f);
         pcl::PointCloud<pcl::PointXYZ> cloud_out_mapping;
         cropBoxFilterMapping.setMin (min_pt_mapping);
         cropBoxFilterMapping.setMax (max_pt_mapping);
         cropBoxFilterMapping.filter (cloud_out_mapping);
-
         pcl::toPCLPointCloud2(cloud_out_mapping, point_cloud2_mappping);
         point_cloud2_mappping.header.frame_id = "/uav1/lidar";
 

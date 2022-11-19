@@ -5,7 +5,13 @@
   <arg name="robot_name" default="uav1" />
 
   <group ns="$(arg robot_name)">
+
+
+
       <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+      <node pkg="firefly_perception" type="lidar_perception" name="lidar_perception" output="screen" />
+      <node pkg="tf" type="static_transform_publisher" name="base_to_lidar" args="0.17 -0.03 -0.15 -1.5707963 0 -1.5707963 $(arg robot_name)/base_link $(arg robot_name)/lidar 100" />
+
   </group>
 
 </launch>
