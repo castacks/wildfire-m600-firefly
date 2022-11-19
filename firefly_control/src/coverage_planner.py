@@ -153,17 +153,26 @@ class EventType(Enum):
 
 
 class Event:
-    def __init__(self, vertex: Point2d, prev_vertex: Point2d, next_vertex: Point2d):
-        self.x = vertex.x
-        self.y = vertex.y
+    def __init__(
+        self,
+        current_vertices: List[Point2d],
+        prev_vertex: Point2d,
+        next_vertex: Point2d,
+    ):
+        self.x = current_vertices[0].x
+        assert all(
+            [v.x == self.x for v in current_vertices]
+        ), "All vertices in current vertices list passed to Event Class must have the same x-coordinate"
+        self.max_y = max([v.y for v in current_vertices])
+        self.min_y = min([v.y for v in current_vertices])
 
         assert self.x != prev_vertex.x
         assert self.x != next_vertex.x
 
         self.prev_vertex = prev_vertex
         self.next_vertex = next_vertex
-        self.prev_edge = Edge(prev_vertex, self.to_point())
-        self.next_edge = Edge(self.to_point(), next_vertex)
+        self.prev_edge = Edge(prev_vertex, current_vertices[0])
+        self.next_edge = Edge(current_vertices[-1], next_vertex)
 
         if self.prev_vertex.x < self.x and self.next_vertex.x < self.x:
             if self.prev_vertex.y > self.next_vertex.y:
@@ -180,16 +189,32 @@ class Event:
         else:
             self.type = EventType.CEILING
 
-    def to_point(self) -> Point2d:
-        return Point2d(self.x, self.y)
-
 
 def get_events_from_polygon(polygon: List[Point2d]) -> List[Event]:
+    # The current vertices list passed to an event consists of a consecutive
+    # set of vertices with the same x-ccordinate. Prev and next are the first
+    # vertex with a different x-coordinate before and after the current vertices.
+
     events = []
-    for i in range(len(polygon)):
+    i = 0
+    while i < len(polygon):
         prev = polygon[(i - 1) % len(polygon)]
+        current_vertex = polygon[(i) % len(polygon)]
+
+        # Skip if we are in the middle of a contiguous set of same-x vertices
+        if current_vertex.x == prev.x:
+            i += 1
+            continue
+
+        # Get contiguous set of vertices with same x-coordinate
+        current_vertices = [current_vertex]
+        while polygon[(i + 1) % len(polygon)].x == polygon[(i) % len(polygon)].x:
+            current_vertices.append(polygon[(i + 1) % len(polygon)])
+            i += 1
+
         next = polygon[(i + 1) % len(polygon)]
-        events.append(Event(polygon[i], prev, next))
+        events.append(Event(current_vertices, prev, next))
+        i += 1
     return events
 
 
@@ -236,26 +261,43 @@ def get_floor_and_ceiling_edge(event: Event, edges: List[Edge]) -> Tuple[Edge, E
     dist_to_floor = None
     dist_to_ceiling = None
     for edge in edges:
+        if edge == event.prev_edge or edge == event.next_edge:
+            continue
         intersect = get_vertical_intersection_with_edge(event.x, edge)
-        signed_dist = intersect.y - event.y
+        ceiling_dist = intersect.y - event.max_y
+        floor_dist = event.min_y - intersect.y
 
-        # if signed_dist == 0:
-        #     if edge == event.prev_edge:
-        #         floor = event.prev_edge
-        #         dist_to_floor = 0
-        #     elif edge == event.next_edge:
-        #         ceiling = event.next_edge
-        #         dist_to_ceiling = 0
-        if signed_dist < 0:
-            if dist_to_floor is None or abs(signed_dist) < dist_to_floor:
-                dist_to_floor = abs(signed_dist)
+        if floor_dist > 0:
+            if dist_to_floor is None or floor_dist < dist_to_floor:
+                dist_to_floor = floor_dist
                 floor = edge
-        elif signed_dist > 0:
-            if dist_to_ceiling is None or signed_dist < dist_to_ceiling:
-                dist_to_ceiling = signed_dist
+        elif ceiling_dist > 0:
+            if dist_to_ceiling is None or ceiling_dist < dist_to_ceiling:
+                dist_to_ceiling = ceiling_dist
                 ceiling = edge
 
     return floor, ceiling
+
+
+def remove_degenerate_cells(cells: List[Trapezoidal_Cell]) -> List[Trapezoidal_Cell]:
+    new_cell_list = []
+    for cell in cells:
+        if cell.left_x != cell.right_x:
+            new_cell_list.append(cell)
+            continue
+        neighbors = cell.neighbors
+        for i, neighbor in enumerate(neighbors):
+            neighbors_of_neighbor = neighbor.neighbors
+            idx = neighbors_of_neighbor.index(cell)
+            new_neighbors_of_neighbor = (
+                neighbors_of_neighbor[0:idx]
+                + neighbors[0:i]
+                + neighbors[i + 1 :]
+                + neighbors_of_neighbor[idx + 1 :]
+            )
+            neighbor.neighbors = new_neighbors_of_neighbor
+
+    return new_cell_list
 
 
 def trapezoidal_decomposition(
@@ -357,7 +399,7 @@ def trapezoidal_decomposition(
         else:
             current_edges.append(e.next_edge)
 
-    return closed_cells
+    return remove_degenerate_cells(closed_cells)
 
 
 def get_cell_dist(cell1: Trapezoidal_Cell, cell2: Trapezoidal_Cell) -> float:
