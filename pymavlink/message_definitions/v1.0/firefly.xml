@@ -5636,5 +5636,13 @@
       <description>Acknowledge receipt of coverage polygon point</description>
       <field type="uint8_t" name="seq_num">Sequence Number</field>
     </message>
+    <message id="13034" name="FIREFLY_START_TERRAIN_MAPPING">
+      <description>Command to start projecting point clouds to map the terrain</description>
+      <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
+    </message>
+    <message id="13035" name="FIREFLY_STOP_TERRAIN_MAPPING">
+      <description>Command to stop projecting point clouds for terrain mapping</description>
+      <field type="uint8_t" name="empty">Empty byte since mavlink requires a non-zero payload</field>
+    </message>
   </messages>
 </mavlink>

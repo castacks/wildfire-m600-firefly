@@ -49,7 +49,7 @@ queue ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1" ! nvvid
 # run ROS record
 if rostopic list | grep -q "/rosout"; then
 	source /home/wildfire/M600_ws/devel/setup.bash
-	rosbag record -a -O "$OUT_FOLDER"/"$DATETIME"_dji_sdk_and_thermal.bag __name:="data_collect" -x "(.*)/compressed(.*)|(.*)/theora(.*)" &
+	rosbag record -a -O "$OUT_FOLDER"/"$DATETIME"_dji_sdk_and_thermal.bag __name:="data_collect" -x "(.*)/compressed(.*)|(.*)/theora(.*)|/uav1/lidar_cropped_mapping|/uav1/lidar_cropped_obstacle|/uav1/altitude" &
 else
 	echo "roscore not running, not recording DJI SDK data"
 fi
