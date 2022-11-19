@@ -246,6 +246,10 @@ DJISDKNode::initPublisher(ros::NodeHandle& nh)
   flight_status_publisher =
     nh.advertise<std_msgs::UInt8>("dji_sdk/flight_status", 10);
 
+  device_status_publisher = nh.advertise<std_msgs::UInt8>("dji_sdk/device_status", 10);
+
+  control_authority_status_publisher = nh.advertise<std_msgs::UInt8>("dji_sdk/control_authority_status", 10);
+
   /*!
    * gps_health needs to be greater than 3 for gps_position and velocity topics
    * to be trusted
@@ -531,6 +535,7 @@ DJISDKNode::initDataSubscribeFromFC(ros::NodeHandle& nh)
   topicList5hz.push_back(Telemetry::TOPIC_GPS_VELOCITY);
   topicList5hz.push_back(Telemetry::TOPIC_GPS_DETAILS);
   topicList5hz.push_back(Telemetry::TOPIC_BATTERY_INFO);
+  topicList5hz.push_back(Telemetry::TOPIC_CONTROL_DEVICE);
 
   if(rtkSupport)
   {
@@ -696,3 +701,26 @@ void DJISDKNode::gpsConvertENU(double &ENU_x, double &ENU_y,
   ENU_y = DEG2RAD(d_lat) * C_EARTH;
   ENU_x = DEG2RAD(d_lon) * C_EARTH * cos(DEG2RAD(gps_t_lat));
 };
+
+bool DJISDKNode::rcInFMode()
+{
+  if (!this->current_mode.has_value()){
+    return false;
+  }
+  // Might need to check a different value if drone is not an M600
+  return this->current_mode.value() == -10000;
+}
+
+void DJISDKNode::update_current_mode(const int16_t new_mode) 
+{
+  const bool wasInFMode = this->rcInFMode();
+  this->current_mode = new_mode;
+  const bool nowInFMode = this->rcInFMode();
+
+  if (wasInFMode && !nowInFMode) {
+    ROS_DEBUG("Controller switched out of F Mode");
+  }
+  else if (!wasInFMode && nowInFMode) {
+    ROS_DEBUG("Controller switched into F Mode");
+  }
+}

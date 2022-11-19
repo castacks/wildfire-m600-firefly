@@ -111,6 +111,10 @@ void DJISDKNode::flightControl(uint8_t flag, float xSP, float ySP, float zSP, fl
     yawCmd = RAD2DEG(-yawSP);
   }
 
+  if (!this->rcInFMode()) {
+    ROS_WARN_THROTTLE(1.0, "Attempting to perform flight control but remote controller not in F mode.");
+    return;
+  }
   Control::CtrlData ctrlData(flag, xCmd, yCmd, zCmd, yawCmd);
   vehicle->control->flightCtrl(ctrlData);
 }

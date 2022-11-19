@@ -12,6 +12,8 @@
 #ifndef DJI_SDK_NODE_MAIN_H
 #define DJI_SDK_NODE_MAIN_H
 
+#include <optional>
+
 //! ROS
 #include <ros/ros.h>
 #include <tf/tf.h>
@@ -378,6 +380,8 @@ private:
   ros::Publisher rtk_yaw_info_publisher;
   ros::Publisher rtk_connection_status_publisher;
   ros::Publisher flight_anomaly_publisher;
+  ros::Publisher device_status_publisher;
+  ros::Publisher control_authority_status_publisher;
   //! Local Position Publisher (Publishes local position in ENU frame)
   ros::Publisher local_position_publisher;
   ros::Publisher local_frame_ref_publisher;
@@ -448,11 +452,15 @@ private:
   void gpsConvertENU(double &ENU_x, double &ENU_y,
                      double gps_t_lon, double gps_t_lat,
                      double gps_r_lon, double gps_r_lat);
+  bool rcInFMode();
+  void update_current_mode(const int16_t new_mode);
 
   double local_pos_ref_latitude, local_pos_ref_longitude, local_pos_ref_altitude;
   double current_gps_latitude, current_gps_longitude, current_gps_altitude;
   int current_gps_health;
   bool rtkSupport;
+  std::optional<int16_t> current_mode;
+  
 };
 
 #endif // DJI_SDK_NODE_MAIN_H
