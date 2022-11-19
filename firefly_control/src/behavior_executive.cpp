@@ -143,6 +143,8 @@ bool BehaviorExecutive::initialize() {
   execute_ipp_plan_pub = nh->advertise<std_msgs::Bool>("execute_ipp_plan", 1);
   wait_for_initial_ipp_plan_pub =
       nh->advertise<std_msgs::Empty>("wait_for_initial_ipp_plan", 1);
+  execute_coverage_planner_pub = nh->advertise<core_trajectory_msgs::FixedTrajectory>(
+      "execute_coverage_planner", 10);
 
   // init subscribers
   behavior_tree_command_sub =
@@ -190,22 +192,12 @@ static core_trajectory_msgs::FixedTrajectory GetLawnmowerTraj() {
   attrib1.key = "frame_id";
   attrib1.value = "world";
   diagnostic_msgs::KeyValue attrib2;
-  attrib2.key = "length";
-  attrib2.value = "100";
-  diagnostic_msgs::KeyValue attrib3;
-  attrib3.key = "width";
-  attrib3.value = "100";
-  diagnostic_msgs::KeyValue attrib4;
   attrib4.key = "height";
   attrib4.value = "30";
-  diagnostic_msgs::KeyValue attrib5;
+  diagnostic_msgs::KeyValue attrib3;
   attrib5.key = "velocity";
   attrib5.value = "2.0";
-  diagnostic_msgs::KeyValue attrib6;
-  attrib6.key = "stepover_dist";
-  attrib6.value = "20.0";
-  fixed_trajectory.attributes = {attrib1, attrib2, attrib3,
-                                 attrib4, attrib5, attrib6};
+  fixed_trajectory.attributes = {attrib1, attrib2, attrib3};
   return fixed_trajectory;
 }
 
@@ -389,7 +381,7 @@ bool BehaviorExecutive::execute() {
           core_trajectory_controller::TrajectoryMode::Request::TRACK;
       trajectory_mode_client.call(srv);
       const auto fixed_trajectory = GetLawnmowerTraj();
-      fixed_trajectory_pub.publish(fixed_trajectory);
+      execute_coverage_planner_pub.publish(fixed_trajectory);
       // Turn on pose controller output
       enable_pose_controller_output();
     }

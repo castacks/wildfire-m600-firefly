@@ -6,6 +6,9 @@ from core_trajectory_msgs.msg import TrajectoryXYZVYaw
 from core_trajectory_msgs.msg import FixedTrajectory
 import copy
 from coverage_planner import get_polygon_path, Point2d, trapezoidal_decomposition, generate_cell_traversal, get_full_coverage_path
+from firefly_telemetry.msg import PolygonArray
+
+polygonPointsList = []
 
 def get_velocities(traj, velocity, max_acc):
     v_prev = 0.
@@ -415,41 +418,6 @@ def get_horizontal_lawnmower_waypoints(attributes):
 
     return traj
 
-def get_coverage_waypoints(attributes):
-    frame_id = str(attributes['frame_id'])
-    height = float(attributes['height'])
-    velocity = float(attributes['velocity'])
-
-    outer_boundary = [
-        Point2d(90, 0),
-        Point2d(70, 50),
-        Point2d(20, 50),
-        Point2d(0, 0),
-    ]
-
-    hole1 = [Point2d(30, 20), Point2d(45, 40), Point2d(60, 20)]
-
-    holes = [hole1]
-    cells = trapezoidal_decomposition(outer_boundary, holes)
-    cell_path = generate_cell_traversal(cells)
-    path = get_full_coverage_path(cell_path, 10)
-    path.append((0,0))
-    path = interpolate_path(path, max_spacing=2.5)
-
-    traj = TrajectoryXYZVYaw()
-    traj.header.frame_id = frame_id
-
-    for (x,y) in path:
-        wp1 = WaypointXYZVYaw()
-        wp1.position.x = x
-        wp1.position.y = y
-        wp1.position.z = height
-        wp1.yaw = np.pi/2
-        wp1.velocity = velocity
-        traj.waypoints.append(wp1)
-
-    return traj    
-
 
 def fixed_trajectory_callback(msg):
     attributes = {}
@@ -480,11 +448,84 @@ def fixed_trajectory_callback(msg):
     else:
         print('No trajectory sent.')
 
+def convert_to_point2D(point32_list):
+    pts = []
+    for point32 in point32_list:
+        p = Point2d(point32.x, point32.y)
+        pts.append(p)
+
+    return pts
+
+def coverage_polygon_callback(msg):
+    global polygonPointsList
+
+    outerPoints = convert_to_point2D(msg.outerPolygon.points)
+    polygonPointsList.append(outerPoints)
+
+    holesList = []
+    for hole in msg.holes:
+        holesList.append(convert_to_point2D(hole))
+
+    polygonPointsList.append(holesList)
+
+def get_stepover_distance(height):
+    cam_fov = 56
+    non_overlapping_fov = 0.6 * cam_fov
+
+    stepover = 2*np.tan(non_overlapping_fov/2)*height
+
+    return stepover
+
+def execute_coverage_planner_callback(msg):
+    global polygonPointsList
+
+    if polygonPointsList:
+        attributes = {}
+
+        for key_value in msg.attributes:
+            attributes[key_value.key] = key_value.value
+
+        frame_id = str(attributes['frame_id'])
+        height = float(attributes['height'])
+        velocity = float(attributes['velocity'])
+
+        global polygonPointsList
+        outer_boundary, holes = polygonPointsList
+
+        cells = trapezoidal_decomposition(outer_boundary, holes)
+        cell_path = generate_cell_traversal(cells)
+        stepover_dist = get_stepover_distance(height)
+
+        path = get_full_coverage_path(cell_path, stepover_dist)
+        path.append((0,0))
+        path = interpolate_path(path, max_spacing=2.5)
+
+        traj = TrajectoryXYZVYaw()
+        traj.header.frame_id = frame_id
+
+        for (x,y) in path:
+            wp1 = WaypointXYZVYaw()
+            wp1.position.x = x
+            wp1.position.y = y
+            wp1.position.z = height
+            wp1.yaw = np.pi/2
+            wp1.velocity = velocity
+            traj.waypoints.append(wp1)
+
+        if traj != None:
+            trajectory_track_pub.publish(traj)
+        else:
+            print('No trajectory sent.')
+
 if __name__ == '__main__':
     rospy.init_node('fixed_trajectory_generator')
 
     fixed_trajectory_sub = rospy.Subscriber('fixed_trajectory', FixedTrajectory, fixed_trajectory_callback)
 
     trajectory_track_pub = rospy.Publisher('trajectory_track', TrajectoryXYZVYaw, queue_size=1)
+
+    coverage_polygon_pub = rospy.Subscriber('coverage_polygon_points', PolygonArray, coverage_polygon_callback)
+
+    execute_coverage_planner_sub = rospy.Subscriber('execute_coverage_planner', FixedTrajectory, execute_coverage_planner_callback)
 
     rospy.spin()
