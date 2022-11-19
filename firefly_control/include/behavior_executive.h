@@ -78,6 +78,7 @@ class BehaviorExecutive : public BaseNode {
   ros::Publisher generate_ipp_plan_request_pub;
   ros::Publisher execute_ipp_plan_pub;
   ros::Publisher wait_for_initial_ipp_plan_pub;
+  ros::Publisher execute_coverage_planner_pub;
 
   // subscribers
   ros::Subscriber behavior_tree_command_sub;

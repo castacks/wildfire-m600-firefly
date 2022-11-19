@@ -4,15 +4,11 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Status1
-        - /Grid1
-        - /PointCloud21
-        - /GridMap1
         - /TF1
         - /TF1/Frames1
         - /Image1
         - /PointCloud22
+        - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 192
   - Class: rviz/Selection
@@ -41,6 +37,30 @@ Toolbars:
 Visualization Manager:
   Class: ""
   Displays:
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Class: grid_map_rviz_plugin/GridMap
+      Color: 200; 200; 200
+      Color Layer: elevation
+      Color Transformer: GridMapLayer
+      ColorMap: default
+      Enabled: true
+      Grid Cell Decimation: 1
+      Grid Line Thickness: 0.10000000149011612
+      Height Layer: elevation
+      Height Transformer: GridMapLayer
+      History Length: 1
+      Invert ColorMap: false
+      Max Color: 255; 255; 255
+      Max Intensity: 10
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: GridMap
+      Show Grid Lines: true
+      Topic: /uav1/grid_map
+      Unreliable: false
+      Use ColorMap: true
+      Value: true
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
@@ -86,30 +106,6 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Class: grid_map_rviz_plugin/GridMap
-      Color: 200; 200; 200
-      Color Layer: elevation
-      Color Transformer: GridMapLayer
-      ColorMap: default
-      Enabled: true
-      Grid Cell Decimation: 1
-      Grid Line Thickness: 0.10000000149011612
-      Height Layer: elevation
-      Height Transformer: GridMapLayer
-      History Length: 1
-      Invert ColorMap: false
-      Max Color: 255; 255; 255
-      Max Intensity: 10
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: GridMap
-      Show Grid Lines: true
-      Topic: /uav1/grid_map
-      Unreliable: false
-      Use ColorMap: true
       Value: true
     - Class: rviz/TF
       Enabled: true
@@ -205,6 +201,14 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /uav1/trajectory_vis
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
