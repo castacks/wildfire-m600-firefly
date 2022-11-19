@@ -27,11 +27,13 @@ import struct
 import time
 import serial
 import datetime
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, Polygon, Point32
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg import BatteryState, NavSatFix
 from behavior_tree_msgs.msg import BehaviorTreeCommand, BehaviorTreeCommands, Status
 from planner_map_interfaces.msg import Plan
+from firefly_telemetry.msg import PolygonArray
+from collections import OrderedDict
 
 os.environ['MAVLINK20'] = '1'
 
@@ -41,7 +43,6 @@ class OnboardTelemetry:
         self.connection = mavutil.mavlink_connection(
             "/dev/mavlink", baud=115200, dialect="firefly"
         )
-
 
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
@@ -70,6 +71,12 @@ class OnboardTelemetry:
         self.ipp_nt = 0
         self.ipp_na = 0
 
+        # nested dictionary with key as polygon IDs and value as another dictionary storing (seq_num, points)
+        # Polygon ID 0 is the outer polygon. The others are holes
+        self.coverage_polygon_dict = {}
+        self.polygon_complete = False
+        self.last_seq_num = -1
+
         rospy.Subscriber("new_fire_bins", Int32MultiArray, self.new_fire_bins_callback)
         rospy.Subscriber("new_no_fire_bins", Int32MultiArray, self.new_no_fire_bins_callback)
         rospy.Subscriber("init_to_no_fire_with_pose_bins", Pose, self.init_to_no_fire_with_pose_callback)
@@ -85,6 +92,7 @@ class OnboardTelemetry:
 
         rospy.Timer(rospy.Duration(0.5), self.pose_send_callback)
         self.extract_frame_pub = rospy.Publisher("extract_frame", Empty, queue_size=1)
+        self.coverage_polygon_points_pub = rospy.Publisher("coverage_polygon_points", PolygonArray, queue_size=10)
 
         self.bytes_per_sec_send_rate = 2000.0
         self.mavlink_packet_overhead_bytes = 12
@@ -334,6 +342,45 @@ class OnboardTelemetry:
                 rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
 
+    def process_new_polygon_point(self, msg, end):
+        if self.polygon_complete:
+            if end:
+                # full outer polygon already received, send last acknowledgement again and return - no further action required
+                self.connection.mav.firefly_coverage_polygon_point_ack_send(self.last_seq_num)
+                rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+                return
+            else:
+                # received points for a new set of polygons, reset everything
+                self.polygon_complete = False
+                self.coverage_polygon_dict.clear()
+                self.last_seq_num = -1
+
+        # add the received message to the dict
+        if msg["poly_ID"] not in self.coverage_polygon_dict:
+            self.coverage_polygon_dict[msg["poly_ID"]] = {} # initialize a new dictionary for a new polygon
+
+        self.coverage_polygon_dict[msg["poly_ID"]][msg["seq_num"]] = Point32(msg["x"], msg["y"], 0)
+        self.connection.mav.firefly_coverage_polygon_point_ack_send(msg["seq_num"])
+        rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
+
+        if end:
+            self.last_seq_num = msg["seq_num"]
+            # sort dict, create and publish message
+            self.polygon_complete = True
+            coverage_polygon_array = PolygonArray()
+            # list of (x, y) Point32 objects sorted based on seq num - of type dict_values
+            sortedDict = OrderedDict(sorted(self.coverage_polygon_dict[0].items())) # outer polygon ID is 0
+            coverage_polygon_array.outerPolygon.points = list(sortedDict.values())
+            del self.coverage_polygon_dict[0]
+
+            for holeDict in self.coverage_polygon_dict.values():
+                holePoints = Polygon()
+                sortedDict = OrderedDict(sorted(holeDict.items()))
+                holePoints.points = list(sortedDict.values())
+                coverage_polygon_array.holes.append(holePoints)
+
+            self.coverage_polygon_points_pub.publish(coverage_polygon_array)
+
     def run(self):
         if (self.last_heartbeat_time is None) or (time.time() - self.last_heartbeat_time > self.watchdog_timeout):
             if self.connectedToGCS:
@@ -508,6 +555,12 @@ class OnboardTelemetry:
                 for i in range(len(self.ipp_transmit_buf) - 1, -1, -1):
                     if (self.ipp_na - self.ipp_transmit_buf[i]["seq_num"]) % 128 <= self.wt:
                         self.ipp_na = self.ipp_transmit_buf[i]["seq_num"]
+
+        elif msg["mavpackettype"] == "FIREFLY_COVERAGE_POLYGON_POINT":
+            self.process_new_polygon_point(msg, end=False)
+
+        elif msg["mavpackettype"] == "FIREFLY_COVERAGE_POLYGON_POINT_END":
+            self.process_new_polygon_point(msg, end=True)
 
         if len(behavior_tree_commands.commands) > 0:
             self.behavior_tree_commands_pub.publish(behavior_tree_commands)

@@ -41,6 +41,8 @@ namespace rviz {
         capture_frame_button_ = new QPushButton("Capture");
         ros_record_button_ = new QPushButton("ROS Bag Record");
         ros_stop_record_button_ = new QPushButton("Stop ROS Bag Recording");
+        view_coverage_poly_button_ = new QPushButton("Load Coverage Polygon");
+        send_coverage_poly_button_ = new QPushButton("Send Coverage Polygon");
 
         //define color for killswitch
         QPalette pal_killswitch = kill_switch_button_->palette();
@@ -87,6 +89,8 @@ namespace rviz {
         layout->addWidget(capture_frame_button_,1 , 2);
         layout->addWidget(ros_record_button_,2 ,0);
         layout->addWidget(ros_stop_record_button_,2 ,1);
+        layout->addWidget(view_coverage_poly_button_,10 ,0);
+        layout->addWidget(send_coverage_poly_button_,10 ,1);
 
         //Update layout
         layout->addWidget(battery_status_text, 3, 0);
@@ -115,6 +119,8 @@ namespace rviz {
         connect(capture_frame_button_, SIGNAL(clicked()), this, SLOT(capture_frame()));
         connect(ros_record_button_, SIGNAL(clicked()), this, SLOT(record_ros_bag()));
         connect(ros_stop_record_button_, SIGNAL(clicked()), this, SLOT(stop_record_ros_bag()));
+        connect(view_coverage_poly_button_, SIGNAL(clicked()), this, SLOT(display_coverage_polygon()));
+        connect(send_coverage_poly_button_, SIGNAL(clicked()), this, SLOT(send_coverage_polygon()));
 
         //Publishers from GUI for Telemetry to read from
         start_mission_pub_ = nh_.advertise<std_msgs::Empty>("execute_auto_flight", 10);
@@ -124,6 +130,8 @@ namespace rviz {
         capture_frame_pub_ = nh_.advertise<std_msgs::Empty>("capture_frame", 10);
         ros_record_ = nh_.advertise<std_msgs::Empty>("record_rosbag", 10);
         stop_ros_record_ = nh_.advertise<std_msgs::Empty>("stop_record_rosbag", 10);
+        coverage_poly_view = nh_.advertise<std_msgs::Empty>("view_coverage_poly", 10);
+        coverage_poly_send = nh_.advertise<std_msgs::Empty>("send_coverage_poly", 10);
 
         //Subscribers for GUI from Telemetry
         camera_health_gcs_ = nh_.subscribe("/camera_health_telem", 10, camera_health_gcs_callback);
@@ -194,6 +202,12 @@ namespace rviz {
         ros_record_button_->setText("ROS Bag Record");
 
         ros_record_button_->setEnabled(true);
+    }
+    void FireflyPanel::display_coverage_polygon() {
+        coverage_poly_view.publish(std_msgs::Empty());
+    }
+    void FireflyPanel::send_coverage_polygon() {
+        coverage_poly_send.publish(std_msgs::Empty());
     }
 
 // Save all configuration data from this panel to the given

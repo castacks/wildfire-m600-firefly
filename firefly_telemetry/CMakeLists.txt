@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  geometry_msgs
   message_generation
   behavior_tree_msgs
 )
@@ -14,9 +15,15 @@ add_service_files(
   SetLocalPosRef.srv
 )
 
+add_message_files(
+  FILES
+  PolygonArray.msg
+)
+
 generate_messages(
   DEPENDENCIES
   std_msgs  # Or other packages containing msgs
+  geometry_msgs
 )
 
 ADD_CUSTOM_TARGET(do_always ALL COMMAND ${CMAKE_SOURCE_DIR}/mavlink_dialect/install_pymavlink.sh)
