@@ -212,6 +212,31 @@ DJISDKNode::dataBroadcastCallback()
     gimbal_angle_vec3.vector.z     = gimbal_angle.yaw;
     gimbal_angle_publisher.publish(gimbal_angle_vec3);
   }
+
+  uint16_t flag_has_sdk_info =
+          isM100() ? (data_enable_flag & DataBroadcast::DATA_ENABLE_FLAG::HAS_DEVICE) :
+          (data_enable_flag & DataBroadcast::DATA_ENABLE_FLAG::A3_HAS_DEVICE);
+
+  if (flag_has_sdk_info)
+  {
+    Telemetry::TypeMap<Telemetry::TOPIC_CONTROL_DEVICE>::type control_device =
+    vehicle->broadcast->getSDKInfo();
+
+    std_msgs::UInt8 device_status;
+    device_status.data = control_device.deviceStatus;
+    this->device_status_publisher.publish(device_status);
+
+    std_msgs::UInt8 control_authority_status;
+    control_authority_status.data = control_device.flightStatus;
+    this->control_authority_status_publisher.publish(control_authority_status);
+
+    if (control_device.flightStatus == 1) {
+      if (!this->rcInFMode()) {
+          ROS_WARN("OSDK has been granted control authority but RC in F mode. Releasing control.");
+          vehicle->releaseCtrlAuthority(this->WAIT_TIMEOUT);
+      }
+    }
+  }
 }
 
 void
@@ -307,6 +332,24 @@ DJISDKNode::publish5HzData(Vehicle *vehicle, RecvContainer recvFrame,
    // std_msgs::UInt8 rtk_connection_status;
     //rtk_connection_status.data = (rtk_telemetry_connect_status.rtkConnected == 1) ? 1 : 0;
    // p->rtk_connection_status_publisher.publish(rtk_connection_status);
+  }
+
+  Telemetry::TypeMap<Telemetry::TOPIC_CONTROL_DEVICE>::type control_device =
+    vehicle->subscribe->getValue<Telemetry::TOPIC_CONTROL_DEVICE>();
+
+  std_msgs::UInt8 device_status;
+  device_status.data = control_device.deviceStatus;
+  p->device_status_publisher.publish(device_status);
+
+  std_msgs::UInt8 control_authority_status;
+  control_authority_status.data = control_device.flightStatus;
+  p->control_authority_status_publisher.publish(control_authority_status);
+
+  if (control_device.flightStatus == 1) {
+    if (!p->rcInFMode()) {
+        ROS_WARN("OSDK has been granted control authority but RC in F mode. Releasing control.");
+        vehicle->releaseCtrlAuthority(p->WAIT_TIMEOUT);
+    }
   }
 
   return;

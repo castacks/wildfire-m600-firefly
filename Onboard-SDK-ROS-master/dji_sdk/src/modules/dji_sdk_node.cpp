@@ -38,9 +38,6 @@ DJISDKNode::DJISDKNode(ros::NodeHandle& nh, ros::NodeHandle& nh_private)
   //! RTK support check
   rtkSupport = false;
 
-  // SDK does not have control at start up
-  has_control = false;
-
   // @todo need some error handling for init functions
   //! @note parsing launch file to get environment parameters
   if (!initVehicle(nh_private))
@@ -248,6 +245,10 @@ DJISDKNode::initPublisher(ros::NodeHandle& nh)
   // Refer to dji_sdk.h for different enums for M100 and A3/N3
   flight_status_publisher =
     nh.advertise<std_msgs::UInt8>("dji_sdk/flight_status", 10);
+
+  device_status_publisher = nh.advertise<std_msgs::UInt8>("dji_sdk/device_status", 10);
+
+  control_authority_status_publisher = nh.advertise<std_msgs::UInt8>("dji_sdk/control_authority_status", 10);
 
   /*!
    * gps_health needs to be greater than 3 for gps_position and velocity topics
@@ -534,6 +535,7 @@ DJISDKNode::initDataSubscribeFromFC(ros::NodeHandle& nh)
   topicList5hz.push_back(Telemetry::TOPIC_GPS_VELOCITY);
   topicList5hz.push_back(Telemetry::TOPIC_GPS_DETAILS);
   topicList5hz.push_back(Telemetry::TOPIC_BATTERY_INFO);
+  topicList5hz.push_back(Telemetry::TOPIC_CONTROL_DEVICE);
 
   if(rtkSupport)
   {
@@ -717,12 +719,8 @@ void DJISDKNode::update_current_mode(const int16_t new_mode)
 
   if (wasInFMode && !nowInFMode) {
     ROS_DEBUG("Controller switched out of F Mode");
-
-    if (this->has_control)
-    {
-      ROS_DEBUG("calling non-blocking vehicle->releaseCtrlAuthority");
-      vehicle->releaseCtrlAuthority();
-      this->has_control = false;
-    }
+  }
+  else if (!wasInFMode && nowInFMode) {
+    ROS_DEBUG("Controller switched into F Mode");
   }
 }

@@ -380,6 +380,8 @@ private:
   ros::Publisher rtk_yaw_info_publisher;
   ros::Publisher rtk_connection_status_publisher;
   ros::Publisher flight_anomaly_publisher;
+  ros::Publisher device_status_publisher;
+  ros::Publisher control_authority_status_publisher;
   //! Local Position Publisher (Publishes local position in ENU frame)
   ros::Publisher local_position_publisher;
   ros::Publisher local_frame_ref_publisher;
@@ -457,7 +459,6 @@ private:
   double current_gps_latitude, current_gps_longitude, current_gps_altitude;
   int current_gps_health;
   bool rtkSupport;
-  bool has_control;
   std::optional<int16_t> current_mode;
   
 };
