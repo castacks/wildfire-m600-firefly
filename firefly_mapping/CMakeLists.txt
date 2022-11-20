@@ -63,7 +63,6 @@ add_executable(gcs_mapping src/gcs_mapping.cpp)
 add_dependencies(gcs_mapping ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(gcs_mapping ${catkin_LIBRARIES})
 
-
 add_executable(mapping_accuracy src/mapping_accuracy.cpp)
 add_dependencies(mapping_accuracy ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(mapping_accuracy ${catkin_LIBRARIES})

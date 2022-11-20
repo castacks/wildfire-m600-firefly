@@ -46,6 +46,12 @@ target_link_libraries(firefly_perception
                             ${OpenCV_LIBRARIES}
                             ${PCL_LIBRARIES})
 
+
+add_executable(terrain_accuracy scripts/terrain_accuracy.cpp)
+target_link_libraries(terrain_accuracy
+                            ${catkin_LIBRARIES}
+                            ${PCL_LIBRARIES})
+
 add_executable(lidar_perception src/lidar_perception.cpp)
 target_link_libraries(lidar_perception
                             ${catkin_LIBRARIES}
