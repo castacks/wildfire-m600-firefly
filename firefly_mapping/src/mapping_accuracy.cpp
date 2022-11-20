@@ -76,8 +76,8 @@ class MappingAccuracy {
                 // size_t gridRow = (size_t) ((intersect(1)-minY)/resolution);
                 // size_t gridCol = (size_t) ((intersect(0)-minX)/resolution);
                 // int mapBin = gridCol + gridRow * outputMap.info.width;
-                row = bin / (mapHeight/resolution);
-                col = bin % (mapHeight/resolution);
+                row = bin / (int)(mapHeight/resolution);
+                col = bin % (int)(mapHeight/resolution);
                 int min_index = -1;
                 float min_dist = -1, dist;
                 for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
@@ -115,8 +115,8 @@ class MappingAccuracy {
             std::pair<int, int> p;
 
             for(int bin : msg.data) {
-                row = bin / (mapHeight/resolution);
-                col = bin % (mapHeight/resolution);
+                row = bin / (int)(mapHeight/resolution);
+                col = bin % (int)(mapHeight/resolution);
                 p = std::make_pair(row, col);
                 if(fire_bin_to_gt.find(p) != fire_bin_to_gt.end()) //Converting fire bin to no fire bin
                 {
@@ -161,7 +161,7 @@ class MappingAccuracy {
         float mapHeight;
         std_msgs::Float32 detect_acc;
         std_msgs::Float32 assoc_acc;
-        const float detection_radius = 2.0;
+        const float detection_radius = 5.0;
 
         void init_gts() {
             // init gt vector - read from YAML
