@@ -1,0 +1,22 @@
+<launch>
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find firefly_bringup)/config/rosconsole.config" />
+    <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find firefly_bringup)/config/python_logging.conf" />
+
+    <arg name="replay_mode" default="false" />
+    <arg name="open_flir" default="false" />
+    <arg name="continuous" default="true" />
+    <arg name="threshold" default="30" />
+    <arg name="robot_name" default="uav1" />
+    <arg name="drone_interface" default="DJIInterface" />
+    <arg name="run_ca_stack" default="true" />
+
+    <group ns="$(arg robot_name)">
+        <node pkg="firefly_perception" type="firefly_perception" name="firefly_perception" output="screen">
+            <param name="threshold" value="$(arg threshold)" />
+            <param name="continuous" value="$(arg continuous)" />
+            <param name="show_thresh_video" value="true" />
+            <param name="show_gray_video" value="true" />
+        </node>
+    </group>
+
+</launch>
