@@ -7,7 +7,6 @@
 
 QLabel *battery = new QLabel;
 QLabel *camera_status = new QLabel;
-QLabel *temperature = new QLabel;
 QLabel *altitude = new QLabel;
 QLabel *detection_accuracy = new QLabel;
 QLabel *association_accuracy = new QLabel;
@@ -15,9 +14,9 @@ QLabel *association_accuracy = new QLabel;
 float base_station_altitude_;
 bool capturing{true};
 bool runningMission{true};
+bool mapping_terrain{true};
 
 void battery_status_gcs_callback(std_msgs::Float32 msg);
-void temperature_status_gcs_callback(std_msgs::Float32 msg);
 void camera_health_gcs_callback(std_msgs::Bool msg);
 void altitude_status_gcs_callback(std_msgs::Float32 msg);
 void base_station_altitude_gcs_callback(sensor_msgs::NavSatFix msg);
@@ -34,34 +33,55 @@ namespace rviz {
         QGridLayout *layout = new QGridLayout;
 
         // define all buttons for GUI
-        start_mission_button_ = new QPushButton("Start Flight");
-        kill_switch_button_ = new QPushButton("KILL SWITCH");
-        clear_button_ = new QPushButton("Clear");
+        arm_button_ = new QPushButton("ARM");
+        disarm_button_ = new QPushButton("DISARM");
+        clear_button_ = new QPushButton("Clear Map");
         set_local_pos_ref_button_ = new QPushButton("Set Reference");
-        capture_frame_button_ = new QPushButton("Capture");
+        capture_frame_button_ = new QPushButton("Capture Frame");
         ros_record_button_ = new QPushButton("ROS Bag Record");
         ros_stop_record_button_ = new QPushButton("Stop ROS Bag Recording");
         view_coverage_poly_button_ = new QPushButton("Load Coverage Polygon");
         send_coverage_poly_button_ = new QPushButton("Send Coverage Polygon");
+        request_control_button_ = new QPushButton("Request Control");
+        takeoff_button_ = new QPushButton("TAKEOFF");
+        land_button_ = new QPushButton("LAND");
+        traj_control_button_ = new QPushButton("Traj Control");
+        coverage_planner_button_ = new QPushButton("Coverage Planner");
+        idle_button_ = new QPushButton("IDLE");
+        terrain_mapping_button_ = new QPushButton("Start Terrain Map");
+        reset_BT_button_ = new QPushButton("RESET BT");
 
-        //define color for killswitch
-        QPalette pal_killswitch = kill_switch_button_->palette();
-        pal_killswitch.setColor(QPalette::Button, QColor(Qt::red));
-        kill_switch_button_->setAutoFillBackground(true);
-        kill_switch_button_->setPalette(pal_killswitch);
-        kill_switch_button_->update();
+        //define color for disarm
+        QPalette pal_disarm = disarm_button_->palette();
+        pal_disarm.setColor(QPalette::Button, QColor(Qt::red));
+        disarm_button_->setAutoFillBackground(true);
+        disarm_button_->setPalette(pal_disarm);
+        disarm_button_->update();
 
         //define color for start mission button
-        QPalette pal_startMission = start_mission_button_->palette();
-        pal_startMission.setColor(QPalette::Button, QColor(Qt::green));
-        start_mission_button_->setAutoFillBackground(true);
-        start_mission_button_->setPalette(pal_startMission);
-        start_mission_button_->update();
+        QPalette pal_arm = arm_button_->palette();
+        pal_arm.setColor(QPalette::Button, QColor(Qt::green));
+        arm_button_->setAutoFillBackground(true);
+        arm_button_->setPalette(pal_arm);
+        arm_button_->update();
+
+        //define color for takeoff
+        QPalette pal_takeoff = takeoff_button_->palette();
+        pal_takeoff.setColor(QPalette::Button, QColor(Qt::blue));
+        takeoff_button_->setAutoFillBackground(true);
+        takeoff_button_->setPalette(pal_takeoff);
+        takeoff_button_->update();
+
+        //define color for land
+        QPalette pal_land = land_button_->palette();
+        pal_land.setColor(QPalette::Button, QColor(Qt::yellow));
+        land_button_->setAutoFillBackground(true);
+        land_button_->setPalette(pal_land);
+        land_button_->update();
 
         ///Initialize variables for fields
         QLabel *battery_status_text = new QLabel;
         QLabel *camera_status_text = new QLabel;
-        QLabel *temperature_status_text = new QLabel;
         QLabel *altitude_status_text = new QLabel;
         QLabel *detection_accuracy_status_text = new QLabel;
         QLabel *association_accuracy_status_text = new QLabel;
@@ -69,7 +89,6 @@ namespace rviz {
         //Define initial values for variables
         battery->setText("-9999");
         camera_status->setText("Waiting for Update");
-        temperature->setText("-9999");
         altitude->setText("-9999");
         detection_accuracy->setText("0");
         association_accuracy->setText("0");
@@ -77,43 +96,48 @@ namespace rviz {
         //Define values for fields
         battery_status_text->setText("Battery Level : ");
         camera_status_text->setText("Camera Status : ");
-        temperature_status_text->setText("Temperature : ");
         altitude_status_text->setText("Altitude : ");
         detection_accuracy_status_text->setText("Detection Accuracy : ");
         association_accuracy_status_text->setText("Association Accuracy : ");
 
         //Buttons layout
-        layout->addWidget(start_mission_button_, 0, 0, 1, 3);
+        layout->addWidget(arm_button_, 0, 1, 1, 2);
         layout->addWidget(clear_button_,1 , 0);
         layout->addWidget(set_local_pos_ref_button_,1 ,1);
         layout->addWidget(capture_frame_button_,1 , 2);
         layout->addWidget(ros_record_button_,2 ,0);
         layout->addWidget(ros_stop_record_button_,2 ,1);
-        layout->addWidget(view_coverage_poly_button_,10 ,0);
-        layout->addWidget(send_coverage_poly_button_,10 ,1);
+        layout->addWidget(view_coverage_poly_button_,4 ,2);
+        layout->addWidget(send_coverage_poly_button_,4 ,3);
+        layout->addWidget(request_control_button_,0,0);
+        layout->addWidget(takeoff_button_,0,3);
+        layout->addWidget(land_button_,1,3,1,1);
+        layout->addWidget(disarm_button_, 9, 0, 1, 4);
+        layout->addWidget(traj_control_button_,3,2);
+        layout->addWidget(coverage_planner_button_,5,2);
+        layout->addWidget(idle_button_,2,3);
+        layout->addWidget(terrain_mapping_button_,2,2);
+        layout->addWidget(reset_BT_button_,3,3);
 
         //Update layout
         layout->addWidget(battery_status_text, 3, 0);
         layout->addWidget(battery, 3, 1);
         layout->addWidget(camera_status_text, 4, 0);
         layout->addWidget(camera_status, 4, 1);
-        layout->addWidget(temperature_status_text, 5, 0);
-        layout->addWidget(temperature, 5, 1);
-        layout->addWidget(altitude_status_text, 6, 0);
-        layout->addWidget(altitude, 6, 1);
-        layout->addWidget(detection_accuracy_status_text, 7, 0);
-        layout->addWidget(detection_accuracy, 7, 1);
-        layout->addWidget(association_accuracy_status_text, 8, 0);
-        layout->addWidget(association_accuracy, 8, 1);
+        layout->addWidget(altitude_status_text, 5, 0);
+        layout->addWidget(altitude, 5, 1);
+        layout->addWidget(detection_accuracy_status_text, 6, 0);
+        layout->addWidget(detection_accuracy, 6, 1);
+        layout->addWidget(association_accuracy_status_text, 7, 0);
+        layout->addWidget(association_accuracy, 7, 1);
 
-        layout->addWidget(kill_switch_button_, 9, 0, 1, 3);
 
 
         setLayout(layout);
 
         // Setting up actions for buttons
-        connect(start_mission_button_, SIGNAL(clicked()), this, SLOT(start_mission())); 
-        connect(kill_switch_button_, SIGNAL(clicked()), this, SLOT(kill_switch()));
+        connect(arm_button_, SIGNAL(clicked()), this, SLOT(arm())); 
+        connect(disarm_button_, SIGNAL(clicked()), this, SLOT(disarm()));
         connect(clear_button_, SIGNAL(clicked()), this, SLOT(clear()));
         connect(set_local_pos_ref_button_, SIGNAL(clicked()), this, SLOT(set_local_pos_ref()));
         connect(capture_frame_button_, SIGNAL(clicked()), this, SLOT(capture_frame()));
@@ -121,10 +145,18 @@ namespace rviz {
         connect(ros_stop_record_button_, SIGNAL(clicked()), this, SLOT(stop_record_ros_bag()));
         connect(view_coverage_poly_button_, SIGNAL(clicked()), this, SLOT(display_coverage_polygon()));
         connect(send_coverage_poly_button_, SIGNAL(clicked()), this, SLOT(send_coverage_polygon()));
+        connect(request_control_button_, SIGNAL(clicked()), this, SLOT(request_control()));
+        connect(takeoff_button_, SIGNAL(clicked()), this, SLOT(takeoff()));
+        connect(land_button_, SIGNAL(clicked()), this, SLOT(land()));
+        connect(traj_control_button_, SIGNAL(clicked()), this, SLOT(traj_control()));
+        connect(coverage_planner_button_, SIGNAL(clicked()), this, SLOT(coverage_planner()));
+        connect(idle_button_, SIGNAL(clicked()), this, SLOT(idle()));
+        connect(terrain_mapping_button_, SIGNAL(clicked()), this, SLOT(terrain_mapping()));
+        connect(reset_BT_button_, SIGNAL(clicked()), this, SLOT(reset_BT()));
 
         //Publishers from GUI for Telemetry to read from
-        start_mission_pub_ = nh_.advertise<std_msgs::Empty>("execute_auto_flight", 10);
-        kill_switch_pub_ = nh_.advertise<std_msgs::Empty>("kill_switch", 10);
+        arm_pub_ = nh_.advertise<std_msgs::Empty>("arm", 10);
+        disarm_pub_ = nh_.advertise<std_msgs::Empty>("disarm", 10);
         clear_map_pub_ = nh_.advertise<std_msgs::Empty>("clear_map", 10);
         set_local_pos_ref_pub_ = nh_.advertise<std_msgs::Empty>("set_local_pos_ref", 10);
         capture_frame_pub_ = nh_.advertise<std_msgs::Empty>("capture_frame", 10);
@@ -132,38 +164,31 @@ namespace rviz {
         stop_ros_record_ = nh_.advertise<std_msgs::Empty>("stop_record_rosbag", 10);
         coverage_poly_view = nh_.advertise<std_msgs::Empty>("view_coverage_poly", 10);
         coverage_poly_send = nh_.advertise<std_msgs::Empty>("send_coverage_poly", 10);
+        request_control_send = nh_.advertise<std_msgs::Empty>("request_control", 10);
+        takeoff_send = nh_.advertise<std_msgs::Empty>("takeoff", 10);
+        land_send = nh_.advertise<std_msgs::Empty>("land", 10);
+        traj_control_send = nh_.advertise<std_msgs::Empty>("traj_control", 10);
+        coverage_planner_send = nh_.advertise<std_msgs::Empty>("coverage_planner", 10);
+        idle_send = nh_.advertise<std_msgs::Empty>("idle", 10);
+        terrain_mapping_start_send = nh_.advertise<std_msgs::Empty>("start_terrain_mapping", 10);
+        terrain_mapping_stop_send = nh_.advertise<std_msgs::Empty>("stop_terrain_mapping", 10);
+        reset_BT_send = nh_.advertise<std_msgs::Empty>("reset_behavior_tree", 10);
 
         //Subscribers for GUI from Telemetry
         camera_health_gcs_ = nh_.subscribe("/camera_health_telem", 10, camera_health_gcs_callback);
         battery_status_gcs_ = nh_.subscribe("/battery_status_telem", 10, battery_status_gcs_callback);
-        temperature_status_gcs_ = nh_.subscribe("/temperature_status_telem", 10, temperature_status_gcs_callback);
         altitude_status_gcs_ = nh_.subscribe("/altitude_telem", 10, altitude_status_gcs_callback);
         base_station_altitude_gcs_ = nh_.subscribe("/local_pos_ref", 10, base_station_altitude_gcs_callback);
         detection_accuracy_gcs = nh_.subscribe("/detection_accuracy", 10,  detection_accuracy_gcs_callback);
         association_accuracy_gcs = nh_.subscribe("/association_accuracy", 10, association_accuracy_gcs_callback);
     }
 
-    void FireflyPanel::start_mission() {
-        start_mission_pub_.publish(std_msgs::Empty());
+    void FireflyPanel::arm() {
+        arm_pub_.publish(std_msgs::Empty());
     }
 
-    void FireflyPanel::kill_switch() {
-        kill_switch_pub_.publish(std_msgs::Empty());
-
-        QPalette pal_startMission = start_mission_button_->palette();
-        pal_startMission.setColor(QPalette::Button, QColor(Qt::red));
-        start_mission_button_->setAutoFillBackground(true);
-        start_mission_button_->setPalette(pal_startMission);
-        start_mission_button_->update();
-
-        start_mission_button_->setText("Aborting Mission");
-        
-        start_mission_button_->setEnabled(false);   
-        clear_button_->setEnabled(false);   
-        set_local_pos_ref_button_->setEnabled(false);   
-        capture_frame_button_->setEnabled(false);   
-        ros_record_button_->setEnabled(false);   
-        ros_stop_record_button_->setEnabled(false); 
+    void FireflyPanel::disarm() {
+        disarm_pub_.publish(std_msgs::Empty());
     }
 
     void FireflyPanel::clear() {
@@ -209,6 +234,39 @@ namespace rviz {
     void FireflyPanel::send_coverage_polygon() {
         coverage_poly_send.publish(std_msgs::Empty());
     }
+    void FireflyPanel::request_control(){
+        request_control_send.publish(std_msgs::Empty());
+    }
+    void FireflyPanel::takeoff(){
+        takeoff_send.publish(std_msgs::Empty());
+    }
+    void FireflyPanel::land(){
+        land_send.publish(std_msgs::Empty());
+    }
+    void FireflyPanel::traj_control(){
+        traj_control_send.publish(std_msgs::Empty());
+    }
+    void FireflyPanel::coverage_planner(){
+        coverage_planner_send.publish(std_msgs::Empty());
+    }
+    void FireflyPanel::idle(){
+        idle_send.publish(std_msgs::Empty());
+    }
+    void FireflyPanel::terrain_mapping(){
+        if(mapping_terrain){
+            terrain_mapping_start_send.publish(std_msgs::Empty());
+            mapping_terrain = false;
+            terrain_mapping_button_->setText("Stop Terrain Map");
+        }
+        else{
+            terrain_mapping_stop_send.publish(std_msgs::Empty());
+            mapping_terrain = true;
+            terrain_mapping_button_->setText("Start Terrain Map");
+        }
+    }
+    void FireflyPanel::reset_BT(){
+        reset_BT_send.publish(std_msgs::Empty());
+    }
 
 // Save all configuration data from this panel to the given
 // Config object.  It is important here that you call save()
@@ -236,12 +294,6 @@ void camera_health_gcs_callback(std_msgs::Bool msg) {
         camera_status->setText("Working");
     else
         camera_status->setText("NOT Working");
-}
-
-void temperature_status_gcs_callback(std_msgs::Float32 msg) {
-    std::cout<<"IN TEMPERATURE"<<std::endl;
-   if (msg.data)
-        temperature->setText(QString::number(msg.data));
 }
 
 void altitude_status_gcs_callback(std_msgs::Float32 msg) {

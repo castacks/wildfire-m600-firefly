@@ -62,7 +62,7 @@ public:
         private_nh_.param<int>("threshold", threshold, 50);  
         private_nh_.param<bool>("continuous", continuous, false);  
         private_nh_.param<bool>("show_thresh_video", show_thresh_video, false);  
-        private_nh_.param<bool>("show_gray_video", show_gray_video, true);  
+        private_nh_.param<bool>("show_gray_video", show_gray_video, false);  
 
     }
 
