@@ -15,7 +15,7 @@ QLabel *association_accuracy = new QLabel;
 float base_station_altitude_;
 bool capturing{true};
 bool runningMission{true};
-bool mapping_terrain{false};
+bool mapping_terrain{true};
 
 void battery_status_gcs_callback(std_msgs::Float32 msg);
 void temperature_status_gcs_callback(std_msgs::Float32 msg);
