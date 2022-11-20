@@ -7,7 +7,6 @@
 
 QLabel *battery = new QLabel;
 QLabel *camera_status = new QLabel;
-QLabel *temperature = new QLabel;
 QLabel *altitude = new QLabel;
 QLabel *detection_accuracy = new QLabel;
 QLabel *association_accuracy = new QLabel;
@@ -18,7 +17,6 @@ bool runningMission{true};
 bool mapping_terrain{true};
 
 void battery_status_gcs_callback(std_msgs::Float32 msg);
-void temperature_status_gcs_callback(std_msgs::Float32 msg);
 void camera_health_gcs_callback(std_msgs::Bool msg);
 void altitude_status_gcs_callback(std_msgs::Float32 msg);
 void base_station_altitude_gcs_callback(sensor_msgs::NavSatFix msg);
@@ -84,7 +82,6 @@ namespace rviz {
         ///Initialize variables for fields
         QLabel *battery_status_text = new QLabel;
         QLabel *camera_status_text = new QLabel;
-        QLabel *temperature_status_text = new QLabel;
         QLabel *altitude_status_text = new QLabel;
         QLabel *detection_accuracy_status_text = new QLabel;
         QLabel *association_accuracy_status_text = new QLabel;
@@ -92,7 +89,6 @@ namespace rviz {
         //Define initial values for variables
         battery->setText("-9999");
         camera_status->setText("Waiting for Update");
-        temperature->setText("-9999");
         altitude->setText("-9999");
         detection_accuracy->setText("0");
         association_accuracy->setText("0");
@@ -100,7 +96,6 @@ namespace rviz {
         //Define values for fields
         battery_status_text->setText("Battery Level : ");
         camera_status_text->setText("Camera Status : ");
-        temperature_status_text->setText("Temperature : ");
         altitude_status_text->setText("Altitude : ");
         detection_accuracy_status_text->setText("Detection Accuracy : ");
         association_accuracy_status_text->setText("Association Accuracy : ");
@@ -129,14 +124,12 @@ namespace rviz {
         layout->addWidget(battery, 3, 1);
         layout->addWidget(camera_status_text, 4, 0);
         layout->addWidget(camera_status, 4, 1);
-        layout->addWidget(temperature_status_text, 5, 0);
-        layout->addWidget(temperature, 5, 1);
-        layout->addWidget(altitude_status_text, 6, 0);
-        layout->addWidget(altitude, 6, 1);
-        layout->addWidget(detection_accuracy_status_text, 7, 0);
-        layout->addWidget(detection_accuracy, 7, 1);
-        layout->addWidget(association_accuracy_status_text, 8, 0);
-        layout->addWidget(association_accuracy, 8, 1);
+        layout->addWidget(altitude_status_text, 5, 0);
+        layout->addWidget(altitude, 5, 1);
+        layout->addWidget(detection_accuracy_status_text, 6, 0);
+        layout->addWidget(detection_accuracy, 6, 1);
+        layout->addWidget(association_accuracy_status_text, 7, 0);
+        layout->addWidget(association_accuracy, 7, 1);
 
 
 
@@ -184,7 +177,6 @@ namespace rviz {
         //Subscribers for GUI from Telemetry
         camera_health_gcs_ = nh_.subscribe("/camera_health_telem", 10, camera_health_gcs_callback);
         battery_status_gcs_ = nh_.subscribe("/battery_status_telem", 10, battery_status_gcs_callback);
-        temperature_status_gcs_ = nh_.subscribe("/temperature_status_telem", 10, temperature_status_gcs_callback);
         altitude_status_gcs_ = nh_.subscribe("/altitude_telem", 10, altitude_status_gcs_callback);
         base_station_altitude_gcs_ = nh_.subscribe("/local_pos_ref", 10, base_station_altitude_gcs_callback);
         detection_accuracy_gcs = nh_.subscribe("/detection_accuracy", 10,  detection_accuracy_gcs_callback);
@@ -302,12 +294,6 @@ void camera_health_gcs_callback(std_msgs::Bool msg) {
         camera_status->setText("Working");
     else
         camera_status->setText("NOT Working");
-}
-
-void temperature_status_gcs_callback(std_msgs::Float32 msg) {
-    std::cout<<"IN TEMPERATURE"<<std::endl;
-   if (msg.data)
-        temperature->setText(QString::number(msg.data));
 }
 
 void altitude_status_gcs_callback(std_msgs::Float32 msg) {

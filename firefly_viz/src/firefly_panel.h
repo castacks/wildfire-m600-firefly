@@ -116,7 +116,6 @@ namespace rviz {
         
         ros::Subscriber camera_health_gcs_;
         ros::Subscriber battery_status_gcs_;
-        ros::Subscriber temperature_status_gcs_;
         ros::Subscriber altitude_status_gcs_;
         ros::Subscriber base_station_altitude_gcs_;
         ros::Subscriber detection_accuracy_gcs;
