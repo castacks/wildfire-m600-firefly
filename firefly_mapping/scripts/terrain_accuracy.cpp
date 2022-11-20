@@ -10,7 +10,7 @@
  * Created:  11 Apr 2022                                                        *
 ********************************************************************************/
 #include "ros/ros.h"
-#include <nav_msgs/OccupancyGrid.h>
+#include <unordered_map>
 #include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Empty.h>
@@ -20,26 +20,18 @@
 #include <map>
 #include <cmath>
 
-
 #include <grid_map_msgs/GridMap.h>
+#include <grid_map_ros/grid_map_ros.hpp>
 #include <nav_msgs/Odometry.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <tf/transform_listener.h>
-
-#include <visualization_msgs/MarkerArray.h>
-#include <grid_map_ros/grid_map_ros.hpp>
-#include <unordered_map>
-
-#include "sensor_msgs/PointCloud2.h"
-
 
 class TerrainAccuracy {
 
     public:
-        TerrainAccuracy() {
+        TerrainAccuracy(std::string filename = "/home/mrsd/Firefly/src/firefly/firefly_mapping/scripts/MergedCloudClean.pcd") {
             map_sub = nh.subscribe("uav1/grid_map", 10, &TerrainAccuracy::map_callback, this);
             elev_acc_pub = nh.advertise<std_msgs::Float32>("average_elevation_accuracy", 10);
             max_err_pub = nh.advertise<std_msgs::Float32>("max_elevation_error", 10);
@@ -61,12 +53,12 @@ class TerrainAccuracy {
             terrain_gt_grid.setGeometry(grid_map::Length(lengthX, lengthY), resolution);
             mapWidth = terrain_gt_grid.getSize()(0);
             mapHeight = terrain_gt_grid.getSize()(1);
-            terrain_gt_grid.add("elevation", grid_map::Matrix::Constant( mapWidth, mapHeight, 0));  // Initialize map to 50 percent certainty
+            terrain_gt_grid.add("elevation", grid_map::Matrix::Constant( mapWidth, mapHeight, 0));
             ROS_INFO("Created map with size %f x %f m (%i x %i cells).",
                     terrain_gt_grid.getLength().x(), terrain_gt_grid.getLength().y(), terrain_gt_grid.getSize()(0),
                     terrain_gt_grid.getSize()(1));
 
-            init_gt("/home/mrsd/Firefly/FaroMap/MergedCloud.pcd");
+            init_gt(filename);
         }
 
     private:
@@ -98,7 +90,7 @@ class TerrainAccuracy {
         void init_gt(std::string filename) {       
             pcl::PointCloud<pcl::PointXYZ>::Ptr terrain_gt_cloud_raw (new pcl::PointCloud<pcl::PointXYZ>);
             if(pcl::io::loadPCDFile<pcl::PointXYZ> (filename, *terrain_gt_cloud_raw) == -1) // load point cloud file
-            {
+            {   
                 PCL_ERROR("Could not read the file");
                 return;
             }
@@ -106,45 +98,61 @@ class TerrainAccuracy {
                     <<"data points from MallGroundtruth.pcd" <<std::endl;
             
             try {
-                // TODO: Orient the gt point cloud correctly
-
+                // define the transform of the ground truth data
                 Eigen::Affine3f transform = Eigen::Affine3f::Identity();
 
-                float theta = M_PI/16; // The angle of rotation in radians
+                float theta = M_PI/15; // The angle of rotation in radians
                 transform.rotate (Eigen::AngleAxisf (theta, Eigen::Vector3f::UnitZ()));
 
-                transform.translation() << -70.0, 30.0, -263.546875;
 
-                // Executing the transformation
+                while (!ros::param::has("/local_pos_ref_longitude") || !ros::param::has("/local_pos_ref_latitude") || !ros::param::has("/local_pos_ref_altitude")){
+                    ROS_WARN("Parameters have not been set, please set parameters before continuing");
+                    ros::Duration(2).sleep();
+                }
+                
+                //get local position from params
+                float t_x;
+                float t_y;
+                float t_z;
+                ros::param::get("/local_pos_ref_longitude", t_x); //-79.944
+                ros::param::get("/local_pos_ref_latitude", t_y); //40.441
+                ros::param::get("/local_pos_ref_altitude", t_z); //258.979
+
+                // transform.translation() << -70.0, 30.0, -263.546875;
+                ROS_INFO("THE PARAMS: %f, %f, %f",t_x, t_y, -t_z);
+                transform.translation() << t_x, t_y, -t_z;
+
+                // executing the transformation
                 pcl::PointCloud<pcl::PointXYZ>::Ptr terrain_gt_cloud (new pcl::PointCloud<pcl::PointXYZ>);
                 pcl::transformPointCloud (*terrain_gt_cloud_raw, *terrain_gt_cloud, transform);
 
+                // Parse through available ground truth maps
                 unsigned int size = (unsigned int)terrain_gt_cloud->points.size();
-
                 for (unsigned int k = 0; k < size; ++k) {
                     const pcl::PointXYZ& pt_cloud = terrain_gt_cloud->points[k];
+
                     // check for invalid measurements
                     if (isnan(pt_cloud.x) || isnan(pt_cloud.y) || isnan(pt_cloud.z)){
                         ROS_INFO("Nan detected, skipping point");
                         continue;
                     }
 
+                    // find grid row and column
                     const int grid_map_col =  mapHeight - (const int)((pt_cloud.y - minY) / resolution);
                     const int grid_map_row = mapWidth - (const int)((pt_cloud.x - minX) / resolution);
 
+                    // check validity of grid bin
                     const bool valid_row = (0 <= grid_map_row) && (grid_map_row < mapWidth);
                     const bool valid_col = (0 <= grid_map_col) && (grid_map_col < mapHeight);
-
                     if (!valid_row || !valid_col) {
                          ROS_INFO("Point outside of bounds for the map area");
                         continue;
                     }
 
+                    // fill bin with maximum height
                     int mapBin = grid_map_col + grid_map_row * mapHeight;
-                    // int binHeight = pt_cloud.z + z_offset;
                     const auto search = terrain_gt_map.find(mapBin);
                     if (search == terrain_gt_map.end() || pt_cloud.z  > search->second) {
-                        ROS_INFO("Adding point to gt");
                         terrain_gt_map[mapBin] = pt_cloud.z;
                     }
                 }
@@ -154,6 +162,7 @@ class TerrainAccuracy {
                 << ex.what());
             }
             
+            // convert unordered map to grid map
             for (const auto iter : terrain_gt_map) {
                 const auto map_bin = iter.first;
                 const auto bin_height = iter.second;
@@ -168,12 +177,13 @@ class TerrainAccuracy {
         }
 
         void publish_map_callback(const ros::TimerEvent& e) {
+            // publish map at frequency
             ros::Time time = ros::Time::now();
             terrain_gt_grid.setTimestamp(time.toNSec());
             grid_map_msgs::GridMap message;
             grid_map::GridMapRosConverter::toMessage(terrain_gt_grid, message);
             gt_map_pub.publish(message);
-            ROS_INFO_THROTTLE(1.0, "Groundtruth(timestamp %f) published.", message.info.header.stamp.toSec());
+            ROS_INFO_THROTTLE(1.0, "Groundtruth at timestamp %f published", message.info.header.stamp.toSec());
         }
 
         void map_callback(const grid_map_msgs::GridMap& terrain_map_msg) {
@@ -190,8 +200,7 @@ class TerrainAccuracy {
             int terrainWidth = floor(terrain_map_msg.info.length_x / terrain_map_msg.info.resolution);
 
             float error_count = 0.0;
-            // for(int r=0; r<terrainHeight ; r++){
-            //     for(int c=0; c<terrainWidth ; c++){
+            
             for (grid_map::GridMapIterator iterator(terrain_map); !iterator.isPastEnd(); ++iterator) {
                 const grid_map::Index index(*iterator);
 
@@ -202,7 +211,7 @@ class TerrainAccuracy {
                 float bin_height = terrain_map.at("elevation", index);
 
                 const auto search = terrain_gt_map.find(map_bin);
-                if (search != terrain_gt_map.end()) {
+                if (search != terrain_gt_map.end()&&bin_height!=0) {
                     const int grid_row = floor(map_bin / mapHeight);
                     const int grid_col = map_bin % mapHeight;
 
@@ -213,7 +222,7 @@ class TerrainAccuracy {
                     if (diff>max_err_f){
                         max_err_f = diff;
                     }
-                    ROS_INFO("Processing error for: %f, %f and got a height diff of %f given max %f", gt , bin_height, diff, max_err_f);
+                    // ROS_INFO("Processing error for: %f, %f and got a height diff of %f given max %f", gt , bin_height, diff, max_err_f);
                 }
                 else{
                     const int grid_row = floor(map_bin / terrainHeight);
@@ -227,7 +236,7 @@ class TerrainAccuracy {
 
             avg_acc.data = avg_acc_f/error_count;
             max_err.data = max_err_f;
-            ROS_INFO("Average Accuracy: %f , Maximum Error: %f", avg_acc.data, max_err.data);
+            ROS_INFO("Terrain map received. Average Accuracy: %f , Maximum Error: %f", avg_acc.data, max_err.data);
             elev_acc_pub.publish(avg_acc);
             max_err_pub.publish(max_err);
         }
