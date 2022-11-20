@@ -33,6 +33,14 @@ class MappingAccuracy {
     public:
         MappingAccuracy() {
 
+            nh.param<float>("resolution", resolution, 0.5);  
+            nh.param<float>("min_x", minX, -100.0);
+            nh.param<float>("max_x", maxX, 100.0);
+            nh.param<float>("min_y", minY, -100.0);
+            nh.param<float>("max_y", maxY, 100.0);
+            mapWidth = (maxX - minX);
+            mapHeight = (maxY - minY);
+
             init_gts();
             map_sub = nh.subscribe("observed_firemap", 10, &MappingAccuracy::map_callback, this);
             new_fire_sub = nh.subscribe("new_fire_bins", 1000, &MappingAccuracy::new_fire_bins_callback, this);
@@ -65,13 +73,16 @@ class MappingAccuracy {
             int row, col;
 
             for(int bin : msg.data) {
-                row = bin/400;
-                col = bin%400;
+                // size_t gridRow = (size_t) ((intersect(1)-minY)/resolution);
+                // size_t gridCol = (size_t) ((intersect(0)-minX)/resolution);
+                // int mapBin = gridCol + gridRow * outputMap.info.width;
+                row = bin / (mapHeight/resolution);
+                col = bin % (mapHeight/resolution);
                 int min_index = -1;
                 float min_dist = -1, dist;
                 for(int i = 0; i < gtfire.size(); ++i) { // get closest gtfire bin and index
                     dist = sqrt(pow((gtfire[i].first - row), 2) + pow((gtfire[i].second - col), 2));
-                    dist = dist * 0.5; // Since bins are 0.5 meters wide
+                    dist = dist * resolution; // Since bins are 0.5 meters wide
                     if(min_index == -1 or dist < min_dist) {
                         min_dist = dist;
                         min_index = i;
@@ -104,8 +115,8 @@ class MappingAccuracy {
             std::pair<int, int> p;
 
             for(int bin : msg.data) {
-                row = bin/400;
-                col = bin%400;
+                row = bin / (mapHeight/resolution);
+                col = bin % (mapHeight/resolution);
                 p = std::make_pair(row, col);
                 if(fire_bin_to_gt.find(p) != fire_bin_to_gt.end()) //Converting fire bin to no fire bin
                 {
@@ -141,6 +152,13 @@ class MappingAccuracy {
         float assoc_acc_nr = 0;
         float assoc_acc_dr = 0;
         float detect_acc_nr = 0;
+        float minX;
+        float minY;
+        float maxX;
+        float maxY;
+        float resolution;
+        float mapWidth;
+        float mapHeight;
         std_msgs::Float32 detect_acc;
         std_msgs::Float32 assoc_acc;
         const float detection_radius = 2.0;
@@ -157,8 +175,8 @@ class MappingAccuracy {
                 double x_xml = gt_locs[2*i];
                 double y_xml = gt_locs[2*i+1];
 
-                int row = (int) ((y_xml + 100)/0.5);
-                int col = (int) ((x_xml + 100)/0.5);
+                int row = (int) ((y_xml - minY)/resolution);
+                int col = (int) ((x_xml - minX)/resolution);
 
 
 
