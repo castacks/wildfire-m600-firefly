@@ -8,7 +8,7 @@
     <param name="tf_prefix" value="$(arg robot_name)" />
     <param name="target_frame" type="string" value="$(arg robot_name)/map" />
     <param name="tracking_point_distance_limit" type="double" value="10.5" />
-    <param name="velocity_look_ahead_time" type="double" value="0.9" />
+    <param name="velocity_look_ahead_time" type="double" value="0.0" />
   </node>
   
 </launch>

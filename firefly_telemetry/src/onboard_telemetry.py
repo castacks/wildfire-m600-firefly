@@ -81,6 +81,7 @@ class OnboardTelemetry:
         rospy.Subscriber("dji_sdk/battery_state", BatteryState, self.battery_health_callback)
         rospy.Subscriber("onboard_temperature", Float32, self.onboard_temperature_callback)
         rospy.Subscriber("initial_ipp_plan_to_transmit", Plan, self.ipp_publish_callback)
+        rospy.Subscriber("local_pos_ref_llh", NavSatFix, self.local_pos_ref_callback)
 
         self.clear_map_pub = rospy.Publisher("clear_map", Empty, queue_size=100)
         self.behavior_tree_commands_pub = rospy.Publisher("behavior_tree_commands", BehaviorTreeCommands, queue_size=100)
@@ -173,6 +174,10 @@ class OnboardTelemetry:
             }
             self.ipp_plan.append(plan_msg)
         self.ipp_plan.append({"type": "end"})
+    
+    def local_pos_ref_callback(self, msg):
+        self.connection.mav.firefly_local_pos_ref_send(msg.latitude, msg.longitude, msg.altitude)
+        rospy.sleep((self.mavlink_packet_overhead_bytes + 24) / self.bytes_per_sec_send_rate)
 
     def send_map_update(self):
         if (len(self.map_transmitted_buf) != 0) and (
@@ -491,8 +496,6 @@ class OnboardTelemetry:
             command.condition_name = "Set Local Position Reference Commanded"
             command.status = Status.SUCCESS
             behavior_tree_commands.commands.append(command)
-            # self.connection.mav.firefly_local_pos_ref_send(response.latitude, response.longitude, response.altitude)
-            self.connection.mav.firefly_local_pos_ref_send(0, 0, 0)
         elif msg["mavpackettype"] == "FIREFLY_REQUEST_CONTROL":
             command = BehaviorTreeCommand()
             command.condition_name = "Request Control Commanded"

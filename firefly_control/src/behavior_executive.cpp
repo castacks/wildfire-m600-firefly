@@ -143,6 +143,11 @@ bool BehaviorExecutive::initialize() {
   execute_ipp_plan_pub = nh->advertise<std_msgs::Bool>("execute_ipp_plan", 1);
   wait_for_initial_ipp_plan_pub =
       nh->advertise<std_msgs::Empty>("wait_for_initial_ipp_plan", 1);
+  execute_coverage_planner_pub =
+      nh->advertise<core_trajectory_msgs::FixedTrajectory>(
+          "execute_coverage_planner", 10);
+  local_pos_ref_llh_pub =
+      nh->advertise<sensor_msgs::NavSatFix>("local_pos_ref_llh", 1);
 
   // init subscribers
   behavior_tree_command_sub =
@@ -157,6 +162,8 @@ bool BehaviorExecutive::initialize() {
   got_initial_ipp_plan_sub =
       nh->subscribe("got_initial_ipp_plan", 10,
                     &BehaviorExecutive::got_initial_ipp_plan_callback, this);
+  dji_gps_sub = nh->subscribe("dji_sdk/gps_position", 1,
+                              &BehaviorExecutive::gps_callback, this);
 
   return true;
 }
@@ -166,7 +173,7 @@ static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
   fixed_trajectory.type = "Rectangle";
   diagnostic_msgs::KeyValue attrib1;
   attrib1.key = "frame_id";
-  attrib1.value = "world";
+  attrib1.value = "/uav1/map";
   diagnostic_msgs::KeyValue attrib2;
   attrib2.key = "length";
   attrib2.value = "25";
@@ -183,29 +190,19 @@ static core_trajectory_msgs::FixedTrajectory GetSquareFixedTraj() {
   return fixed_trajectory;
 }
 
-static core_trajectory_msgs::FixedTrajectory GetLawnmowerTraj() {
+static core_trajectory_msgs::FixedTrajectory GetCoveragePlannerTraj() {
   core_trajectory_msgs::FixedTrajectory fixed_trajectory;
   fixed_trajectory.type = "Horizontal_Lawnmower";
   diagnostic_msgs::KeyValue attrib1;
   attrib1.key = "frame_id";
-  attrib1.value = "world";
+  attrib1.value = "/uav1/map";
   diagnostic_msgs::KeyValue attrib2;
-  attrib2.key = "length";
-  attrib2.value = "100";
+  attrib2.key = "height";
+  attrib2.value = "30";
   diagnostic_msgs::KeyValue attrib3;
-  attrib3.key = "width";
-  attrib3.value = "100";
-  diagnostic_msgs::KeyValue attrib4;
-  attrib4.key = "height";
-  attrib4.value = "30";
-  diagnostic_msgs::KeyValue attrib5;
-  attrib5.key = "velocity";
-  attrib5.value = "2.0";
-  diagnostic_msgs::KeyValue attrib6;
-  attrib6.key = "stepover_dist";
-  attrib6.value = "20.0";
-  fixed_trajectory.attributes = {attrib1, attrib2, attrib3,
-                                 attrib4, attrib5, attrib6};
+  attrib3.key = "velocity";
+  attrib3.value = "2.0";
+  fixed_trajectory.attributes = {attrib1, attrib2, attrib3};
   return fixed_trajectory;
 }
 
@@ -227,23 +224,33 @@ bool BehaviorExecutive::execute() {
   // Set local position reference action
   if (set_local_pos_ref_action->is_active()) {
     if (set_local_pos_ref_action->active_has_changed()) {
-      disable_pose_controller_output();
-
-      if (!local_pos_ref_set_condition->get()) {
-        // Only reset these conditions if this is the first time setting the local pos ref
-        takeoff_complete_condition->set(false);
-        landed_condition->set(false);
-        request_control_commanded_condition->set(false);
-        get_initial_ipp_plan_commanded->set(false);
-        have_control_condition->set(false);
-      }
-
-      dji_sdk::SetLocalPosRef set_local_pos_ref_srv;
-      set_local_pos_ref_client.call(set_local_pos_ref_srv);
-
-      set_local_pos_ref_action->set_success();
       set_local_pos_ref_commanded_condition->set(false);
-      local_pos_ref_set_condition->set(true);
+      if (current_gps_position.has_value()) {
+        disable_pose_controller_output();
+
+        dji_sdk::SetLocalPosRef set_local_pos_ref_srv;
+        set_local_pos_ref_client.call(set_local_pos_ref_srv);
+
+        if (set_local_pos_ref_srv.response.result) {
+          set_local_pos_ref_action->set_success();
+
+          local_pos_ref_llh_pub.publish(current_gps_position.value());
+
+          if (!local_pos_ref_set_condition->get()) {
+            // Only reset these conditions if this is the first time setting the
+            // local pos ref
+            takeoff_complete_condition->set(false);
+            landed_condition->set(false);
+            request_control_commanded_condition->set(false);
+            get_initial_ipp_plan_commanded->set(false);
+            have_control_condition->set(false);
+          }
+
+          local_pos_ref_set_condition->set(true);
+        } else {
+          set_local_pos_ref_action->set_failure();
+        }
+      }
     }
   }
 
@@ -388,8 +395,8 @@ bool BehaviorExecutive::execute() {
       srv.request.mode =
           core_trajectory_controller::TrajectoryMode::Request::TRACK;
       trajectory_mode_client.call(srv);
-      const auto fixed_trajectory = GetLawnmowerTraj();
-      fixed_trajectory_pub.publish(fixed_trajectory);
+      const auto fixed_trajectory = GetCoveragePlannerTraj();
+      execute_coverage_planner_pub.publish(fixed_trajectory);
       // Turn on pose controller output
       enable_pose_controller_output();
     }
@@ -408,7 +415,7 @@ bool BehaviorExecutive::execute() {
       std_msgs::Bool true_msg;
       true_msg.data = true;
       execute_ipp_plan_pub.publish(true_msg);
-      
+
       // Turn on pose controller output
       enable_pose_controller_output();
     }
@@ -487,6 +494,10 @@ void BehaviorExecutive::has_control_callback(std_msgs::Bool msg) {
 
 void BehaviorExecutive::got_initial_ipp_plan_callback(std_msgs::Bool msg) {
   got_initial_ipp_plan_condition->set(msg.data);
+}
+
+void BehaviorExecutive::gps_callback(const sensor_msgs::NavSatFix& msg) {
+  current_gps_position = msg;
 }
 
 void BehaviorExecutive::reset_integrators() {
