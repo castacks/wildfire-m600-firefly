@@ -24,6 +24,8 @@
   <!-- These two nodes are for validating the mapping accuracy -->
   <node pkg="firefly_mapping" type="gps_to_local.py" name="gps_to_local" output="screen" />
   <node pkg="firefly_mapping" type="mapping_accuracy" name="mapping_accuracy" output="screen" />
+
+
   <node pkg="firefly_viz" type="firefly_gcs_polygon.py" name="gcs_polygon_node" output="screen" />
 
   <!-- This node handles visualization -->
