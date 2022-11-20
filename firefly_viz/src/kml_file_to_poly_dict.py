@@ -2,8 +2,7 @@ import utm
 import argparse
 import pprint
 from bs4 import BeautifulSoup
-import numpy as np
-
+import yaml
 def parse_folder(folder):
     names = folder.find_all("name")
 
@@ -69,7 +68,7 @@ def extract_cartesian_points(placemark, start_lat, start_lon):
         lon, lat, alt = float(lon), float(lat), float(alt)
         
         x, y = approx_cartesian_offset_meters(start_lat, start_lon, lat, lon)
-        ret["points"].append({"x": x, "y":y, "z": 0})
+        ret["points"].append({"x": float(x), "y":float(y), "z": float(0)})
     return ret
 
 def find_placemark_lat_lon(names, search_name):
@@ -109,6 +108,7 @@ if __name__ == "__main__":
         print("Writing mission " + mission_name + " to yaml file")
         plan_request_dict = parse_folder(folder)
         pprint.pprint(plan_request_dict)
-        np.save(mission_name + ".npy", plan_request_dict)
-        print("===============================\n")
+        with open("polygon.yaml", "w") as f:
+            yaml.dump(plan_request_dict, f, default_flow_style=False)
+            f.close()
 
