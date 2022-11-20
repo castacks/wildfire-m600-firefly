@@ -70,3 +70,7 @@ target_link_libraries(mapping_accuracy ${catkin_LIBRARIES})
 add_executable(terrain_mapping src/terrain_mapping.cpp)
 add_dependencies(terrain_mapping ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(terrain_mapping ${catkin_LIBRARIES})
+
+add_executable(terrain_accuracy scripts/terrain_accuracy.cpp)
+add_dependencies(terrain_accuracy ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(terrain_accuracy ${catkin_LIBRARIES})
