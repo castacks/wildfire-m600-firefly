@@ -8,18 +8,13 @@ def parse_folder(folder):
 
     origin_lat, origin_lon = find_placemark_lat_lon(names, "origin")
 
-    start_lat, start_lon = find_placemark_lat_lon(names[1:], "start_pose")
-
     origin_x, origin_y, _, _ = utm.from_latlon(origin_lat, origin_lon)
-    start_x, start_y, _, _ = utm.from_latlon(start_lat, start_lon)
-    start_x_relative_to_origin = start_x - origin_x
-    start_y_relative_to_origin = start_y - origin_y
     
     hole_dict = {"holes": []}
     
     for name in names[1:]:
         if name.next_element == "outer_polygon":
-            print("Found search bounds")
+            print("Found outer polygon")
             placemark = name.parent
             points_dict = extract_cartesian_points(placemark, origin_lat, origin_lon)
             outer_polygon_dict = {"outer_polygon": points_dict}
@@ -57,7 +52,6 @@ def approx_cartesian_offset_meters(lat1, lon1, lat2, lon2):
     # x = (lon2 - lon1) * m_per_deg_lon
     # y = (lat2 - lat1) * m_per_deg_lat
     
-    print("adding points  ", x, "  ", y)
     return x, y
 
 def extract_cartesian_points(placemark, start_lat, start_lon):
@@ -90,6 +84,12 @@ def find_placemark_lat_lon(names, search_name):
     return latitude, longitude
 
 if __name__ == "__main__":
+    '''
+    [USAGE]
+    python kml_file_to_poly_dict.py xxx.kml
+    
+    Run from firefly_viz/src so polygon.yaml gets saved there and can be read by GCS
+    '''
     parser = argparse.ArgumentParser()
     parser.add_argument("kml_file_path", type=str)
     args = parser.parse_args()
