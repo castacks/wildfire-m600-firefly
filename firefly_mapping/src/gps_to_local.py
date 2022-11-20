@@ -27,11 +27,14 @@ if __name__ == "__main__":
 
     rospy.set_param("gt_locs", xys)
 
-    resolution = 0.5
-    minX = -100
-    maxX = 100
-    minY = -100
-    maxY = 100
+    while not (rospy.has_param("min_x") and rospy.has_param("max_x") and rospy.has_param("min_y") and rospy.has_param("max_y") and rospy.has_param("resolution")):
+        continue
+
+    resolution = rospy.get_param("resolution")
+    minX = rospy.get_param("min_x")
+    maxX = rospy.get_param("max_x")
+    minY = rospy.get_param("min_y")
+    maxY = rospy.get_param("max_y")
 
     output = OccupancyGrid()
     output.header.frame_id = "world"
