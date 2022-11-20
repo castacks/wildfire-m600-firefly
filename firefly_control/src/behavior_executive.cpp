@@ -198,7 +198,7 @@ static core_trajectory_msgs::FixedTrajectory GetCoveragePlannerTraj() {
   attrib1.value = "/uav1/map";
   diagnostic_msgs::KeyValue attrib2;
   attrib2.key = "height";
-  attrib2.value = "30";
+  attrib2.value = "25";
   diagnostic_msgs::KeyValue attrib3;
   attrib3.key = "velocity";
   attrib3.value = "2.0";
