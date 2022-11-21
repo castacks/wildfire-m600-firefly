@@ -27,20 +27,26 @@ if __name__ == "__main__":
 
     rospy.set_param("gt_locs", xys)
 
-    resolution = 0.5
-    minX = -100
-    maxX = 100
-    minY = -100
-    maxY = 100
+    while not (rospy.has_param("~min_x") and rospy.has_param("~max_x") and rospy.has_param("~min_y") and rospy.has_param("~max_y") and rospy.has_param("~resolution")):
+        continue
+
+    resolution = rospy.get_param("~resolution")
+    minX = rospy.get_param("~min_x")
+    maxX = rospy.get_param("~max_x")
+    minY = rospy.get_param("~min_y")
+    maxY = rospy.get_param("~max_y")
+
+    map_width = int((maxX - minX) / resolution)
+    map_height = int((maxY - minY) / resolution)
 
     output = OccupancyGrid()
     output.header.frame_id = "world"
-    output.info.resolution = 0.5
-    output.info.width = 400
-    output.info.height = 400
-    output.info.origin.position.x = -100
-    output.info.origin.position.y = -100
-    output.data = [0] * (400 * 400)
+    output.info.resolution = resolution
+    output.info.width = map_width
+    output.info.height = map_height
+    output.info.origin.position.x = minX
+    output.info.origin.position.y = minY
+    output.data = [0] * (map_width * map_height)
 
     for i in range(len(xys)//2):
         x = xys[2*i]
@@ -49,7 +55,7 @@ if __name__ == "__main__":
         gtRow = int((y-minY)/resolution)
         gtCol = int((x-minX)/resolution)
 
-        gtBin = gtCol + gtRow * 400
+        gtBin = gtCol + gtRow * map_width
 
         output.data[gtBin] = 100
 
