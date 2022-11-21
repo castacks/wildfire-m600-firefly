@@ -28,6 +28,21 @@
 #include <pcl_ros/transforms.h>
 #include <sensor_msgs/PointCloud2.h>
 
+#define C_EARTH (float)6378137.0
+#define C_PI (float)3.14159265
+#define DEG2RAD(DEG) ((DEG) * ((C_PI) / (180.0)))
+#define RAD2DEG(RAD) ((RAD) * (180.0) / (C_PI))
+
+void gpsConvertENU(float &ENU_x, float &ENU_y,
+                    float gps_t_lon, float gps_t_lat,
+                    float gps_r_lon, float gps_r_lat)
+{
+    float d_lon = gps_t_lon - gps_r_lon;
+    float d_lat = gps_t_lat - gps_r_lat;
+    ENU_y = DEG2RAD(d_lat) * C_EARTH;
+    ENU_x = DEG2RAD(d_lon) * C_EARTH * cos(DEG2RAD(gps_t_lat));
+};
+
 class TerrainAccuracy {
 
     public:
@@ -105,7 +120,10 @@ class TerrainAccuracy {
                 transform.rotate (Eigen::AngleAxisf (theta, Eigen::Vector3f::UnitZ()));
 
 
-                while (!ros::param::has("/local_pos_ref_longitude") || !ros::param::has("/local_pos_ref_latitude") || !ros::param::has("/local_pos_ref_altitude")){
+                while (!ros::param::has("/uav1/local_pos_ref_longitude") || 
+                        !ros::param::has("/uav1/local_pos_ref_latitude") || 
+                        !ros::param::has("/uav1/local_pos_ref_altitude"))
+                {
                     ROS_WARN("Parameters have not been set, please set parameters before continuing");
                     ros::Duration(2).sleep();
                 }
@@ -114,13 +132,19 @@ class TerrainAccuracy {
                 float t_x;
                 float t_y;
                 float t_z;
-                ros::param::get("/local_pos_ref_longitude", t_x); //-79.944
-                ros::param::get("/local_pos_ref_latitude", t_y); //40.441
-                ros::param::get("/local_pos_ref_altitude", t_z); //258.979
+                float ENU_x;
+                float ENU_y;
+                ros::param::get("/uav1/local_pos_ref_longitude", t_x); //-79.944
+                ros::param::get("/uav1/local_pos_ref_latitude", t_y); //40.441
+                ros::param::get("/uav1/local_pos_ref_altitude", t_z); //258.979
+                float r_lon = -79.9442565;
+                float r_lat = 40.44184940;
+                
+                gpsConvertENU(ENU_x, ENU_y, t_x, t_y, r_lon, r_lat);
 
                 // transform.translation() << -70.0, 30.0, -263.546875;
-                ROS_INFO("THE PARAMS: %f, %f, %f",t_x, t_y, -t_z);
-                transform.translation() << t_x, t_y, -t_z;
+                ROS_INFO("THE PARAMS: %f, %f, %f",-ENU_x, -ENU_y, -t_z);
+                transform.translation() << -ENU_x, -ENU_y, -t_z;
 
                 // executing the transformation
                 pcl::PointCloud<pcl::PointXYZ>::Ptr terrain_gt_cloud (new pcl::PointCloud<pcl::PointXYZ>);
