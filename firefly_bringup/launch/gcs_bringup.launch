@@ -22,7 +22,14 @@
   <node pkg="firefly_telemetry" type="gcs_telemetry.py" name="gcs_telemetry" output="screen" />
 
   <!-- These two nodes are for validating the mapping accuracy -->
-  <node pkg="firefly_mapping" type="gps_to_local.py" name="gps_to_local" output="screen" />
+  <node pkg="firefly_mapping" type="gps_to_local.py" name="gps_to_local" output="screen">
+    <param name="resolution" value="$(arg map_resolution)" />
+    <param name="min_x" value="$(arg map_min_x)" />
+    <param name="max_x" value="$(arg map_max_x)" />
+    <param name="min_y" value="$(arg map_min_y)" />
+    <param name="max_y" value="$(arg map_max_y)" />
+  </node>
+
   <node pkg="firefly_mapping" type="mapping_accuracy" name="mapping_accuracy" output="screen" />
 
 
