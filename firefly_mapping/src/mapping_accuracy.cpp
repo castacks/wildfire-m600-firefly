@@ -92,7 +92,6 @@ class MappingAccuracy {
           min_index = i;
         }
       }
-               gtfire[min_index].first, gtfire[min_index].second);
                if (fire_bin_to_gt.find(std::make_pair(row, col)) ==
                    fire_bin_to_gt.end())  // New fire bin not in map
                {
