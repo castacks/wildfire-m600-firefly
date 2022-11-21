@@ -177,9 +177,9 @@ class OnboardTelemetry:
     
     def local_pos_ref_callback(self, msg):
         self.connection.mav.firefly_local_pos_ref_send(msg.latitude, msg.longitude, msg.altitude)
-        rospy.set_param("local_pos_ref_latitude", msg['latitude'])
-        rospy.set_param("local_pos_ref_longitude", msg['longitude']) 
-        rospy.set_param("local_pos_ref_altitude", msg['altitude'])
+        rospy.set_param("local_pos_ref_latitude", msg.latitude)
+        rospy.set_param("local_pos_ref_longitude", msg.longitude) 
+        rospy.set_param("local_pos_ref_altitude", msg.altitude)
         rospy.sleep((self.mavlink_packet_overhead_bytes + 24) / self.bytes_per_sec_send_rate)
 
     def send_map_update(self):
