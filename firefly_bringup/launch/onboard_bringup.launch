@@ -57,17 +57,17 @@
         <include file="$(find core_central)/launch/dji/sim/dji_sim_control.launch" pass_all_args="true" />
         <include file="$(find firefly_control)/launch/autonomy.launch" pass_all_args="true" />
         <node pkg="firefly_control" type="ipp_plan_to_trajectory.py" name="ipp_plan_to_trajectory" output="screen" />
-        <!-- <node pkg="planner_map_interfaces" type="pub_fixed_plan_request_on_demand.py" name="pub_fixed_plan_request_on_demand" output="screen" /> -->
+        <node pkg="planner_map_interfaces" type="pub_fixed_plan_request_on_demand.py" name="pub_fixed_plan_request_on_demand" output="screen" />
       </group>
     </group>
   </group>
 
-  <!-- <arg name="config" value="wildfire" />
+  <arg name="config" value="wildfire" />
   <arg name="planner" default="tigris" />
   <arg name="search" default="true" />
   <arg name="track" default="false" />
   <arg name="rviz" default="true" />
   <arg name="vis_while_planning" default="true" />
   <arg name="loglevel" default="info" />
-  <include file="$(find onr_ipp)/launch/main.launch" pass_all_args="true" /> -->
+  <include file="$(find onr_ipp)/launch/main.launch" pass_all_args="true" />
 </launch>
