@@ -46,7 +46,7 @@ void gpsConvertENU(float &ENU_x, float &ENU_y,
 class TerrainAccuracy {
 
     public:
-        TerrainAccuracy(std::string filename = "/home/mrsd/Firefly/src/firefly/firefly_mapping/scripts/MergedCloudClean.pcd") {
+        TerrainAccuracy(std::string filename = "/home/wildfire/M600_ws/src/firefly/firefly_mapping/scripts/MergedCloudClean.pcd") {
             map_sub = nh.subscribe("uav1/grid_map", 10, &TerrainAccuracy::map_callback, this);
             elev_acc_pub = nh.advertise<std_msgs::Float32>("average_elevation_accuracy", 10);
             max_err_pub = nh.advertise<std_msgs::Float32>("max_elevation_error", 10);
