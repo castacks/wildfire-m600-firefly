@@ -2,7 +2,62 @@
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
 	<name>test</name>
-	<gx:CascadingStyle kml:id="__managed_style_264E69C23225CB6411DE">
+	<gx:CascadingStyle kml:id="__managed_style_16CDDBDD5C25CFCB78DD">
+		<Style>
+			<IconStyle>
+				<Icon>
+					<href>https://earth.google.com/earth/rpc/cc/icon?color=fbc02d&amp;id=2000&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>4</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+				<displayMode>hide</displayMode>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<StyleMap id="__managed_style_0EA99DED9B25CFCB78DD">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#__managed_style_16CDDBDD5C25CFCB78DD</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#__managed_style_2F0D94E41825CFCB78DD</styleUrl>
+		</Pair>
+	</StyleMap>
+	<gx:CascadingStyle kml:id="__managed_style_2F0D94E41825CFCB78DD">
+		<Style>
+			<IconStyle>
+				<scale>1.2</scale>
+				<Icon>
+					<href>https://earth.google.com/earth/rpc/cc/icon?color=fbc02d&amp;id=2000&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>6</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+				<displayMode>hide</displayMode>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<gx:CascadingStyle kml:id="__managed_style_2B36097C7125CFC5A032">
 		<Style>
 			<IconStyle>
 				<scale>1.2</scale>
@@ -25,7 +80,7 @@
 			</BalloonStyle>
 		</Style>
 	</gx:CascadingStyle>
-	<gx:CascadingStyle kml:id="__managed_style_13FC20940925CB6411DE">
+	<gx:CascadingStyle kml:id="__managed_style_198115738225CFC5A032">
 		<Style>
 			<IconStyle>
 				<Icon>
@@ -47,40 +102,23 @@
 			</BalloonStyle>
 		</Style>
 	</gx:CascadingStyle>
-	<StyleMap id="__managed_style_0543DAE1CA25CB6411DE">
+	<StyleMap id="__managed_style_0F7EB66CA525CFC5A032">
 		<Pair>
 			<key>normal</key>
-			<styleUrl>#__managed_style_13FC20940925CB6411DE</styleUrl>
+			<styleUrl>#__managed_style_198115738225CFC5A032</styleUrl>
 		</Pair>
 		<Pair>
 			<key>highlight</key>
-			<styleUrl>#__managed_style_264E69C23225CB6411DE</styleUrl>
+			<styleUrl>#__managed_style_2B36097C7125CFC5A032</styleUrl>
 		</Pair>
 	</StyleMap>
 	<Folder id="0E65F8A33125BDD22A7D">
 		<name>polygon</name>
 		<open>1</open>
-		<styleUrl>#__managed_style_0543DAE1CA25CB6411DE</styleUrl>
-		<Placemark id="0F17946EDB25CAC41A74">
-			<name>origin</name>
-			<LookAt>
-				<longitude>-79.94411747048865</longitude>
-				<latitude>40.44185908936123</latitude>
-				<altitude>290.9344977041982</altitude>
-				<heading>359.9999966876193</heading>
-				<tilt>0</tilt>
-				<gx:fovy>35</gx:fovy>
-				<range>86.43038053734927</range>
-				<altitudeMode>absolute</altitudeMode>
-			</LookAt>
-			<styleUrl>#__managed_style_0543DAE1CA25CB6411DE</styleUrl>
-			<Point>
-				<coordinates>-79.94409781913386,40.44176290700079,291.385476220315</coordinates>
-			</Point>
-		</Placemark>
+		<styleUrl>#__managed_style_0F7EB66CA525CFC5A032</styleUrl>
 		<Placemark id="0F316AF0FA25C5526390">
 			<name>outer_polygon</name>
-			<styleUrl>#__managed_style_0543DAE1CA25CB6411DE</styleUrl>
+			<styleUrl>#__managed_style_0F7EB66CA525CFC5A032</styleUrl>
 			<Polygon>
 				<outerBoundaryIs>
 					<LinearRing>
@@ -90,6 +128,24 @@
 					</LinearRing>
 				</outerBoundaryIs>
 			</Polygon>
+		</Placemark>
+		<Placemark id="0B4D81BD3C25CFCB07BD">
+			<name>origin</name>
+			<LookAt>
+				<longitude>-79.944142</longitude>
+				<latitude>40.4417439</latitude>
+				<altitude>0</altitude>
+				<heading>0</heading>
+				<tilt>0</tilt>
+				<gx:fovy>35</gx:fovy>
+				<range>781.0655839328227</range>
+				<altitudeMode>relativeToGround</altitudeMode>
+			</LookAt>
+			<styleUrl>#__managed_style_0EA99DED9B25CFCB78DD</styleUrl>
+			<Point>
+				<altitudeMode>relativeToGround</altitudeMode>
+				<coordinates>-79.944142,40.4417439,0</coordinates>
+			</Point>
 		</Placemark>
 	</Folder>
 </Document>
