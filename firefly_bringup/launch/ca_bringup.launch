@@ -33,6 +33,7 @@
   </group>
 
 
+  <arg name="config" value="wildfire" />
   <arg name="planner" default="tigris" />
   <arg name="search" default="true" />
   <arg name="track" default="false" />
@@ -40,7 +41,7 @@
   <arg name="vis_while_planning" default="true" />
   <arg name="loglevel" default="debug" />
 
-  <include file="$(find onr_ipp)/launch/sim_belief_and_plan.launch" pass_all_args="true" />
+  <include file="$(find onr_ipp)/launch/main.launch" pass_all_args="true" />
 
 
 </launch>
