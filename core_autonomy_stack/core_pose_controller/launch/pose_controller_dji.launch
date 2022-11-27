@@ -25,8 +25,8 @@
     <param name="z/I" type="double" value="0.0" />
     <param name="z/D" type="double" value="0.0" />
     <param name="z/FF" type="double" value="1.0" />
-    <param name="z/min" type="double" value="-2.0" />
-    <param name="z/max" type="double" value="2.5" />
+    <param name="z/min" type="double" value="-5.0" />
+    <param name="z/max" type="double" value="5.0" />
 
     <!-- yaw -->
     <param name="yaw/P" type="double" value="1." />

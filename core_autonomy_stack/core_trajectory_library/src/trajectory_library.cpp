@@ -406,13 +406,13 @@ bool Trajectory::get_odom(double time, nav_msgs::Odometry *odom)
   odom->pose.pose.position.z = position.z();
 
   // interpolate velocity
-  tf::Vector3 velocity = curr_wp.velocity() + t * (next_wp.velocity() - curr_wp.velocity());
+  tf::Vector3 velocity = curr_wp.velocity(); // + t * (next_wp.velocity() - curr_wp.velocity());
   odom->twist.twist.linear.x = velocity.x();
   odom->twist.twist.linear.y = velocity.y();
   odom->twist.twist.linear.z = velocity.z();
 
   // interpolate orientation
-  tf::Quaternion q = prev_wp.q().slerp(curr_wp.q(), t);
+  tf::Quaternion q = prev_wp.q(); //.slerp(curr_wp.q(), t);
   odom->pose.pose.orientation.x = q.x();
   odom->pose.pose.orientation.y = q.y();
   odom->pose.pose.orientation.z = q.z();

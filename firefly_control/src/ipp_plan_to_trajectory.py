@@ -17,6 +17,14 @@ def get_initial_waypoints(curr_pose, first_x, first_y, first_height, velocity):
     wp = WaypointXYZVYaw()
     wp.yaw = np.pi / 2
     wp.velocity = velocity
+    wp.position.x = curr_pose.pose.position.x
+    wp.position.y = curr_pose.pose.position.y
+    wp.position.z = curr_pose.pose.position.z
+    initial_waypoints.append(wp)
+
+    wp = WaypointXYZVYaw()
+    wp.yaw = np.pi / 2
+    wp.velocity = velocity
 
     if curr_pose.pose.position.z > first_height:
         wp.position.x = first_x
@@ -117,13 +125,17 @@ class IppPlanToTrajectory:
             rospy.logerr("Received IPP plan with 0 waypoints")
             return
 
-        first_x = ipp_plan.plan[0].position.position.x
-        first_y = ipp_plan.plan[0].position.position.y
-        first_z = ipp_plan.plan[0].position.position.z
-        initial_wps = get_initial_waypoints(
-            transformed_curr_pose, first_x, first_y, first_z, velocity
+        wp = WaypointXYZVYaw()
+        orientation =  transformed_curr_pose.pose.orientation
+        (_, _, yaw) = euler_from_quaternion(
+            [orientation.x, orientation.y, orientation.z, orientation.w]
         )
-        trajectory_msg.waypoints.extend(initial_wps)
+        wp.yaw = yaw
+        wp.velocity = velocity
+        wp.position.x = transformed_curr_pose.pose.position.x
+        wp.position.y = transformed_curr_pose.pose.position.y
+        wp.position.z = transformed_curr_pose.pose.position.z
+        trajectory_msg.waypoints.append(wp)
 
         for wp in ipp_plan.plan:
             output_wp = WaypointXYZVYaw()
@@ -140,15 +152,7 @@ class IppPlanToTrajectory:
             output_wp.velocity = velocity
 
             trajectory_msg.waypoints.append(output_wp)
-
-        # wp1 = WaypointXYZVYaw()
-        # wp1.position.x = 0
-        # wp1.position.y = 0
-        # wp1.position.z = 30
-        # wp1.yaw = 0
-        # wp1.velocity = 3.0
-        # trajectory_msg.waypoints.append(wp1)
-
+        
         if self.executing:
             self.trajectory_track_pub.publish(trajectory_msg)
         elif self.waiting_for_initial_ipp_plan and self.initial_plan is None:
