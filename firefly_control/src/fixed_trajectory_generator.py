@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 import numpy as np
 import rospy
 from core_trajectory_msgs.msg import WaypointXYZVYaw
@@ -483,8 +483,6 @@ def get_stepover_distance(height):
     return stepover
 
 def transform_odom(curr_odom, target_frame):
-    global tf_listener
-
     curr_pose = PoseStamped()
     curr_pose.header.frame_id = curr_odom.header.frame_id
     curr_pose.pose = curr_odom.pose.pose
@@ -590,7 +588,6 @@ def odometry_callback(msg):
 if __name__ == '__main__':
     rospy.init_node('fixed_trajectory_generator')
 
-    global tf_listener
     tf_listener = TransformListener()
 
     fixed_trajectory_sub = rospy.Subscriber('fixed_trajectory', FixedTrajectory, fixed_trajectory_callback)
