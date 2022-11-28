@@ -1,0 +1,18 @@
+# Ubuntu 18.04 and up, put me under /etc/netplan/
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      addresses:
+        - 192.168.1.100/24
+      gateway4: 0.0.0.0
+      nameservers:
+        addresses:
+          - 8.8.8.8
+        search:
+          - mydomain.net
+      routes:
+        - to: 192.168.1.201
+          via: 0.0.0.0
+

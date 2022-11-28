@@ -21,3 +21,10 @@ Install the udev rules on the ground control station by running the following co
     sudo cp firefly_bringup/99-firefly-gcs.rules /etc/udev/rules.d
     sudo udevadm control --reload-rules && udevadm trigger
 
+Install the netplan for the Velodyne
+
+```bash
+# sudo apt install netplan.io
+sudo cp 50-velodyne-init.yaml /etc/netplan
+sudo netplan apply
+```
