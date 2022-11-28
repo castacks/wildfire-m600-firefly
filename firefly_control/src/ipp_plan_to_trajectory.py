@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 
 import rospy
 from planner_map_interfaces.msg import Plan, Waypoint
