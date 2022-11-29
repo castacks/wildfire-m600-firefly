@@ -80,7 +80,6 @@ class TerrainMapping {
     if (!terrain_mapping_enabled) {
       return;
     }
-
     auto start = std::chrono::high_resolution_clock::now();
     std::unordered_map<int, float> map_bin_to_max_altitude;
 

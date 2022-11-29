@@ -564,9 +564,18 @@ def execute_coverage_planner_callback(msg):
         traj = TrajectoryXYZVYaw()
         traj.header.frame_id = frame_id
 
-        x, y = path[0]
-        initial_wps = get_initial_waypoints(transformed_curr_pose, x, y, height, velocity)
-        traj.waypoints.extend(initial_wps)
+        wp = WaypointXYZVYaw()
+        orientation =  transformed_curr_pose.pose.orientation
+        (_, _, yaw) = euler_from_quaternion(
+            [orientation.x, orientation.y, orientation.z, orientation.w]
+        )
+        wp.yaw = yaw
+        wp.velocity = velocity
+        wp.position.x = transformed_curr_pose.pose.position.x
+        wp.position.y = transformed_curr_pose.pose.position.y
+        wp.position.z = transformed_curr_pose.pose.position.z
+        traj.waypoints.append(wp)
+        
 
         for (x,y) in path:
             wp1 = WaypointXYZVYaw()

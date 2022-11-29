@@ -61,7 +61,7 @@ public:
         cropBoxFilterMapping.setMax (max_pt_mapping);
         cropBoxFilterMapping.filter (cloud_out_mapping);
         pcl::toPCLPointCloud2(cloud_out_mapping, point_cloud2_mappping);
-        point_cloud2_mappping.header.frame_id = "/uav1/lidar";
+        point_cloud2_mappping.header.frame_id = "uav1/lidar";
 
         lidar_mapping_pub_.publish(point_cloud2_mappping);
 
@@ -73,7 +73,7 @@ public:
         cropBoxFilterAltitude.setMin (min_pt_altitude);
         cropBoxFilterAltitude.setMax (max_pt_altitude);
         cropBoxFilterAltitude.filter (cloud_out_altitude);
-        cloud_out_altitude.header.frame_id = "/uav1/lidar";
+        cloud_out_altitude.header.frame_id = "uav1/lidar";
         lidar_altitude_pub_.publish(cloud_out_altitude);
         
         float height = 0;

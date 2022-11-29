@@ -1,3 +1,6 @@
 *.pyc
 .vscode
 firefly_dialect.md5
+*build/
+*.swp
+*.bag

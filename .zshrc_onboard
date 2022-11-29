@@ -162,6 +162,7 @@ unset __conda_setup
 
 export DJI_SDK_APP_ID='1114337'
 export DJI_SDK_ENC_KEY='7b18b3f25f1763f0a7b9fab68d0f83d06a67018bfd50baafa5eed7aca860008d'
-alias cbr=catkin build --cmake-args -DCMAKE_BUILD_TYPE="Release"
+
+alias cbr="catkin build -DCMAKE_BUILD_TYPE=Release"
 
 source /opt/ros/noetic/setup.zsh
