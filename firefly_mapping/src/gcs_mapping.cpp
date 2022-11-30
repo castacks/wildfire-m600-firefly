@@ -154,6 +154,7 @@ private:
         map_pub.publish(outputMap);
         new_update = false;
       }
+      ROS_INFO("Total mapped area: %f m^2", (float)mapped_bins*outputMap.info.resolution*outputMap.info.resolution);
     }
 
     void clear(const std_msgs::Empty &empty_msg) {

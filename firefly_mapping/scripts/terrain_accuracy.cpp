@@ -30,8 +30,8 @@
 
 #define C_EARTH (float)6378137.0
 #define C_PI (float)3.14159265
-#define DEG2RAD(DEG) ((DEG) * ((C_PI) / (180.0)))
-#define RAD2DEG(RAD) ((RAD) * (180.0) / (C_PI))
+#define terrain_DEG2RAD(DEG) ((DEG) * ((C_PI) / (180.0)))
+#define terrain_RAD2DEG(RAD) ((RAD) * (180.0) / (C_PI))
 
 void gpsConvertENU(float &ENU_x, float &ENU_y,
                     float gps_t_lon, float gps_t_lat,
@@ -39,14 +39,14 @@ void gpsConvertENU(float &ENU_x, float &ENU_y,
 {
     float d_lon = gps_t_lon - gps_r_lon;
     float d_lat = gps_t_lat - gps_r_lat;
-    ENU_y = DEG2RAD(d_lat) * C_EARTH;
-    ENU_x = DEG2RAD(d_lon) * C_EARTH * cos(DEG2RAD(gps_t_lat));
+    ENU_y = terrain_DEG2RAD(d_lat) * C_EARTH;
+    ENU_x = terrain_DEG2RAD(d_lon) * C_EARTH * cos(terrain_DEG2RAD(gps_t_lat));
 };
 
 class TerrainAccuracy {
 
     public:
-        TerrainAccuracy(std::string filename = "/home/wildfire/M600_ws/src/firefly/firefly_mapping/scripts/MergedCloudClean.pcd") {
+        TerrainAccuracy(std::string filename = "/home/wildfire/m600_ws/src/firefly/firefly_mapping/scripts/MergedCloudClean.pcd") {
             map_sub = nh.subscribe("uav1/grid_map", 10, &TerrainAccuracy::map_callback, this);
             elev_acc_pub = nh.advertise<std_msgs::Float32>("average_elevation_accuracy", 10);
             max_err_pub = nh.advertise<std_msgs::Float32>("max_elevation_error", 10);

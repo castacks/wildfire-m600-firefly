@@ -64,9 +64,9 @@
 		<Placemark id="0F17946EDB25CAC41A74">
 			<name>origin</name>
 			<LookAt>
-				<longitude>-79.94411747048865</longitude>
-				<latitude>40.44185908936123</latitude>
-				<altitude>290.9344977041982</altitude>
+				<longitude>-79.94414930</longitude>
+				<latitude>40.44171800</latitude>
+				<altitude>258.979</altitude>
 				<heading>359.9999966876193</heading>
 				<tilt>0</tilt>
 				<gx:fovy>35</gx:fovy>
