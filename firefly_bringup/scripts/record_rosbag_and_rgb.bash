@@ -27,7 +27,7 @@ echo "Saving to $OUTPUT ..."
 sleep 2
 
 # Run DJI SDK
-# source /home/wildfire/M600_ws/devel/setup.bash && nohup roslaunch dji_sdk sdk.launch &
+# source /home/wildfire/m600_ws/devel/setup.bash && nohup roslaunch dji_sdk sdk.launch &
 sleep 4
 
 # run RGB
@@ -38,18 +38,18 @@ gst-launch-1.0 -e nvarguscamerasrc sensor-id=0 !\
 queue ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1" ! nvvidconv flip-method=2 ! nvv4l2h264enc bitrate=20000000 ! h264parse ! mp4mux ! filesink location="$OUTPUT"_rgb.mp4 &
 
 # run Mavlink
-#python3 ~/M600_ws/src/data_collection/ros_mavlink_test.py &
+#python3 ~/m600_ws/src/data_collection/ros_mavlink_test.py &
 
 # run thermal
-# source /home/wildfire/M600_ws/devel/setup.bash && roslaunch flir_ros_sync flir_ros.launch &
-#source /home/wildfire/M600_ws/devel/setup.bash && roslaunch flir_ros_sync flir_ros.launch &
+# source /home/wildfire/m600_ws/devel/setup.bash && roslaunch flir_ros_sync flir_ros.launch &
+#source /home/wildfire/m600_ws/devel/setup.bash && roslaunch flir_ros_sync flir_ros.launch &
 
-#source /home/wildfire/M600_ws/devel/setup.bash && roslaunch seek_driver seek_driver.launch &
+#source /home/wildfire/m600_ws/devel/setup.bash && roslaunch seek_driver seek_driver.launch &
 
 # run ROS record
 if rostopic list | grep -q "/rosout"; then
-	source /home/wildfire/M600_ws/devel/setup.bash
-	rosbag record -a -O "$OUT_FOLDER"/"$DATETIME"_dji_sdk_and_thermal.bag __name:="data_collect" -x "(.*)/compressed(.*)|(.*)/theora(.*)|/uav1/lidar_cropped_mapping|/uav1/lidar_cropped_obstacle|/uav1/altitude" &
+	source /home/wildfire/m600_ws/devel/setup.bash
+	rosbag record -a -O "$OUT_FOLDER"/"$DATETIME"_dji_sdk_and_thermal.bag __name:="data_collect" -x "(.*)/compressed(.*)|(.*)/theora(.*)|/uav1/lidar_cropped_mapping|/uav1/lidar_cropped_obstacle|/uav1/altitude|/uav1/velodyne_points" &
 else
 	echo "roscore not running, not recording DJI SDK data"
 fi
