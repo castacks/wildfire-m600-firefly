@@ -11,10 +11,10 @@
   <arg name="run_ca_stack" default="true" />
   <arg name="map_resolution" default="0.5" />
   <arg name="terrain_resolution" default="2.5" />
-  <arg name="map_min_x" default="-250" />
-  <arg name="map_max_x" default="250" />
-  <arg name="map_min_y" default="-250" />
-  <arg name="map_max_y" default="250" />
+  <arg name="map_min_x" default="-1000" />
+  <arg name="map_max_x" default="1000" />
+  <arg name="map_min_y" default="-1000" />
+  <arg name="map_max_y" default="100" />
 
   <group ns="$(arg robot_name)">
     <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen">
@@ -30,13 +30,13 @@
       <param name="continuous" value="$(arg continuous)" />
     </node>
     <node pkg="firefly_perception" type="lidar_perception" name="lidar_perception" output="screen" />
-    <node pkg="firefly_mapping" type="terrain_mapping" name="terrain_mapping" output="screen">
+    <!-- <node pkg="firefly_mapping" type="terrain_mapping" name="terrain_mapping" output="screen">
       <param name="terrain_resolution" value="$(arg terrain_resolution)" />
       <param name="min_x" value="$(arg map_min_x)" />
       <param name="max_x" value="$(arg map_max_x)" />
       <param name="min_y" value="$(arg map_min_y)" />
       <param name="max_y" value="$(arg map_max_y)" />
-    </node>
+    </node> -->
     <node pkg="firefly_bringup" type="pcb_interface.py" name="pcb_interface" output="screen" />
 
     <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">
@@ -47,11 +47,11 @@
       <include file="$(find flir_ros_sync)/launch/example/flir_ros.launch" if="$(arg open_flir)" />
       <include file="$(find seek_driver)/launch/seek_driver.launch" />
       <include file="$(find core_central)/launch/dji/sim/dji_sim_state_estimation.launch" pass_all_args="true" />
-      <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+      <!-- <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" /> -->
       <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.0253145 0.056098 -0.27658746 -1.5707963 0 3.14159 $(arg robot_name)/base_link $(arg robot_name)/thermal/camera_link 100" />
       <node pkg="tf" type="static_transform_publisher" name="base_to_lidar" args="0.17 -0.03 -0.15 -1.5707963 0 -1.5707963 $(arg robot_name)/base_link $(arg robot_name)/lidar 100" />
 
-      <node name="rviz" pkg="rviz" type="rviz" args="-d $(find firefly_mapping)/rviz/terrain_mapping.rviz"/>
+      <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find firefly_mapping)/rviz/terrain_mapping.rviz"/> -->
 
       <group if="$(arg run_ca_stack)">
         <include file="$(find core_central)/launch/dji/sim/dji_sim_control.launch" pass_all_args="true" />
@@ -67,6 +67,7 @@
   <arg name="search" default="true" />
   <arg name="track" default="false" />
   <arg name="rviz" default="true" />
+  <arg name="rviz_file" default="gascola_nrec.rviz" />
   <arg name="vis_while_planning" default="false" />
   <arg name="loglevel" default="debug" />
   <include file="$(find onr_ipp)/launch/main.launch" pass_all_args="true" />
