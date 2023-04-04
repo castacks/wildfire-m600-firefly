@@ -1,0 +1,3 @@
+[submodule "flir_ros_sync"]
+	path = flir_ros_sync
+	url = git@github.com:castacks/flir_ros_sync.git
