@@ -1,0 +1,216 @@
+{
+  "keys": {},
+  "groups": {
+    "pluginmanager": {
+      "keys": {
+        "running-plugins": {
+          "type": "repr",
+          "repr": "{u'__DockWidgetContainer': [1], u'core_trajectory_library/FixedTrajectorySelectorPlugin': [1], u'rqt_behavior_tree_command/BehaviorTreeCommandPlugin': [1], u'behavior_tree/BehaviorTreePlugin': [1]}"
+        }
+      },
+      "groups": {
+        "plugin____DockWidgetContainer__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Container'"
+                }
+              },
+              "groups": {
+                "mainwindow": {
+                  "keys": {
+                    "geometry": {
+                      "type": "repr(QByteArray.hex)",
+                      "repr(QByteArray.hex)": "b'01d9d0cb0002000000000000000000150000067e0000024a0000000000000000ffffffffffffffff00000000000000000d70'",
+                      "pretty-print": "         ~ J            p"
+                    },
+                    "state": {
+                      "type": "repr(QByteArray.hex)",
+                      "repr(QByteArray.hex)": "b'000000ff00000000fd00000001000000020000067f00000236fc0100000003fb0000004c006200650068006100760069006f0072005f0074007200650065005f005f004200650068006100760069006f007200540072006500650050006c007500670069006e005f005f0031005f005f03000002f60000007c00000882000002ddfc000000000000067f0000067400fffffffc0100000002fb00000072007200710074005f006200650068006100760069006f0072005f0074007200650065005f0063006f006d006d0061006e0064005f005f004200650068006100760069006f007200540072006500650043006f006d006d0061006e00640050006c007500670069006e005f005f0031005f005f0100000000000003340000033400fffffffb000000760063006f00720065005f007400720061006a006500630074006f00720079005f006c006900620072006100720079005f005f00460069007800650064005400720061006a006500630074006f0072007900530065006c006500630074006f00720050006c007500670069006e005f005f0031005f005f010000033a000003450000033a00fffffffb0000006c007400720061006a006500630074006f00720079005f006c006900620072006100720079005f005f00460069007800650064005400720061006a006500630074006f0072007900530065006c006500630074006f00720050006c007500670069006e005f005f0031005f005f010000033a0000034500000000000000000000067f0000000000000004000000040000000800000008fc00000000'",
+                      "pretty-print": "                 Lbehavior_tree__BehaviorTreePlugin__1__              t                                                                    4 4                                                                 : E :                                                            : E                  "
+                    }
+                  },
+                  "groups": {}
+                }
+              }
+            }
+          }
+        },
+        "plugin__trajectory_library__FixedTrajectorySelectorPlugin__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "1"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u''"
+                }
+              },
+              "groups": {}
+            },
+            "plugin": {
+              "keys": {
+                "attribute_settings": {
+                  "type": "repr",
+                  "repr": "{u'Circle': {u'frame_id': u'world', u'radius': u'0', u'velocity': u'0'}, u'Racetrack': {u'frame_id': u'world', u'height': u'0', u'width': u'0', u'length': u'0', u'max_acceleration': u'0', u'velocity': u'0'}, u'Figure8': {u'frame_id': u'world', u'height': u'1', u'width': u'10', u'length': u'10', u'max_acceleration': u'0.2', u'velocity': u'1'}}"
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__rqt_behavior_tree_command__BehaviorTreeCommandPlugin__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "1"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u''"
+                }
+              },
+              "groups": {}
+            },
+            "plugin": {
+              "keys": {
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__basestation_gui_python__BasestationGuiPlugin__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "u'true'"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u''"
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__behavior_tree__BehaviorTreePlugin__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u''"
+                }
+              },
+              "groups": {}
+            },
+            "plugin": {
+              "keys": {
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__core_trajectory_library__FixedTrajectorySelectorPlugin__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "1"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u''"
+                }
+              },
+              "groups": {}
+            },
+            "plugin": {
+              "keys": {
+                "attribute_settings": {
+                  "type": "repr",
+                  "repr": "{u'Circle': {u'frame_id': u'world', u'radius': u'5', u'velocity': u'1'}, u'Racetrack': {u'frame_id': u'world', u'height': u'1', u'width': u'15', u'length': u'30', u'max_acceleration': u'0.2', u'velocity': u'1'}, u'Figure8': {u'frame_id': u'world', u'height': u'1', u'width': u'10', u'length': u'10', u'max_acceleration': u'0.2', u'velocity': u'4'}}"
+                }
+              },
+              "groups": {}
+            }
+          }
+        }
+      }
+    },
+    "mainwindow": {
+      "keys": {
+        "geometry": {
+          "type": "repr(QByteArray.hex)",
+          "repr(QByteArray.hex)": "b'01d9d0cb00020000000003cc000000de00000a4a00000513000003cc000000fc00000a4a0000051300000000000000000d70'",
+          "pretty-print": "         J       J      p"
+        },
+        "state": {
+          "type": "repr(QByteArray.hex)",
+          "repr(QByteArray.hex)": "b'000000ff00000000fd00000001000000030000067f000003ecfc0100000002fc000000000000067f0000067400fffffffc0200000003fb0000004c006200650068006100760069006f0072005f0074007200650065005f005f004200650068006100760069006f007200540072006500650050006c007500670069006e005f005f0031005f005f01000000160000019b000000df00fffffffb000000760063006f00720065005f007400720061006a006500630074006f00720079005f006c006900620072006100720079005f005f00460069007800650064005400720061006a006500630074006f0072007900530065006c006500630074006f00720050006c007500670069006e005f005f0031005f005f030000060d00000294000000ff000003ecfb00000030005f005f0044006f0063006b0057006900640067006500740043006f006e007400610069006e00650072005f005f003101000001b70000024b000001f800fffffffc0000047b000002040000000000fffffffc0200000001fb00000072007200710074005f006200650068006100760069006f0072005f0074007200650065005f0063006f006d006d0061006e0064005f005f004200650068006100760069006f007200540072006500650043006f006d006d0061006e00640050006c007500670069006e005f005f0031005f005f03000005ce0000016e0000022b000003ec0000067f0000000000000004000000040000000800000008fc00000001000000030000000100000036004d0069006e0069006d0069007a006500640044006f0063006b00570069006400670065007400730054006f006f006c0062006100720000000000ffffffff0000000000000000'",
+          "pretty-print": "                     t                                                                                                                                                          K                 rrqt_behavior_tree_command__BehaviorTreeCommandPlugin__1__                            6MinimizedDockWidgetsToolbar        "
+        }
+      },
+      "groups": {
+        "toolbar_areas": {
+          "keys": {
+            "MinimizedDockWidgetsToolbar": {
+              "type": "repr",
+              "repr": "8"
+            }
+          },
+          "groups": {}
+        }
+      }
+    }
+  }
+}
