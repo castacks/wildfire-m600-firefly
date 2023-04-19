@@ -8,6 +8,7 @@
   </node>
   
   <node name="rqt" pkg="rqt_gui" type="rqt_gui" args="--perspective-file $(find core_gazebo_sim)/core.perspective" />
+  
   <include file="$(find model_publisher)/launch/model_publisher.launch" ns="drone">
     <arg name="model_filename" value="$(find core_gazebo_sim)/meshes/hex_mesh.dae" />
     <arg name="frame_id" value="$(arg robot_name)/base_link" />
