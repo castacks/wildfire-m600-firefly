@@ -141,6 +141,10 @@ gzip_progress(){
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
+# For Ctrl Backspace & Ctrl Delete
+bindkey -M emacs '^[[3;5~' kill-word
+bindkey -M emacs '^H' backward-kill-word
+
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
 __conda_setup="$('/home/andrew/.miniforge3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
@@ -156,8 +160,6 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
-
-
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 export DJI_SDK_APP_ID='1114337'
@@ -166,3 +168,5 @@ export DJI_SDK_ENC_KEY='7b18b3f25f1763f0a7b9fab68d0f83d06a67018bfd50baafa5eed7ac
 alias cbr="catkin build -DCMAKE_BUILD_TYPE=Release"
 
 source /opt/ros/noetic/setup.zsh
+
+source ~/m600_ws/devel/setup.zsh

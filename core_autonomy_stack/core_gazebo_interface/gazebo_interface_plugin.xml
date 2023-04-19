@@ -1,5 +1,0 @@
-<library path="lib/libgazebo_interface">
-  <class type="GazeboInterface" base_class_type="DroneInterface">
-    <description>Gazebo interface plugin.</description>
-  </class>
-</library>
