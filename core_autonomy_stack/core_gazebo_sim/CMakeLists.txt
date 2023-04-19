@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(core_gazebo_sim)
 
-add_compile_options(-std=c++11)
+# add_compile_options(-std=c++11)
+
+set(CMAKE_CXX_STANDARD 14)
 
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS 
