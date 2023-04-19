@@ -70,5 +70,5 @@
   <arg name="rviz_file" default="gascola_nrec.rviz" />
   <arg name="vis_while_planning" default="false" />
   <arg name="loglevel" default="debug" />
-  <include file="$(find onr_ipp)/launch/main.launch" pass_all_args="true" />
+  <include file="$(find ipp_planners)/launch/main.launch" pass_all_args="true" />
 </launch>
