@@ -66,7 +66,7 @@
   <arg name="search" default="true" />
   <arg name="track" default="false" />
   <arg name="rviz" default="true" />
-  <arg name="rviz_file" default="gascola_nrec.rviz" />
+  <!-- <arg name="rviz_file" default="wildfire.rviz" /> -->
   <arg name="vis_while_planning" default="false" />
   <arg name="loglevel" default="debug" />
   <include file="$(find ipp_planners)/launch/main.launch" pass_all_args="true" />
