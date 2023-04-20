@@ -61,6 +61,8 @@
     </group>
   </group>
 
+  <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 /uav1/map /local_enu" />
+
   <arg name="config" value="wildfire" />
   <arg name="planner" default="tigris" />
   <arg name="search" default="true" />
