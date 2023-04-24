@@ -15,6 +15,7 @@
   <arg name="map_max_x" default="1000" />
   <arg name="map_min_y" default="-1000" />
   <arg name="map_max_y" default="100" />
+  <arg name="record" default="true" />
 
   <group ns="$(arg robot_name)">
     <node pkg="firefly_mapping" type="onboard_mapping" name="onboard_mapping" output="screen">
@@ -44,7 +45,7 @@
     </node> -->
     <group unless="$(arg replay_mode)">
       <include file="$(find dji_sdk)/launch/sdk.launch" />
-      <include file="$(find flir_ros_sync)/launch/wildfire/M600/wildfire-m600-resize.launch" />
+      <include file="$(find flir_ros_sync)/launch/wildfire/M600/wildfire-m600.launch" if="$(arg open_flir)"/>
       <include file="$(find core_central)/launch/dji/sim/dji_sim_state_estimation.launch" pass_all_args="true" />
       <!-- <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" /> -->
       <node pkg="tf" type="static_transform_publisher" name="base_to_thermal_camera_link" args="0.0253145 0.056098 -0.27658746 -1.5707963 0 3.14159 $(arg robot_name)/base_link $(arg robot_name)/thermal/camera_link 100" />
@@ -70,15 +71,25 @@
     <arg name="planner" value="tigris" />
     <arg name="search" value="true" />
     <arg name="track" value="true" />
+    <arg name="sim" value="false" />
     <arg name="rviz" value="true" />
-    <arg name="perception" value="custom" />
+    <arg name="perception" value="true" />
     <arg name="vis_while_planning" value="false" />
-    <arg name="loglevel" value="debug" />
-  </include>
-  <include file="$(find object_detection)/launch/ipp_computer_vision.launch">
-    <arg name="config" value="wildfire" />
-    <arg name="robot_name" value="$(arg robot_name)" />
-    <arg name="use_docker" value="$(arg use_docker)" />
+    <arg name="loglevel" value="info" />
+	  <arg name="use_docker_obj_det" value="true" />
   </include>
 
+  <node name="record" pkg="rosbag" type="record" args="
+  /tf 
+  /uav1/global_path
+  /uav1/global_path/final_path
+  /uav1/ipp_belief/particle_filters_belief
+  /uav1/ipp_belief/total_variance
+  /uav1/ipp_belief/variance_array 
+  /uav1/odometry 
+  /uav1/planner/plan_request
+  /uav1/remaining_budget
+  /uav1/thermal/image
+  /uav1/waypoint_num
+  -o /mnt/nvme0n1/data/m600_ipp_with_perception.bag" if="$(arg record)"/>
 </launch>
