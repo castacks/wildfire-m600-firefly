@@ -3,7 +3,7 @@
   <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find firefly_bringup)/config/python_logging.conf" />
 
   <arg name="replay_mode" default="false" />
-  <arg name="open_flir" default="false" />
+  <arg name="open_flir" default="true" />
   <arg name="continuous" default="true" />
   <arg name="threshold" default="30" />
   <arg name="robot_name" default="uav1" />
@@ -63,13 +63,22 @@
 
   <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 /uav1/map /local_enu" />
 
-  <arg name="config" value="wildfire" />
-  <arg name="planner" default="tigris" />
-  <arg name="search" default="true" />
-  <arg name="track" default="false" />
-  <arg name="rviz" default="true" />
-  <!-- <arg name="rviz_file" default="wildfire.rviz" /> -->
-  <arg name="vis_while_planning" default="false" />
-  <arg name="loglevel" default="debug" />
-  <include file="$(find ipp_planners)/launch/main.launch" pass_all_args="true" />
+
+  <include file="$(find ipp_planners)/launch/main.launch" pass_all_args="true">
+    <arg name="config" value="wildfire" />
+    <arg name="robot_name" value="$(arg robot_name)" />
+    <arg name="planner" value="tigris" />
+    <arg name="search" value="true" />
+    <arg name="track" value="true" />
+    <arg name="rviz" value="true" />
+    <arg name="perception" value="custom" />
+    <arg name="vis_while_planning" value="false" />
+    <arg name="loglevel" value="debug" />
+  </include>
+  <include file="$(find object_detection)/launch/ipp_computer_vision.launch">
+    <arg name="config" value="wildfire" />
+    <arg name="robot_name" value="$(arg robot_name)" />
+    <arg name="use_docker" value="$(arg use_docker)" />
+  </include>
+
 </launch>
