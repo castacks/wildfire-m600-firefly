@@ -56,7 +56,7 @@ class IppPlanToTrajectory:
         self.got_initial_plan_pub = rospy.Publisher(
             "got_initial_ipp_plan", Bool, queue_size=1
         )
-        self.replan_pub = rospy.Publisher("planner/replan", String, queue_size=1)
+        # self.replan_pub = rospy.Publisher("planner/replan", String, queue_size=1)
         self.initial_ipp_plan_to_transmit_pub = rospy.Publisher(
             "initial_ipp_plan_to_transmit", Plan, queue_size=1
         )
@@ -72,10 +72,10 @@ class IppPlanToTrajectory:
         self.executing = False
         self.initial_plan = None
 
-        self.request_replan_timer = rospy.Timer(
-            rospy.Duration(1.0), self.request_replan_callback
-        )
-        self.last_replan_time = None
+        # self.request_replan_timer = rospy.Timer(
+        #     rospy.Duration(1.0), self.request_replan_callback
+        # )
+        # self.last_replan_time = None
 
         self.got_initial_ipp_plan_timer = rospy.Timer(
             rospy.Duration(0.1), self.got_initial_ipp_plan_callback
@@ -83,20 +83,20 @@ class IppPlanToTrajectory:
 
         self.current_odom = None
 
-    def request_replan_callback(self, event):
-        if self.last_replan_time is None:
-            return
+    # def request_replan_callback(self, event):
+    #     if self.last_replan_time is None:
+    #         return
 
-        if self.executing and time.time() - self.last_replan_time > 15:
-            self.replan_pub.publish(String())
-            self.last_replan_time = time.time()
+    #     if self.executing and time.time() - self.last_replan_time > 15:
+    #         self.replan_pub.publish(String())
+    #         self.last_replan_time = time.time()
 
     def got_initial_ipp_plan_callback(self, event):
         have_initial_plan = self.initial_plan is not None
         self.got_initial_plan_pub.publish(have_initial_plan)
 
     def execute_plan_callback(self, msg):
-        self.last_replan_time = time.time()
+        # self.last_replan_time = time.time()
         self.executing = msg.data
         self.waiting_for_initial_ipp_plan = False
         if self.executing:

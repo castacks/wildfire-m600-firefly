@@ -45,6 +45,7 @@
     </node> -->
     <group unless="$(arg replay_mode)">
       <include file="$(find dji_sdk)/launch/sdk.launch" />
+      <include file="$(find seek_driver)/launch/seek_driver.launch" />
       <include file="$(find flir_ros_sync)/launch/wildfire/M600/wildfire-m600.launch" if="$(arg open_flir)"/>
       <include file="$(find core_central)/launch/dji/sim/dji_sim_state_estimation.launch" pass_all_args="true" />
       <!-- <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" /> -->
@@ -64,13 +65,13 @@
 
   <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 /uav1/map /local_enu" />
 
-
+  <remap from="odom" to="odometry" />
   <include file="$(find ipp_planners)/launch/main.launch" pass_all_args="true">
-    <arg name="config" value="wildfire" />
+    <arg name="config" value="journal_m600" />
     <arg name="robot_name" value="$(arg robot_name)" />
     <arg name="planner" value="tigris" />
     <arg name="search" value="true" />
-    <arg name="track" value="true" />
+    <arg name="track" value="false" />
     <arg name="sim" value="false" />
     <arg name="rviz" value="true" />
     <arg name="perception" value="true" />
@@ -82,14 +83,12 @@
   <node name="record" pkg="rosbag" type="record" args="
   /tf 
   /uav1/global_path
-  /uav1/global_path/final_path
-  /uav1/ipp_belief/particle_filters_belief
-  /uav1/ipp_belief/total_variance
-  /uav1/ipp_belief/variance_array 
   /uav1/odometry 
-  /uav1/planner/plan_request
-  /uav1/remaining_budget
   /uav1/thermal/image
+	/uav1/object_detection/detected_bboxes
+	/uav1/seek_camera/displayImage
+	/seek_camera/filteredImage
+	/seek_camera/temperatureImageCelcius
   /uav1/waypoint_num
-  -o /mnt/nvme0n1/data/m600_ipp_with_perception.bag" if="$(arg record)"/>
+  -o /mnt/nvme0n1/data/m600_perception.bag" if="$(arg record)"/>
 </launch>

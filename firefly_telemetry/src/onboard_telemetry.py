@@ -409,7 +409,7 @@ class OnboardTelemetry:
                         self.connection.mav.firefly_heartbeat_send(2)
                     else:
                         self.connection.mav.firefly_heartbeat_send(1)
-                    rospy.logdebug("Sending Heartbeat")
+                    # rospy.logdebug("Sending Heartbeat")
                     self.heartbeat_send_flag = False
                     rospy.sleep((self.mavlink_packet_overhead_bytes + 1) / self.bytes_per_sec_send_rate)
 
